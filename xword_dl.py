@@ -6,6 +6,7 @@ import json
 import puz
 import requests
 
+from html2text import html2text
 from unidecode import unidecode
 
 def main():
@@ -60,7 +61,8 @@ def main():
 
     clues = [word['clue']['clue'] for word in weirdass_puz_clue_sorting]
 
-    normalized_clues = [unidecode(clue) for clue in clues] 
+
+    normalized_clues = [html2text(unidecode(clue), bodywidth=0) for clue in clues]
 
     p.clues.extend(normalized_clues)
 
