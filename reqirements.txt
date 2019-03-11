@@ -1,0 +1,3 @@
+puzpy==0.2.3
+requests==2.21.0
+Unidecode==1.0.23
