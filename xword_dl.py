@@ -66,8 +66,6 @@ def main():
 
     p.clues.extend(normalized_clues)
 
-    p.preamble = b''
-
     filename = input("And what shall we call it? ")
     
     if not filename:
