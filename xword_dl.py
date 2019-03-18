@@ -3,12 +3,16 @@
 import argparse
 import base64
 import json
-import puz
-import requests
+import sys
 import urllib
 
-from bs4 import BeautifulSoup
+import dateparser
+import puz
+import requests
 
+from datetime import datetime
+
+from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
@@ -71,6 +75,10 @@ def get_amuse_puzzle(url, output):
 
 def get_newyorker_puzzle(url, output):
     puzzle_res = requests.get(url)
+
+    if puzzle_res.status_code == 404:
+        sys.exit('Unable to find a puzzle at {}'.format(url))
+ 
     puzzle_soup = BeautifulSoup(puzzle_res.text, "html.parser")
 
     amuse_url = puzzle_soup.findAll('iframe', attrs={'id':'crossword'})[0]['data-src']
@@ -130,15 +138,33 @@ def main():
                             parents=[extractor_parent],
                             help="download a New Yorker puzzle")
 
-    # parser.add_argument('--url', help='URL of puzzle to download')
+    newsday_puzzle = subparsers.add_parser('nd',
+                            aliases=['newsday'],
+                            parents=[extractor_parent],
+                            help="download a Newsday puzzle")
+
+    parser.add_argument('--url', help='URL of puzzle to download')
 
     args = parser.parse_args()
 
     if args.subparser_name == 'tny':
-        if args.date or args.url:
-            print("haven't yet implemented specific puzzle selection")
+        if args.date:
+           guessed_date = dateparser.parse(args.date)
+           if guessed_date:
+               human_format = guessed_date.strftime('%a, %b %d')
+               print("Attempting to download a puzzle for {}.".format(human_format))
+               url_format = guessed_date.strftime('%Y/%m/%d')
+               guessed_url = urllib.parse.urljoin(
+                       'https://www.newyorker.com/crossword/puzzles-dept/',
+                       url_format)
+               get_newyorker_puzzle(url=guessed_url, output=args.output)
+        elif args.url:
+            get_newyorker_puzzle(url=args.url, output=args.output)
         elif args.latest:
             get_latest_newyorker_puzzle(output=args.output)
+
+    elif args.subparser_name == 'nd':
+        pass
 
 if __name__ == '__main__':
     main()
