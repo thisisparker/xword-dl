@@ -3,6 +3,7 @@
 import argparse
 import base64
 import json
+import os
 import sys
 import urllib
 
@@ -16,8 +17,18 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
+DIRNAME = os.path.dirname(os.path.realpath(__file__))
+
 def get_amuse_puzzle(url, output):
-    res = requests.get(url)
+    # AmuseLabs has misconfigured its SSL and doesn't provide a complete
+    # certificate chain. So this is the full chain with root and intermediates,
+    # sourced from:
+    # https://ssl.comodo.com/support/which-is-root-which-is-intermediate.php and
+    # https://support.comodo.com/index.php?/comodo/Knowledgebase/Article/View/979/108/domain-validation-sha-2
+    cert_bundle = os.path.join(DIRNAME, 'certs',
+                    'comodo-rsa-domain-validation-sha-2-w-root.ca-bundle')
+
+    res= requests.get(url, verify=cert_bundle)
 
     rawc = next((line.strip() for line in res.text.splitlines()
                     if 'window.rawc' in line), None)
@@ -139,7 +150,7 @@ def main():
                                 (this is the default behavior)""",
                             action='store_true',
                             default=True)
-    date_selector.add_argument('-d', '--date',
+    date_selector.add_argument('-d', '--date', nargs='*',
                             help='a specific puzzle date to select')
 
     extractor_parent.add_argument('-o', '--output',
@@ -171,22 +182,24 @@ def main():
 
     args = parser.parse_args()
 
+    guessed_date = ''
+
     if args.date:
-        guessed_date = dateparser.parse(args.date)
+        entered_date = ' '.join(args.date)
+        guessed_date = dateparser.parse(entered_date)
         if guessed_date:
             human_format = guessed_date.strftime('%a, %b %d')
+        else:
+            sys.exit('Unable to determine a date from "{}".'.format(entered_date))
 
     if args.subparser_name == 'tny':
-        if args.date:
-            if guessed_date:
-                print("Attempting to download a puzzle for {}.".format(human_format))
-                url_format = guessed_date.strftime('%Y/%m/%d')
-                guessed_url = urllib.parse.urljoin(
-                       'https://www.newyorker.com/crossword/puzzles-dept/',
-                       url_format)
-                get_newyorker_puzzle(url=guessed_url, output=args.output)
-            else:
-                sys.exit("Unable to determine a date from that input.")
+        if guessed_date:
+            print("Attempting to download a puzzle for {}.".format(human_format))
+            url_format = guessed_date.strftime('%Y/%m/%d')
+            guessed_url = urllib.parse.urljoin(
+                   'https://www.newyorker.com/crossword/puzzles-dept/',
+                   url_format)
+            get_newyorker_puzzle(url=guessed_url, output=args.output)
                 
         elif args.url:
             get_newyorker_puzzle(url=args.url, output=args.output)
@@ -194,18 +207,15 @@ def main():
             get_latest_newyorker_puzzle(output=args.output)
 
     elif args.subparser_name == 'nd':
-        if args.date:
-            if guessed_date:
-                print("Attempting to download a puzzle for {}.".format(human_format))
-                url_format = guessed_date.strftime('%Y%m%d')
-                guessed_url = ''.join([
-                    'https://cdn2.amuselabs.com/pmm/crossword?id=Creators_WEB_',
-                    url_format, '&set=creatorsweb'])
-                output = args.output if args.output else ''.join(
-                    ['nd', url_format, '.puz'])
-                get_newsday_puzzle(url=guessed_url, output=output)
-            else:
-                sys.exit("Unable to determine a date from that input.")
+        if guessed_date:
+            print("Attempting to download a puzzle for {}.".format(human_format))
+            url_format = guessed_date.strftime('%Y%m%d')
+            guessed_url = ''.join([
+                'https://cdn2.amuselabs.com/pmm/crossword?id=Creators_WEB_',
+                url_format, '&set=creatorsweb'])
+            output = args.output if args.output else ''.join(
+                ['nd', url_format, '.puz'])
+            get_newsday_puzzle(url=guessed_url, output=output)
         elif args.latest:
             get_latest_newsday_puzzle(args.output)
 
