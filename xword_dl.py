@@ -135,13 +135,16 @@ def main():
                             default=True)
     date_selector.add_argument('-d', '--date',
                             help='a specific puzzle date to select')
-    date_selector.add_argument('-u', '--url',
-                            help='a specific puzzle URL to download')
+
     extractor_parent.add_argument('-o', '--output',
                             help="""
                             the filename for the saved puzzle
                             (if not provided, a default value will be used)""",
                             default=None)
+
+    extractor_url_parent = argparse.ArgumentParser(add_help=False)
+    extractor_url_parent.add_argument('-u', '--url',
+                            help='a specific puzzle URL to download')
 
     subparsers = parser.add_subparsers(title='sites',
                             description='Supported puzzle sources',
@@ -149,7 +152,8 @@ def main():
 
     newyorker_parser = subparsers.add_parser('tny',
                             aliases=['newyorker', 'nyer'],
-                            parents=[extractor_parent],
+                            parents=[extractor_parent,
+                                     extractor_url_parent],
                             help="download a New Yorker puzzle")
 
     newsday_puzzle = subparsers.add_parser('nd',
