@@ -22,11 +22,11 @@ def get_amuse_puzzle(url, output):
     rawc = next((line.strip() for line in res.text.splitlines()
                     if 'window.rawc' in line), None)
 
+    if not rawc:
+        sys.exit("Crossword puzzle not found.")
+
     rawc = rawc.lstrip("window.rawc = '")
     rawc = rawc.rstrip("';")
-
-    if not rawc:
-        sys.exit("crossword puzzle data not found")
     
     xword_data = json.loads(base64.b64decode(rawc))
 
@@ -70,7 +70,7 @@ def get_amuse_puzzle(url, output):
 
     p.save(output)
 
-    print("Puzzle downloaded and saved as {}".format(output))
+    print("Puzzle downloaded and saved as {}.".format(output))
 
 
 def get_newyorker_puzzle(url, output):
@@ -81,7 +81,7 @@ def get_newyorker_puzzle(url, output):
  
     puzzle_soup = BeautifulSoup(puzzle_res.text, "html.parser")
 
-    amuse_url = puzzle_soup.findAll('iframe', attrs={'id':'crossword'})[0]['data-src']
+    amuse_url = puzzle_soup.find('iframe', attrs={'id':'crossword'})['data-src']
 
     if output:
         output = output if output.endswith('.puz') else ''.join([output, '.puz'])
@@ -99,12 +99,26 @@ def get_latest_newyorker_puzzle(output=None):
 
     index_soup = BeautifulSoup(index_res.text, "html.parser")
 
-    latest_fragment = [a for a in index_soup.findAll('a') if a.find('h4')][0]['href']
+    latest_fragment = next(a for a in index_soup.findAll('a') if a.find('h4'))['href']
 
     latest_absolute = urllib.parse.urljoin('https://www.newyorker.com',
                                             latest_fragment)
 
     get_newyorker_puzzle(url=latest_absolute, output=output)
+
+def get_latest_newsday_puzzle(output=None):
+    datepicker_url = "https://cdn2.amuselabs.com/pmm/date-picker?set=creatorsweb"
+    res = requests.get(datepicker_url)
+    soup = BeautifulSoup(res.text, 'html.parser')
+
+    data_id = soup.find('li', attrs={'class':'tile'})['data-id']
+
+    if not output:
+        output = 'nd' + data_id.split('_')[-1] + '.puz'
+
+    url = "https://cdn2.amuselabs.com/pmm/crossword?id={}&set=creatorsweb".format(data_id)
+
+    get_amuse_puzzle(url=url, output=output)
 
 
 def main():
@@ -122,7 +136,7 @@ def main():
     date_selector.add_argument('-d', '--date',
                             help='a specific puzzle date to select')
     date_selector.add_argument('-u', '--url',
-                            help='a specific puzzle URL to downlod')
+                            help='a specific puzzle URL to download')
     extractor_parent.add_argument('-o', '--output',
                             help="""
                             the filename for the saved puzzle
@@ -130,7 +144,7 @@ def main():
                             default=None)
 
     subparsers = parser.add_subparsers(title='sites',
-                            description='supported puzzle sources',
+                            description='Supported puzzle sources',
                             dest='subparser_name')
 
     newyorker_parser = subparsers.add_parser('tny',
@@ -149,22 +163,41 @@ def main():
 
     if args.subparser_name == 'tny':
         if args.date:
-           guessed_date = dateparser.parse(args.date)
-           if guessed_date:
-               human_format = guessed_date.strftime('%a, %b %d')
-               print("Attempting to download a puzzle for {}.".format(human_format))
-               url_format = guessed_date.strftime('%Y/%m/%d')
-               guessed_url = urllib.parse.urljoin(
+            guessed_date = dateparser.parse(args.date)
+            if guessed_date:
+                human_format = guessed_date.strftime('%a, %b %d')
+                print("Attempting to download a puzzle for {}.".format(human_format))
+                url_format = guessed_date.strftime('%Y/%m/%d')
+                guessed_url = urllib.parse.urljoin(
                        'https://www.newyorker.com/crossword/puzzles-dept/',
                        url_format)
-               get_newyorker_puzzle(url=guessed_url, output=args.output)
+                get_newyorker_puzzle(url=guessed_url, output=args.output)
+            else:
+                sys.exit("Unable to determine a date from that input.")
+                
         elif args.url:
             get_newyorker_puzzle(url=args.url, output=args.output)
         elif args.latest:
             get_latest_newyorker_puzzle(output=args.output)
 
     elif args.subparser_name == 'nd':
-        pass
+        if args.date:
+            guessed_date = dateparser.parse(args.date)
+            if guessed_date:
+                human_format = guessed_date.strftime('%a, %b %d')
+                print("Attempting to download a puzzle for {}.".format(human_format))
+                url_format = guessed_date.strftime('%Y%m%d')
+                guessed_url = ''.join([
+                    'https://cdn2.amuselabs.com/pmm/crossword?id=Creators_WEB_',
+                    url_format, '&set=creatorsweb'])
+                output = ''.join(['nd', url_format, '.puz'])
+                get_amuse_puzzle(url=guessed_url, output=output)
+            else:
+                sys.exit("Unable to determine a date from that input.")
+        elif args.url:
+            sys.exit("Newsday puzzles are only selectable by date.")
+        elif args.latest:
+            get_latest_newsday_puzzle(args.output)
 
 if __name__ == '__main__':
     main()
