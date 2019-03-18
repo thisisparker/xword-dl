@@ -165,11 +165,14 @@ def main():
 
     args = parser.parse_args()
 
+    if args.date:
+        guessed_date = dateparser.parse(args.date)
+        if guessed_date:
+            human_format = guessed_date.strftime('%a, %b %d')
+
     if args.subparser_name == 'tny':
         if args.date:
-            guessed_date = dateparser.parse(args.date)
             if guessed_date:
-                human_format = guessed_date.strftime('%a, %b %d')
                 print("Attempting to download a puzzle for {}.".format(human_format))
                 url_format = guessed_date.strftime('%Y/%m/%d')
                 guessed_url = urllib.parse.urljoin(
@@ -186,9 +189,7 @@ def main():
 
     elif args.subparser_name == 'nd':
         if args.date:
-            guessed_date = dateparser.parse(args.date)
             if guessed_date:
-                human_format = guessed_date.strftime('%a, %b %d')
                 print("Attempting to download a puzzle for {}.".format(human_format))
                 url_format = guessed_date.strftime('%Y%m%d')
                 guessed_url = ''.join([
@@ -198,8 +199,6 @@ def main():
                 get_amuse_puzzle(url=guessed_url, output=output)
             else:
                 sys.exit("Unable to determine a date from that input.")
-        elif args.url:
-            sys.exit("Newsday puzzles are only selectable by date.")
         elif args.latest:
             get_latest_newsday_puzzle(args.output)
 
