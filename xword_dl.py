@@ -106,6 +106,12 @@ def get_latest_newyorker_puzzle(output=None):
 
     get_newyorker_puzzle(url=latest_absolute, output=output)
 
+def get_newsday_puzzle(url, output=None):
+    if not output.endswith('.puz'):
+        output = ''.join([output, '.puz'])
+
+    get_amuse_puzzle(url=url, output=output)
+
 def get_latest_newsday_puzzle(output=None):
     datepicker_url = "https://cdn2.amuselabs.com/pmm/date-picker?set=creatorsweb"
     res = requests.get(datepicker_url)
@@ -118,7 +124,7 @@ def get_latest_newsday_puzzle(output=None):
 
     url = "https://cdn2.amuselabs.com/pmm/crossword?id={}&set=creatorsweb".format(data_id)
 
-    get_amuse_puzzle(url=url, output=output)
+    get_newsday_puzzle(url=url, output=output)
 
 
 def main():
@@ -195,8 +201,9 @@ def main():
                 guessed_url = ''.join([
                     'https://cdn2.amuselabs.com/pmm/crossword?id=Creators_WEB_',
                     url_format, '&set=creatorsweb'])
-                output = ''.join(['nd', url_format, '.puz'])
-                get_amuse_puzzle(url=guessed_url, output=output)
+                output = args.output if args.output else ''.join(
+                    ['nd', url_format, '.puz'])
+                get_newsday_puzzle(url=guessed_url, output=output)
             else:
                 sys.exit("Unable to determine a date from that input.")
         elif args.latest:
