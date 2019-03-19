@@ -26,17 +26,20 @@ class BaseDownloader:
             self.output = self.output + '.puz'
         self.puzfile = puz.Puzzle()
 
-    def find_by_date(self):
-        print("Attempting to download a puzzle for {}".format(self.readable_date))
-        self.guess_url_from_date()
+    def find_by_date(self, entered_date):
+        guessed_dt = dateparser.parse(entered_date)
+        if guessed_dt:
+            readable_date = guessed_dt.strftime('%A, %B %d')
+            print("Attempting to download a puzzle for {}".format(readable_date))
+        else:
+            sys.exit('Unable to determine a date from "{}".'.format(entered_date))
 
-    @property
-    def readable_date(self):
-        return self.guessed_dt.strftime('%A, %B %d')
+        self.guess_url_from_date(guessed_dt)
 
     def save_puz(self):
         self.puzfile.save(self.output)
         print("Puzzle downloaded and saved as {}.".format(self.output))
+
 
 class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, output=None, **kwargs):
@@ -104,8 +107,8 @@ class NewYorkerDownloader(AmuseLabsDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output, **kwargs)
 
-    def guess_url_from_date(self):
-        url_format = self.guessed_dt.strftime('%Y/%m/%d')
+    def guess_url_from_date(self, dt):
+        url_format = dt.strftime('%Y/%m/%d')
         guessed_url = urllib.parse.urljoin(
                 'https://www.newyorker.com/crossword/puzzles-dept/',
                 url_format)
@@ -143,8 +146,8 @@ class NewsdayDownloader(AmuseLabsDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output, **kwargs)
 
-    def guess_url_from_date(self):
-        url_format = self.guessed_dt.strftime('%Y%m%d')
+    def guess_url_from_date(self, dt):
+        url_format = dt.strftime('%Y%m%d')
         guessed_url = ''.join([
             'https://cdn2.amuselabs.com/pmm/crossword?id=Creators_WEB_',
             url_format, '&set=creatorsweb'])
@@ -220,11 +223,7 @@ def main():
 
     if args.date:
         entered_date = ' '.join(args.date)
-        dl.guessed_dt = dateparser.parse(entered_date)
-        if dl.guessed_dt:
-            dl.find_by_date()
-        else:
-            sys.exit('Unable to determine a date from "{}".'.format(entered_date))
+        dl.find_by_date(entered_date)
 
     elif args.url:
         dl.find_solver(args.url)
