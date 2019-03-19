@@ -46,16 +46,7 @@ class AmuseLabsDownloader(BaseDownloader):
         super().__init__(output)
 
     def download(self):
-        # AmuseLabs has misconfigured its SSL and doesn't provide a complete
-        # certificate chain. So this is the full chain with root and intermediates,
-        # sourced from:
-        # https://ssl.comodo.com/support/which-is-root-which-is-intermediate.php and
-        # https://support.comodo.com/index.php?/comodo/Knowledgebase/Article/View
-        # /979/108/domain-validation-sha-2
-        cert_bundle = os.path.join(DIRNAME, 'certs',
-                        'comodo-rsa-domain-validation-sha-2-w-root.ca-bundle')
-
-        res = requests.get(self.url, verify=cert_bundle)
+        res = requests.get(self.url)
         rawc = next((line.strip() for line in res.text.splitlines()
                         if 'window.rawc' in line), None)
 
