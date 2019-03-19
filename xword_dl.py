@@ -174,6 +174,68 @@ class NewsdayDownloader(AmuseLabsDownloader):
         self.url = url
 
 
+class WSJDownloader(BaseDownloader):
+    def __init__(self, output=None, **kwargs):
+        super().__init__(output, **kwargs)
+
+    def guess_url_from_date(self, dt):
+        pass
+
+    def find_latest(self):
+        url = "https://blogs.wsj.com/puzzle/category/crossword/"
+        res = requests.get(url)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        latest_url = soup.find('h4',
+                attrs={'class':'headline'}).find('a').get('href', None)
+
+        self.find_solver(url=latest_url)
+
+    def find_solver(self, url):
+        if '/puzzle/crossword/' in url:
+            self.url = url
+        else:
+            res = requests.get(url)
+            soup = BeautifulSoup(res.text, 'html.parser')
+            puzzle_link = 'https:' + soup.find('a',
+                    attrs={'class':'puzzle-link'}).get('href')
+            self.url = puzzle_link
+
+    def download(self):
+        self.url = self.url.replace('index.html', 'data.json')
+        xword_data = requests.get(self.url).json()['data']['copy']
+
+        date = xword_data.get('date-publish-analytics').split()[0].replace('/','')
+
+        if not self.output:
+            self.output = 'wsj' + date + '.puz'
+
+        self.puzfile.title = xword_data.get('title', '')
+        self.puzfile.author = xword_data.get('byline', '')
+        self.puzfile.copyright = xword_data.get('publisher', '')
+        self.puzfile.width = int(xword_data.get('gridsize').get('cols'))
+        self.puzfile.height = int(xword_data.get('gridsize').get('rows'))
+
+        solution = xword_data.get('settings').get('solution').replace(' ', '.')
+        self.puzfile.solution = solution
+
+        fill = ''
+        for letter in solution:
+            if letter == '.':
+                fill += '.'
+            else:
+                fill += '-'
+        self.puzfile.fill = fill
+
+        clue_list = xword_data['clues'][0]['clues'] + xword_data['clues'][1]['clues']
+        sorted_clue_list = sorted(clue_list, key=lambda x: int(x['number']))
+
+        clues = [clue['clue'] for clue in sorted_clue_list]
+
+        self.puzfile.clues = clues
+
+        self.save_puz()
+
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -214,6 +276,13 @@ def main():
                             parents=[extractor_parent],
                             help="download a Newsday puzzle")
     newsday_parser.set_defaults(downloader_class=NewsdayDownloader)
+
+    wsj_parser = subparsers.add_parser('wsj',
+                            aliases=['wallstreet'],
+                            parents=[extractor_parent,
+                                     extractor_url_parent],
+                            help="download a Wall Street Journal puzzle")
+    wsj_parser.set_defaults(downloader_class=WSJDownloader)
 
     parser.add_argument('--url', help='URL of puzzle to download')
 

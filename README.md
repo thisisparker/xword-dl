@@ -5,6 +5,7 @@
 Currently, `xword-dl` supports:
 * The New Yorker
 * Newsday
+* The Wall Street Journal
 
 To download a puzzle, run `xword-dl` on the command line. For example, to download the latest New Yorker puzzle, you could run:
 
