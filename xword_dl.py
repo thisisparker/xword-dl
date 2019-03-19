@@ -230,25 +230,32 @@ class WSJDownloader(BaseDownloader):
 def main():
     parser = argparse.ArgumentParser()
 
-    extractor_parent = argparse.ArgumentParser(add_help=False)
-    date_selector = extractor_parent.add_mutually_exclusive_group()
-    date_selector.add_argument('-l', '--latest',
-                            help="""
-                                select most recent available puzzle
-                                (this is the default behavior)""",
-                            action='store_true',
-                            default=True)
-    date_selector.add_argument('-d', '--date', nargs='*',
-                            help='a specific puzzle date to select')
+    parser.add_argument('url', nargs="?",
+                            help='URL of puzzle to download')
 
+    extractor_parent = argparse.ArgumentParser(add_help=False)
     extractor_parent.add_argument('-o', '--output',
                             help="""
                             the filename for the saved puzzle
                             (if not provided, a default value will be used)""",
                             default=None)
+    extractor_parent.set_defaults(date=None, spec_url=None, latest=None)
 
-    extractor_url_parent = argparse.ArgumentParser(add_help=False)
-    extractor_url_parent.add_argument('-u', '--url',
+    latest_parent = argparse.ArgumentParser(add_help=False)
+    latest_parent.add_argument('-l', '--latest',
+                            help="""
+                                select most recent available puzzle
+                                (this is the default behavior)""",
+                            action='store_true',
+                            default=True)
+
+    date_parent = argparse.ArgumentParser(add_help=False)
+    date_parent.add_argument('-d', '--date', nargs='*', metavar='',
+                            help='a specific puzzle date to select')
+
+
+    url_parent = argparse.ArgumentParser(add_help=False)
+    url_parent.add_argument('-u', '--url', metavar='URL', dest='spec_url',
                             help='a specific puzzle URL to download')
 
     subparsers = parser.add_subparsers(title='sites',
@@ -257,25 +264,28 @@ def main():
 
     newyorker_parser = subparsers.add_parser('tny',
                             aliases=['newyorker', 'nyer'],
-                            parents=[extractor_parent,
-                                     extractor_url_parent],
+                            parents=[latest_parent,
+                                     date_parent,
+                                     url_parent,
+                                     extractor_parent],
                             help="download a New Yorker puzzle")
     newyorker_parser.set_defaults(downloader_class=NewYorkerDownloader)
 
     newsday_parser = subparsers.add_parser('nd',
                             aliases=['newsday'],
-                            parents=[extractor_parent],
+                            parents=[latest_parent,
+                                     date_parent,
+                                     extractor_parent],
                             help="download a Newsday puzzle")
     newsday_parser.set_defaults(downloader_class=NewsdayDownloader)
 
     wsj_parser = subparsers.add_parser('wsj',
                             aliases=['wallstreet'],
-                            parents=[extractor_parent,
-                                     extractor_url_parent],
+                            parents=[latest_parent,
+                                     url_parent,
+                                     extractor_parent],
                             help="download a Wall Street Journal puzzle")
     wsj_parser.set_defaults(downloader_class=WSJDownloader)
-
-    parser.add_argument('--url', help='URL of puzzle to download')
 
     args = parser.parse_args()
 
@@ -285,8 +295,8 @@ def main():
         entered_date = ' '.join(args.date)
         dl.find_by_date(entered_date)
 
-    elif args.url:
-        dl.find_solver(args.url)
+    elif args.spec_url:
+        dl.find_solver(args.spec_url)
 
     elif args.latest:
         dl.find_latest()
