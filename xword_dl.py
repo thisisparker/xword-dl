@@ -64,7 +64,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         rawc = rawc.split("'")[1]
 
-        xword_data = json.loads(base64.b64decode(rawc))
+        xword_data = json.loads(base64.b64decode(rawc).decode("utf-8"))
 
         self.puzfile.title = xword_data.get('title', '')
         self.puzfile.author = xword_data.get('author', '')
