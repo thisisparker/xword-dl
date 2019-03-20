@@ -10,6 +10,7 @@ import urllib
 import dateparser
 import puz
 import requests
+import xmltodict
 
 from datetime import datetime
 
@@ -227,6 +228,76 @@ class WSJDownloader(BaseDownloader):
         self.save_puz()
 
 
+class LATimesDownloader(BaseDownloader):
+    def __init__(self, output=None, **kwargs):
+        super().__init__(output)
+
+    def guess_url_from_date(self, dt):
+        url_format = dt.strftime('%y%m%d')
+        self.url = 'http://ams.cdn.arkadiumhosted.com/assets/gamesfeed/latimescrosswords/DailyCrossword/la' + url_format + '.xml'
+
+        output_format = dt.strftime('%Y%m%d')
+        self.output = 'lat' + output_format + '.puz'
+
+    def find_latest(self):
+        self.find_by_date('today')
+
+    def find_solver(self, url):
+        pass
+
+    def download(self):
+        res = requests.get(self.url)
+
+        data = xmltodict.parse(res.text)['crossword-compiler']['rectangular-puzzle']
+
+        metadata = data['metadata']
+
+        self.puzfile.title = metadata.get('title','')
+        self.puzfile.author = metadata.get('creator','')
+        self.puzfile.copyright = metadata.get('copyright','')
+
+        xw_data = data['crossword']
+
+        self.puzfile.width = int(xw_data.get('grid').get('@width'))
+        self.puzfile.height = int(xw_data.get('grid').get('@height'))
+
+        solution = ''
+        fill = ''
+
+        cells = xw_data['grid']['cell']
+        cells = [{'x':int(cell['@x']),
+                  'y':int(cell['@y']),
+                  'solution':cell.get('@solution', '.')} for cell in cells]
+
+        sorted_cells = sorted(cells, key=lambda x: (x['y'], x['x']))
+
+        for cell in sorted_cells:
+            if cell['solution'] == '.':
+                solution += '.'
+                fill += '.'
+            else:
+                solution += cell['solution']
+                fill += '-'
+
+        self.puzfile.solution = solution
+        self.puzfile.fill = fill
+
+        across_clues = xw_data['clues'][0]['clue']
+        down_clues = xw_data['clues'][1]['clue']
+
+        clues_list = across_clues + down_clues
+        clues_list_stripped = [{'number':int(clue['@number']),
+                                'clue':clue['#text']} for clue in clues_list]
+
+        clues_sorted = sorted(clues_list_stripped, key=lambda x: x['number'])
+
+        clues = [clue['clue'] for clue in clues_sorted]
+
+        self.puzfile.clues = clues
+
+        self.save_puz()
+
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -286,6 +357,14 @@ def main():
                                      extractor_parent],
                             help="download a Wall Street Journal puzzle")
     wsj_parser.set_defaults(downloader_class=WSJDownloader)
+
+    lat_parser = subparsers.add_parser('lat',
+                            aliases=['latimes'],
+                            parents=[latest_parent,
+                                     date_parent,
+                                     extractor_parent],
+                            help="download an LA Times Puzzle")
+    lat_parser.set_defaults(downloader_class=LATimesDownloader)
 
     args = parser.parse_args()
 
