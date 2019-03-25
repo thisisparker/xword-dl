@@ -12,13 +12,9 @@ import puz
 import requests
 import xmltodict
 
-from datetime import datetime
-
 from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
-
-DIRNAME = os.path.dirname(os.path.realpath(__file__))
 
 class BaseDownloader:
     def __init__(self, output=None):
@@ -93,6 +89,43 @@ class AmuseLabsDownloader(BaseDownloader):
         self.puzfile.clues.extend(normalized_clues)
 
         self.save_puz()
+
+class WaPoDownloader(AmuseLabsDownloader):
+    def __init__(self, output=None, **kwargs):
+        super().__init__(output, **kwargs)
+
+    def guess_url_from_date(self, dt):
+        url_format = dt.strftime('%y%m%d')
+        guessed_url = ('https://cdn1.amuselabs.com/wapo/crossword?id=ebirnholz_'
+                       + url_format
+                       + '&set=wapo-eb')
+
+        filename_format = dt.strftime('%Y%m%d')
+
+        if not self.output:
+            self.output = 'wapo' + finame_format + '.puz'
+
+        self.find_solver(guessed_url)
+
+    def find_latest(self):
+        picker_url = "https://cdn1.amuselabs.com/wapo/wp-picker?set=wapo-eb"
+        res = requests.get(picker_url)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        puzzles = soup.find('div', attrs={'class':'puzzles'})
+        latest_id = puzzles.findAll('div', attrs={'class':'tile'})[0].get('data-id','')
+ 
+        latest_url = ('https://cdn1.amuselabs.com/wapo/crossword?id='
+                      + latest_id
+                      + '&set=wapo-eb')
+
+        if not self.output:
+            puz_date = latest_id.split('_')[-1]
+            self.output = 'wapo20' + puz_date + '.puz'
+
+        self.find_solver(latest_url)
+
+    def find_solver(self, url):
+        self.url = url
 
 
 class NewYorkerDownloader(AmuseLabsDownloader):
@@ -365,6 +398,14 @@ def main():
                                      extractor_parent],
                             help="download an LA Times Puzzle")
     lat_parser.set_defaults(downloader_class=LATimesDownloader)
+
+    wapo_parser = subparsers.add_parser('wapo',
+                            aliases=['wp'],
+                            parents=[latest_parent,
+                                      date_parent,
+                                      extractor_parent],
+                            help="download a Washington Post Sunday puzzle")
+    wapo_parser.set_defaults(downloader_class=WaPoDownloader)
 
     args = parser.parse_args()
 
