@@ -34,8 +34,11 @@ class BaseDownloader:
         self.guess_url_from_date(guessed_dt)
 
     def save_puz(self):
-        self.puzfile.save(self.output)
-        print("Puzzle downloaded and saved as {}.".format(self.output))
+        if not os.path.exists(self.output):
+            self.puzfile.save(self.output)
+            print("Puzzle downloaded and saved as {}.".format(self.output))
+        else:
+            print("Not saving: a file named {} already exists.".format(self.output))
 
 
 class AmuseLabsDownloader(BaseDownloader):
