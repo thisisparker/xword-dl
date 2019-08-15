@@ -258,8 +258,9 @@ class WSJDownloader(BaseDownloader):
         sorted_clue_list = sorted(clue_list, key=lambda x: int(x['number']))
 
         clues = [clue['clue'] for clue in sorted_clue_list]
+        normalized_clues = [html2text(unidecode(clue), bodywidth=0) for clue in clues]
 
-        self.puzfile.clues = clues
+        self.puzfile.clues = normalized_clues
 
         self.save_puz()
 
