@@ -369,7 +369,9 @@ class USATodayDownloader(BaseDownloader):
         xword_data = res.json()
 
         self.puzfile.title = xword_data.get('Title', '')
-        self.puzfile.author = xword_data.get('Author', '')
+        self.puzfile.author = ''.join([xword_data.get('Author', ''),
+                                       ' (ed. ',
+                                       xword_data.get('Editor', ''), ')'])
         self.puzfile.copyright = xword_data.get('Copyright', '')
         self.puzfile.width = int(xword_data.get('Width'))
         self.puzfile.height = int(xword_data.get('Height'))
