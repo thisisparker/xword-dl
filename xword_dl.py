@@ -344,6 +344,30 @@ class LATimesDownloader(BaseDownloader):
 
         self.save_puz()
 
+class USATodayDownloader(BaseDownloader):
+    def __init__(self, output=None, **kwargs):
+        super().__init__(output)
+
+    def guess_url_from_date(self, dt):
+        hardcoded_blob = 'https://gamedata.services.amuniversal.com/c/uupuz/l/U2FsdGVkX18CR3EauHsCV8JgqcLh1ptpjBeQ%2Bnjkzhu8zNO00WYK6b%2BaiZHnKcAD%0A9vwtmWJp2uHE9XU1bRw2gA%3D%3D/g/usaon/d/'
+
+        url_format = dt.strftime('%Y-%m-%d')
+        self.url = hardcoded_blob + url_format + '/data.json'
+
+        output_format = dt.strftime('%Y%m%d')
+        self.output = 'usatoday' + output_format + '.puz'
+
+    def find_latest(self):
+        self.find_by_date('today')
+
+    def find_solver(self):
+        pass
+
+    def download(self):
+        res = requests.get(self.url)
+
+        xword_data = res.json()
+
 
 def main():
     parser = argparse.ArgumentParser()
