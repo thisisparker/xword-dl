@@ -300,11 +300,13 @@ class LATimesDownloader(BaseDownloader):
 
         solution = ''
         fill = ''
+        markup = b''
 
         cells = xw_data['grid']['cell']
         cells = [{'x':int(cell['@x']),
                   'y':int(cell['@y']),
-                  'solution':cell.get('@solution', '.')} for cell in cells]
+                  'solution':cell.get('@solution', '.'),
+                  'markup':cell.get('@background-shape', '.')} for cell in cells]
 
         sorted_cells = sorted(cells, key=lambda x: (x['y'], x['x']))
 
@@ -312,12 +314,20 @@ class LATimesDownloader(BaseDownloader):
             if cell['solution'] == '.':
                 solution += '.'
                 fill += '.'
+                markup += b'\x00'
             else:
                 solution += cell['solution']
                 fill += '-'
+                markup += b'\x80' if cell['markup'] == 'circle' else b'\x00'
 
         self.puzfile.solution = solution
         self.puzfile.fill = fill
+
+        has_markup = b'\x80' in markup
+        if has_markup:
+            self.puzfile.extensions[b'GEXT'] = markup
+            self.puzfile._extensions_order.append(b'GEXT')
+            self.puzfile.markup() 
 
         across_clues = xw_data['clues'][0]['clue']
         down_clues = xw_data['clues'][1]['clue']
