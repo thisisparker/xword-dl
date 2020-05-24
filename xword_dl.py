@@ -368,6 +368,39 @@ class USATodayDownloader(BaseDownloader):
 
         xword_data = res.json()
 
+        self.puzfile.title = xword_data.get('Title', '')
+        self.puzfile.author = xword_data.get('Author', '')
+        self.puzfile.copyright = xword_data.get('Copyright', '')
+        self.puzfile.width = int(xword_data.get('Width'))
+        self.puzfile.height = int(xword_data.get('Height'))
+
+        solution = xword_data.get('AllAnswer').replace('-','.')
+
+        self.puzfile.solution = solution
+
+        fill = ''
+        for letter in solution:
+            if letter == '.':
+                fill += '.'
+            else:
+                fill += '-'
+        self.puzfile.fill = fill
+
+        across_clues = xword_data['AcrossClue'].splitlines()
+        down_clues = xword_data['DownClue'].splitlines()[:-1]
+
+        clues_list = across_clues + down_clues
+
+        clues_list_stripped = [{'number':clue.split('|')[0],
+                                'clue':clue.split('|')[1]} for clue in clues_list]
+
+        clues_sorted = sorted(clues_list_stripped, key=lambda x: x['number'])
+
+        clues = [clue['clue'] for clue in clues_sorted]
+
+        self.puzfile.clues = clues
+
+        self.save_puz()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -444,6 +477,14 @@ def main():
                                       extractor_parent],
                             help="download a Washington Post Sunday puzzle")
     wapo_parser.set_defaults(downloader_class=WaPoDownloader)
+
+    usatoday_parser = subparsers.add_parser('usa',
+                            aliases=[],
+                            parents=[latest_parent,
+                                      date_parent,
+                                      extractor_parent],
+                            help="download a USA Today puzzle")
+    usatoday_parser.set_defaults(downloader_class=USATodayDownloader)
 
     args = parser.parse_args()
 
