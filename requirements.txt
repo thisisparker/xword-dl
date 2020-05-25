@@ -5,3 +5,4 @@ html2text==2018.1.9
 puzpy==0.2.4
 requests==2.21.0
 Unidecode==1.0.23
+xmltodict==0.12.0
