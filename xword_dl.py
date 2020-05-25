@@ -250,7 +250,7 @@ class WSJDownloader(BaseDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output, **kwargs)
 
-    def guess_url_from_date(self, dt):
+    def guess_url_from_date(self):
         pass
 
     def find_latest(self):
@@ -309,97 +309,51 @@ class WSJDownloader(BaseDownloader):
         self.save_puz()
 
 
-class LATimesDownloader(BaseDownloader):
+class LATimesDownloader(AmuseLabsDownloader):
     def __init__(self, output=None, **kwargs):
-        super().__init__(output)
+        super().__init__(output, **kwargs)
 
-    def guess_url_from_date(self, dt):
-        url_format = dt.strftime('%y%m%d')
-        self.url = 'http://ams.cdn.arkadiumhosted.com/assets/gamesfeed/latimescrosswords/DailyCrossword/la' + url_format + '.xml'
+        self.picker_url = 'https://cdn4.amuselabs.com/lat/date-picker?set=latimes'
+        self.url_from_id = 'https://cdn4.amuselabs.com/lat/crossword?id={puzzle_id}&set=latimes'
 
-        output_format = dt.strftime('%Y%m%d')
-        self.output = 'lat' + output_format + '.puz'
+        self.outlet_prefix = 'LA Times'
 
-    def find_latest(self):
-        self.find_by_date('today')
+    def guess_date_from_id(self):
+        self.date = '20' + ''.join([char for char in self.id if char.isdigit()])
+
+    def guess_url_from_date(self):
+        url_formatted_date = self.dt.strftime('%y%m%d')
+        self.id = 'tca' + url_formatted_date
+
+        self.find_puzzle_url_from_id()
 
     def find_solver(self, url):
-        pass
+        self.url = url
 
-    def download(self):
-        res = requests.get(self.url)
+    def pick_filename(self):
+        split_on_dashes = self.puzfile.title.split(' - ')
+        if len(split_on_dashes) > 1:
+            use_title = split_on_dashes[-1].strip()
+        else:
+            use_title = ''
 
-        data = xmltodict.parse(res.text)['crossword-compiler']['rectangular-puzzle']
-
-        metadata = data['metadata']
-
-        self.puzfile.title = metadata.get('title','')
-        self.puzfile.author = metadata.get('creator','')
-        self.puzfile.copyright = metadata.get('copyright','')
-
-        xw_data = data['crossword']
-
-        self.puzfile.width = int(xw_data.get('grid').get('@width'))
-        self.puzfile.height = int(xw_data.get('grid').get('@height'))
-
-        solution = ''
-        fill = ''
-        markup = b''
-
-        cells = xw_data['grid']['cell']
-        cells = [{'x':int(cell['@x']),
-                  'y':int(cell['@y']),
-                  'solution':cell.get('@solution', '.'),
-                  'markup':cell.get('@background-shape', '.')} for cell in cells]
-
-        sorted_cells = sorted(cells, key=lambda x: (x['y'], x['x']))
-
-        for cell in sorted_cells:
-            if cell['solution'] == '.':
-                solution += '.'
-                fill += '.'
-                markup += b'\x00'
-            else:
-                solution += cell['solution']
-                fill += '-'
-                markup += b'\x80' if cell['markup'] == 'circle' else b'\x00'
-
-        self.puzfile.solution = solution
-        self.puzfile.fill = fill
-
-        has_markup = b'\x80' in markup
-        if has_markup:
-            self.puzfile.extensions[b'GEXT'] = markup
-            self.puzfile._extensions_order.append(b'GEXT')
-            self.puzfile.markup() 
-
-        across_clues = xw_data['clues'][0]['clue']
-        down_clues = xw_data['clues'][1]['clue']
-
-        clues_list = across_clues + down_clues
-        clues_list_stripped = [{'number':int(clue['@number']),
-                                'clue':clue['#text']} for clue in clues_list]
-
-        clues_sorted = sorted(clues_list_stripped, key=lambda x: x['number'])
-
-        clues = [clue['clue'] for clue in clues_sorted]
-
-        self.puzfile.clues = clues
-
-        self.save_puz()
+        filename_components = [component for component in
+                                            [self.outlet_prefix, self.date,
+                                             use_title] if component]
+        self.output =  " - ".join(filename_components) + '.puz'
 
 
 class USATodayDownloader(BaseDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output)
 
-    def guess_url_from_date(self, dt):
+    def guess_url_from_date(self):
         hardcoded_blob = 'https://gamedata.services.amuniversal.com/c/uupuz/l/U2FsdGVkX18CR3EauHsCV8JgqcLh1ptpjBeQ%2Bnjkzhu8zNO00WYK6b%2BaiZHnKcAD%0A9vwtmWJp2uHE9XU1bRw2gA%3D%3D/g/usaon/d/'
 
-        url_format = dt.strftime('%Y-%m-%d')
+        url_format = self.dt.strftime('%Y-%m-%d')
         self.url = hardcoded_blob + url_format + '/data.json'
 
-        output_format = dt.strftime('%Y%m%d')
+        output_format = self.dt.strftime('%Y%m%d')
         self.output = 'usatoday' + output_format + '.puz'
 
     def find_latest(self):
