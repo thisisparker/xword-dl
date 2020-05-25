@@ -28,4 +28,4 @@ To download the Newsday Saturday Stumper and save it as `stumper.puz`, you could
 xword-dl nd --date saturday --output stumper
 ```
 
-The resulting .puz file can be opened with `[cursewords](https://github.com/thisisparker/cursewords)` or any other puz file reader.
+The resulting .puz file can be opened with [`cursewords`](https://github.com/thisisparker/cursewords) or any other puz file reader.
