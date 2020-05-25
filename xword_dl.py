@@ -63,18 +63,28 @@ class AmuseLabsDownloader(BaseDownloader):
         self.puzfile.width = xword_data.get('w')
         self.puzfile.height = xword_data.get('h')
 
+        markup_data = xword_data.get('cellInfos', '')
+
+        circled = [(square['x'], square['y']) for square in markup_data
+                                                      if square['isCircled']]
+
         solution = ''
         fill = ''
+        markup = b''
+
         box = xword_data['box']
         for row_num in range(xword_data.get('h')):
-            for column in box:
+            for col_num, column in enumerate(box):
                 cell = column[row_num]
                 if cell == '\x00':
                     solution += '.'
                     fill += '.'
+                    markup += b'\x00'
                 else:
                     solution += cell
                     fill += '-'
+                    markup += b'\x80' if (col_num, row_num) in circled else b'\x00'
+
         self.puzfile.solution = solution
         self.puzfile.fill = fill
 
@@ -90,6 +100,13 @@ class AmuseLabsDownloader(BaseDownloader):
 
         normalized_clues = [html2text(unidecode(clue), bodywidth=0) for clue in clues]
         self.puzfile.clues.extend(normalized_clues)
+
+        has_markup = b'\x80' in markup
+
+        if has_markup:
+            self.puzfile.extensions[b'GEXT'] = markup
+            self.puzfile._extensions_order.append(b'GEXT')
+            self.puzfile.markup()
 
         self.save_puz()
 
