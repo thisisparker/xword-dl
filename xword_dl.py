@@ -421,6 +421,43 @@ class USATodayDownloader(BaseDownloader):
 
         self.save_puz()
 
+class AtlanticDownloader(AmuseLabsDownloader):
+    def __init__(self, output=None, **kwargs):
+        super().__init__(output, **kwargs)
+
+    def guess_url_from_date(self, dt):
+        url_format = dt.strftime('%y%m%d')
+        guessed_url = ('https://cdn3.amuselabs.com/atlantic/crossword?id=atlantic_'
+                       + url_format
+                       + '&set=atlantic')
+
+        filename_format = dt.strftime('%Y%m%d')
+
+        if not self.output:
+            self.output = 'atlantic' + finame_format + '.puz'
+
+        self.find_solver(guessed_url)
+
+    def find_latest(self):
+        picker_url = "https://cdn3.amuselabs.com/atlantic/date-picker?set=atlantic"
+        res = requests.get(picker_url)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        puzzles = soup.find('div', attrs={'class':'puzzles'})
+        latest_id = puzzles.findAll('li', attrs={'class':'tile'})[0].get('data-id','')
+ 
+        latest_url = ('https://cdn3.amuselabs.com/atlantic/crossword?id='
+                      + latest_id
+                      + '&set=atlantic')
+
+        if not self.output:
+            puz_date = latest_id.split('_')[-1]
+            self.output = 'atlantic20' + puz_date + '.puz'
+
+        self.find_solver(latest_url)
+
+    def find_solver(self, url):
+        self.url = url
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -504,6 +541,14 @@ def main():
                                       extractor_parent],
                             help="download a USA Today puzzle")
     usatoday_parser.set_defaults(downloader_class=USATodayDownloader)
+
+    atlantic_parser = subparsers.add_parser('atl',
+                            aliases=['atlantic'],
+                            parents=[latest_parent,
+                                      date_parent,
+                                      extractor_parent],
+                            help="download an Atlantic puzzle")
+    atlantic_parser.set_defaults(downloader_class=AtlanticDownloader)
 
     args = parser.parse_args()
 
