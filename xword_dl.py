@@ -106,7 +106,7 @@ class WaPoDownloader(AmuseLabsDownloader):
         filename_format = dt.strftime('%Y%m%d')
 
         if not self.output:
-            self.output = 'wapo' + finame_format + '.puz'
+            self.output = 'wapo' + filename_format + '.puz'
 
         self.find_solver(guessed_url)
 
