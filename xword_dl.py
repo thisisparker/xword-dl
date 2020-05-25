@@ -23,17 +23,29 @@ class BaseDownloader:
             self.output = self.output + '.puz'
         self.puzfile = puz.Puzzle()
 
+        self.outlet_prefix = None
+        self.date = None
+
     def find_by_date(self, entered_date):
         guessed_dt = dateparser.parse(entered_date)
         if guessed_dt:
             readable_date = guessed_dt.strftime('%A, %B %d')
-            print("Attempting to download a puzzle for {}".format(readable_date))
+            print("Attempting to download a puzzle for {}.".format(readable_date))
+            self.dt = guessed_dt
+            self.date = self.dt.strftime('%Y%m%d')
         else:
             sys.exit('Unable to determine a date from "{}".'.format(entered_date))
 
-        self.guess_url_from_date(guessed_dt)
+        self.guess_url_from_date()
+
+    def pick_filename(self):
+        filename_components = [component for component in
+                                            [self.outlet_prefix, self.date,
+                                             self.puzfile.title] if component]
+        self.output =  " - ".join(filename_components) + '.puz'
 
     def save_puz(self):
+        self.pick_filename()
         if not os.path.exists(self.output):
             self.puzfile.save(self.output)
             print("Puzzle downloaded and saved as {}.".format(self.output))
@@ -44,6 +56,23 @@ class BaseDownloader:
 class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output)
+
+    def find_latest(self):
+        res = requests.get(self.picker_url)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        puzzles = soup.find('div', attrs={'class':'puzzles'})
+        puzzle_ids = puzzles.findAll('div', attrs={'class':'tile'})
+        if not puzzle_ids:
+            puzzle_ids = puzzles.findAll('li', attrs={'class':'tile'})
+        self.id = puzzle_ids[0].get('data-id','')
+
+        self.find_puzzle_url_from_id()
+
+    def find_puzzle_url_from_id(self):
+        self.url = self.url_from_id.format(puzzle_id = self.id)
+
+    def guess_date_from_id(self):
+        self.date = self.id.split('_')[-1]
 
     def download(self):
         res = requests.get(self.url)
@@ -110,40 +139,29 @@ class AmuseLabsDownloader(BaseDownloader):
 
         self.save_puz()
 
+    def save_puz(self):
+        if not self.date:
+            self.guess_date_from_id()
+        super().save_puz()
+
 
 class WaPoDownloader(AmuseLabsDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output, **kwargs)
 
-    def guess_url_from_date(self, dt):
-        url_format = dt.strftime('%y%m%d')
-        guessed_url = ('https://cdn1.amuselabs.com/wapo/crossword?id=ebirnholz_'
-                       + url_format
-                       + '&set=wapo-eb')
+        self.picker_url = 'https://cdn1.amuselabs.com/wapo/wp-picker?set=wapo-eb'
+        self.url_from_id = 'https://cdn1.amuselabs.com/wapo/crossword?id={puzzle_id}&set=wapo-eb'
 
-        filename_format = dt.strftime('%Y%m%d')
+        self.outlet_prefix = 'WaPo'
 
-        if not self.output:
-            self.output = 'wapo' + filename_format + '.puz'
+    def guess_date_from_id(self):
+        self.date = '20' + self.id.split('_')[1]
 
-        self.find_solver(guessed_url)
+    def guess_url_from_date(self):
+        url_formatted_date = self.dt.strftime('%y%m%d')
+        self.id = 'ebirnholz_' + url_formatted_date
 
-    def find_latest(self):
-        picker_url = "https://cdn1.amuselabs.com/wapo/wp-picker?set=wapo-eb"
-        res = requests.get(picker_url)
-        soup = BeautifulSoup(res.text, 'html.parser')
-        puzzles = soup.find('div', attrs={'class':'puzzles'})
-        latest_id = puzzles.findAll('div', attrs={'class':'tile'})[0].get('data-id','')
- 
-        latest_url = ('https://cdn1.amuselabs.com/wapo/crossword?id='
-                      + latest_id
-                      + '&set=wapo-eb')
-
-        if not self.output:
-            puz_date = latest_id.split('_')[-1]
-            self.output = 'wapo20' + puz_date + '.puz'
-
-        self.find_solver(latest_url)
+        self.find_puzzle_url_from_id()
 
     def find_solver(self, url):
         self.url = url
@@ -153,35 +171,16 @@ class AtlanticDownloader(AmuseLabsDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output, **kwargs)
 
-    def guess_url_from_date(self, dt):
-        url_format = dt.strftime('%y%m%d')
-        guessed_url = ('https://cdn3.amuselabs.com/atlantic/crossword?id=atlantic_'
-                       + url_format
-                       + '&set=atlantic')
+        self.picker_url = 'https://cdn3.amuselabs.com/atlantic/date-picker?set=atlantic'
+        self.url_from_id = 'https://cdn3.amuselabs.com/atlantic/crossword?id={puzzle_id}&set=atlantic'
 
-        filename_format = dt.strftime('%Y%m%d')
+        self.outlet_prefix = 'Atlantic'
 
-        if not self.output:
-            self.output = 'atlantic' + filename_format + '.puz'
+    def guess_url_from_date(self):
+        url_formatted_date = self.dt.strftime('%Y%m%d')
+        self.id = 'atlantic_' + url_formatted_date
 
-        self.find_solver(guessed_url)
-
-    def find_latest(self):
-        picker_url = "https://cdn3.amuselabs.com/atlantic/date-picker?set=atlantic"
-        res = requests.get(picker_url)
-        soup = BeautifulSoup(res.text, 'html.parser')
-        puzzles = soup.find('div', attrs={'class':'puzzles'})
-        latest_id = puzzles.findAll('li', attrs={'class':'tile'})[0].get('data-id','')
-
-        latest_url = ('https://cdn3.amuselabs.com/atlantic/crossword?id='
-                      + latest_id
-                      + '&set=atlantic')
-
-        if not self.output:
-            puz_date = latest_id.split('_')[-1]
-            self.output = 'atlantic' + puz_date + '.puz'
-
-        self.find_solver(latest_url)
+        self.find_puzzle_url_from_id()
 
     def find_solver(self, url):
         self.url = url
@@ -190,6 +189,8 @@ class AtlanticDownloader(AmuseLabsDownloader):
 class NewYorkerDownloader(AmuseLabsDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output, **kwargs)
+
+        self.outlet_prefix = 'New Yorker'
 
     def guess_url_from_date(self, dt):
         url_format = dt.strftime('%Y/%m/%d')
@@ -230,29 +231,16 @@ class NewsdayDownloader(AmuseLabsDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output, **kwargs)
 
-    def guess_url_from_date(self, dt):
-        url_format = dt.strftime('%Y%m%d')
-        guessed_url = ''.join([
-            'https://cdn2.amuselabs.com/pmm/crossword?id=Creators_WEB_',
-            url_format, '&set=creatorsweb'])
-        if not self.output:
-            self.output = ''.join(['nd', url_format, '.puz'])
-        self.find_solver(url=guessed_url)
+        self.picker_url = 'https://cdn2.amuselabs.com/pmm/date-picker?set=creatorsweb'
+        self.url_from_id = 'https://cdn2.amuselabs.com/pmm/crossword?id={puzzle_id}&set=creatorsweb'
 
-    def find_latest(self):
-        datepicker_url = "https://cdn2.amuselabs.com/pmm/date-picker?set=creatorsweb"
-        res = requests.get(datepicker_url)
-        soup = BeautifulSoup(res.text, 'html.parser')
+        self.outlet_prefix = 'Newsday'
 
-        data_id = soup.find('li', attrs={'class':'tile'})['data-id']
+    def guess_url_from_date(self):
+        url_formatted_date = self.dt.strftime('%Y%m%d')
+        self.id = 'Creators_WEB_' + url_formatted_date
 
-        if not self.output:
-            self.output = 'nd' + data_id.split('_')[-1] + '.puz'
-
-        url = "https://cdn2.amuselabs.com/pmm/crossword?id={}&set=creatorsweb".format(
-                data_id)
-
-        self.find_solver(url=url)
+        self.find_puzzle_url_from_id()
 
     def find_solver(self, url):
         self.url = url
@@ -427,8 +415,8 @@ class USATodayDownloader(BaseDownloader):
 
         self.puzfile.title = xword_data.get('Title', '')
         self.puzfile.author = ''.join([xword_data.get('Author', ''),
-                                       ' (ed. ',
-                                       xword_data.get('Editor', ''), ')'])
+                                       ' / Ed. ',
+                                       xword_data.get('Editor', '')])
         self.puzfile.copyright = xword_data.get('Copyright', '')
         self.puzfile.width = int(xword_data.get('Width'))
         self.puzfile.height = int(xword_data.get('Height'))
