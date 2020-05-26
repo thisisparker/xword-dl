@@ -296,6 +296,8 @@ class WSJDownloader(BaseDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output, **kwargs)
 
+        self.outlet_prefix = 'WSJ'
+
     def guess_url_from_date(self):
         pass
 
@@ -316,16 +318,13 @@ class WSJDownloader(BaseDownloader):
             soup = BeautifulSoup(res.text, 'html.parser')
             puzzle_link = 'https:' + soup.find('a',
                     attrs={'class':'puzzle-link'}).get('href')
-            self.url = puzzle_link
+            self.find_solver(puzzle_link)
 
     def download(self):
         self.url = self.url.replace('index.html', 'data.json')
         xword_data = requests.get(self.url).json()['data']['copy']
 
-        date = xword_data.get('date-publish-analytics').split()[0].replace('/','')
-
-        if not self.output:
-            self.output = 'wsj' + date + '.puz'
+        self.date = xword_data.get('date-publish-analytics').split()[0].replace('/','')
 
         self.puzfile.title = xword_data.get('title', '')
         self.puzfile.author = xword_data.get('byline', '')
@@ -359,14 +358,13 @@ class USATodayDownloader(BaseDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output)
 
+        self.outlet_prefix = 'USA Today'
+
     def guess_url_from_date(self):
         hardcoded_blob = 'https://gamedata.services.amuniversal.com/c/uupuz/l/U2FsdGVkX18CR3EauHsCV8JgqcLh1ptpjBeQ%2Bnjkzhu8zNO00WYK6b%2BaiZHnKcAD%0A9vwtmWJp2uHE9XU1bRw2gA%3D%3D/g/usaon/d/'
 
         url_format = self.dt.strftime('%Y-%m-%d')
         self.url = hardcoded_blob + url_format + '/data.json'
-
-        output_format = self.dt.strftime('%Y%m%d')
-        self.output = 'usatoday' + output_format + '.puz'
 
     def find_latest(self):
         self.find_by_date('today')
