@@ -190,10 +190,12 @@ class NewYorkerDownloader(AmuseLabsDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output, **kwargs)
 
+        self.url_from_id = 'https://cdn3.amuselabs.com/tny/crossword?id={puzzle_id}&set=tny-weekly'
+
         self.outlet_prefix = 'New Yorker'
 
-    def guess_url_from_date(self, dt):
-        url_format = dt.strftime('%Y/%m/%d')
+    def guess_url_from_date(self):
+        url_format = self.dt.strftime('%Y/%m/%d')
         guessed_url = urllib.parse.urljoin(
                 'https://www.newyorker.com/crossword/puzzles-dept/',
                 url_format)
@@ -208,7 +210,9 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         latest_absolute = urllib.parse.urljoin('https://www.newyorker.com',
                                                 latest_fragment)
 
-        self.find_solver(url=latest_absolute)
+        self.landing_page_url = latest_absolute
+
+        self.find_solver(self.landing_page_url)
 
     def find_solver(self, url):
         res = requests.get(url)
@@ -218,13 +222,21 @@ class NewYorkerDownloader(AmuseLabsDownloader):
  
         soup = BeautifulSoup(res.text, "html.parser")
 
-        self.url = soup.find('iframe', attrs={'id':'crossword'})['data-src']
+        iframe_url = soup.find('iframe', attrs={'id':'crossword'})['data-src']
 
-        if not self.output:
-            path = urllib.parse.urlsplit(url).path
-            date_frags = path.split('/')[-3:]
-            date_mash = ''.join(date_frags)
-            self.output = ''.join(['tny', date_mash, '.puz'])
+        query = urllib.parse.urlparse(iframe_url).query
+        query_id = urllib.parse.parse_qs(query)['id']
+        self.id = query_id[0]
+
+        pubdate = soup.find('time').get_text()
+        pubdate_dt = dateparser.parse(pubdate)
+
+        self.date = pubdate_dt.strftime('%Y%m%d')
+
+        self.find_puzzle_url_from_id()
+
+    def pick_filename(self):
+        self.output =  " - ".join([self.outlet_prefix, self.date]) + '.puz'
 
 
 class NewsdayDownloader(AmuseLabsDownloader):
