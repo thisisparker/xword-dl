@@ -186,6 +186,59 @@ class AtlanticDownloader(AmuseLabsDownloader):
         self.url = url
 
 
+class NewsdayDownloader(AmuseLabsDownloader):
+    def __init__(self, output=None, **kwargs):
+        super().__init__(output, **kwargs)
+
+        self.picker_url = 'https://cdn2.amuselabs.com/pmm/date-picker?set=creatorsweb'
+        self.url_from_id = 'https://cdn2.amuselabs.com/pmm/crossword?id={puzzle_id}&set=creatorsweb'
+
+        self.outlet_prefix = 'Newsday'
+
+    def guess_url_from_date(self):
+        url_formatted_date = self.dt.strftime('%Y%m%d')
+        self.id = 'Creators_WEB_' + url_formatted_date
+
+        self.find_puzzle_url_from_id()
+
+    def find_solver(self, url):
+        self.url = url
+
+
+class LATimesDownloader(AmuseLabsDownloader):
+    def __init__(self, output=None, **kwargs):
+        super().__init__(output, **kwargs)
+
+        self.picker_url = 'https://cdn4.amuselabs.com/lat/date-picker?set=latimes'
+        self.url_from_id = 'https://cdn4.amuselabs.com/lat/crossword?id={puzzle_id}&set=latimes'
+
+        self.outlet_prefix = 'LA Times'
+
+    def guess_date_from_id(self):
+        self.date = '20' + ''.join([char for char in self.id if char.isdigit()])
+
+    def guess_url_from_date(self):
+        url_formatted_date = self.dt.strftime('%y%m%d')
+        self.id = 'tca' + url_formatted_date
+
+        self.find_puzzle_url_from_id()
+
+    def find_solver(self, url):
+        self.url = url
+
+    def pick_filename(self):
+        split_on_dashes = self.puzfile.title.split(' - ')
+        if len(split_on_dashes) > 1:
+            use_title = split_on_dashes[-1].strip()
+        else:
+            use_title = ''
+
+        filename_components = [component for component in
+                                            [self.outlet_prefix, self.date,
+                                             use_title] if component]
+        self.output =  " - ".join(filename_components) + '.puz'
+
+
 class NewYorkerDownloader(AmuseLabsDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output, **kwargs)
@@ -237,25 +290,6 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
     def pick_filename(self):
         self.output =  " - ".join([self.outlet_prefix, self.date]) + '.puz'
-
-
-class NewsdayDownloader(AmuseLabsDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
-
-        self.picker_url = 'https://cdn2.amuselabs.com/pmm/date-picker?set=creatorsweb'
-        self.url_from_id = 'https://cdn2.amuselabs.com/pmm/crossword?id={puzzle_id}&set=creatorsweb'
-
-        self.outlet_prefix = 'Newsday'
-
-    def guess_url_from_date(self):
-        url_formatted_date = self.dt.strftime('%Y%m%d')
-        self.id = 'Creators_WEB_' + url_formatted_date
-
-        self.find_puzzle_url_from_id()
-
-    def find_solver(self, url):
-        self.url = url
 
 
 class WSJDownloader(BaseDownloader):
@@ -319,40 +353,6 @@ class WSJDownloader(BaseDownloader):
         self.puzfile.clues = normalized_clues
 
         self.save_puz()
-
-
-class LATimesDownloader(AmuseLabsDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
-
-        self.picker_url = 'https://cdn4.amuselabs.com/lat/date-picker?set=latimes'
-        self.url_from_id = 'https://cdn4.amuselabs.com/lat/crossword?id={puzzle_id}&set=latimes'
-
-        self.outlet_prefix = 'LA Times'
-
-    def guess_date_from_id(self):
-        self.date = '20' + ''.join([char for char in self.id if char.isdigit()])
-
-    def guess_url_from_date(self):
-        url_formatted_date = self.dt.strftime('%y%m%d')
-        self.id = 'tca' + url_formatted_date
-
-        self.find_puzzle_url_from_id()
-
-    def find_solver(self, url):
-        self.url = url
-
-    def pick_filename(self):
-        split_on_dashes = self.puzfile.title.split(' - ')
-        if len(split_on_dashes) > 1:
-            use_title = split_on_dashes[-1].strip()
-        else:
-            use_title = ''
-
-        filename_components = [component for component in
-                                            [self.outlet_prefix, self.date,
-                                             use_title] if component]
-        self.output =  " - ".join(filename_components) + '.puz'
 
 
 class USATodayDownloader(BaseDownloader):
