@@ -45,7 +45,8 @@ class BaseDownloader:
         self.output =  " - ".join(filename_components) + '.puz'
 
     def save_puz(self):
-        self.pick_filename()
+        if not self.output:
+            self.pick_filename()
         if not os.path.exists(self.output):
             self.puzfile.save(self.output)
             print("Puzzle downloaded and saved as {}.".format(self.output))
@@ -412,6 +413,7 @@ class USATodayDownloader(BaseDownloader):
         self.puzfile.clues = clues
 
         self.save_puz()
+
 
 def main():
     parser = argparse.ArgumentParser()
