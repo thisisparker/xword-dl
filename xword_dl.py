@@ -323,34 +323,53 @@ class WSJDownloader(BaseDownloader):
 
     def download(self):
         self.url = self.url.replace('index.html', 'data.json')
-        xword_data = requests.get(self.url).json()['data']['copy']
+        json_data = requests.get(self.url).json()['data']
+        xword_metadata = json_data.get('copy', '')
+        xword_data = json_data.get('grid','')
 
-        self.date = xword_data.get('date-publish-analytics').split()[0].replace('/','')
+        self.date = xword_metadata.get('date-publish-analytics').split()[0].replace('/','')
 
-        self.puzfile.title = xword_data.get('title', '')
-        self.puzfile.author = xword_data.get('byline', '')
-        self.puzfile.copyright = xword_data.get('publisher', '')
-        self.puzfile.width = int(xword_data.get('gridsize').get('cols'))
-        self.puzfile.height = int(xword_data.get('gridsize').get('rows'))
+        self.puzfile.title = xword_metadata.get('title', '')
+        self.puzfile.author = xword_metadata.get('byline', '')
+        self.puzfile.copyright = xword_metadata.get('publisher', '')
+        self.puzfile.width = int(xword_metadata.get('gridsize').get('cols'))
+        self.puzfile.height = int(xword_metadata.get('gridsize').get('rows'))
 
-        solution = xword_data.get('settings').get('solution').replace(' ', '.')
+
+        solution = ''
+        fill = ''
+        markup = b''
+
+        for row in xword_data:
+            for cell in row:
+                if not cell['Letter']:
+                    fill += '.'
+                    solution += '.'
+                    markup += b'\x00'
+                else:
+                    fill += '-'
+                    solution += cell['Letter']
+                    markup += (b'\x80' if (cell.get('style','')
+                                           and cell['style']['shapebg'] == 'circle') \
+                                       else b'\x00')
+
+        self.puzfile.fill = fill
         self.puzfile.solution = solution
 
-        fill = ''
-        for letter in solution:
-            if letter == '.':
-                fill += '.'
-            else:
-                fill += '-'
-        self.puzfile.fill = fill
-
-        clue_list = xword_data['clues'][0]['clues'] + xword_data['clues'][1]['clues']
+        clue_list = xword_metadata['clues'][0]['clues'] + xword_metadata['clues'][1]['clues']
         sorted_clue_list = sorted(clue_list, key=lambda x: int(x['number']))
 
         clues = [clue['clue'] for clue in sorted_clue_list]
         normalized_clues = [html2text(unidecode(clue), bodywidth=0) for clue in clues]
 
         self.puzfile.clues = normalized_clues
+
+        has_markup = b'\x80' in markup
+
+        if has_markup:
+            self.puzfile.extensions[b'GEXT'] = markup
+            self.puzfile._extensions_order.append(b'GEXT')
+            self.puzfile.markup()
 
         self.save_puz()
 
