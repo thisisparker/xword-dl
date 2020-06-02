@@ -47,6 +47,12 @@ class BaseDownloader:
     def save_puz(self):
         if not self.output:
             self.pick_filename()
+
+        invalid_chars = '<>:"/\|?*'
+
+        for char in invalid_chars:
+            self.output = self.output.replace(char, '')
+
         if not os.path.exists(self.output):
             self.puzfile.save(self.output)
             print("Puzzle downloaded and saved as {}.".format(self.output))
