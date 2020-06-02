@@ -5,6 +5,7 @@ import base64
 import json
 import os
 import sys
+import time
 import urllib
 
 import dateparser
@@ -399,9 +400,18 @@ class USATodayDownloader(BaseDownloader):
         pass
 
     def download(self):
-        res = requests.get(self.url)
-
-        xword_data = res.json()
+        attempts = 3
+        while attempts:
+            try:
+                res = requests.get(self.url)
+                xword_data = res.json()
+                break
+            except json.JSONDecodeError:
+                print('Failed to download puzzle. Trying again.')
+                attempts -= 1
+                time.sleep(1)
+        else:
+            print('Failed to download puzzle.')
 
         self.puzfile.title = xword_data.get('Title', '')
         self.puzfile.author = ''.join([xword_data.get('Author', ''),
