@@ -145,8 +145,6 @@ class AmuseLabsDownloader(BaseDownloader):
             self.puzfile._extensions_order.append(b'GEXT')
             self.puzfile.markup()
 
-        self.save_puz()
-
     def save_puz(self):
         if not self.date:
             self.guess_date_from_id()
@@ -378,8 +376,6 @@ class WSJDownloader(BaseDownloader):
             self.puzfile._extensions_order.append(b'GEXT')
             self.puzfile.markup()
 
-        self.save_puz()
-
 
 class USATodayDownloader(BaseDownloader):
     def __init__(self, output=None, **kwargs):
@@ -446,8 +442,6 @@ class USATodayDownloader(BaseDownloader):
         clues = [clue['clue'] for clue in clues_sorted]
 
         self.puzfile.clues = clues
-
-        self.save_puz()
 
 
 def main():
@@ -557,6 +551,7 @@ def main():
         dl.find_latest()
 
     dl.download()
+    dl.save_puz()
 
 
 if __name__ == '__main__':
