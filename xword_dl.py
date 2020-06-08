@@ -146,7 +146,7 @@ class AmuseLabsDownloader(BaseDownloader):
             self.puzfile.markup()
 
     def save_puz(self):
-        if not self.date:
+        if not self.output and not self.date:
             self.guess_date_from_id()
         super().save_puz()
 
