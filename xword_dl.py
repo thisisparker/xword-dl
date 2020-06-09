@@ -108,6 +108,9 @@ class AmuseLabsDownloader(BaseDownloader):
         solution = ''
         fill = ''
         markup = b''
+        rebus_board = []
+        rebus_index = 0
+        rebus_table = ''
 
         box = xword_data['box']
         for row_num in range(xword_data.get('h')):
@@ -117,10 +120,18 @@ class AmuseLabsDownloader(BaseDownloader):
                     solution += '.'
                     fill += '.'
                     markup += b'\x00'
-                else:
+                    rebus_board.append(0)
+                elif len(cell) == 1:
                     solution += cell
                     fill += '-'
                     markup += b'\x80' if (col_num, row_num) in circled else b'\x00'
+                    rebus_board.append(0)
+                else:
+                    solution += cell[0]
+                    fill += '-'
+                    rebus_board.append(rebus_index + 1)
+                    rebus_table += '{:2d}:{};'.format(rebus_index, cell)
+                    rebus_index += 1
 
         self.puzfile.solution = solution
         self.puzfile.fill = fill
@@ -139,11 +150,18 @@ class AmuseLabsDownloader(BaseDownloader):
         self.puzfile.clues.extend(normalized_clues)
 
         has_markup = b'\x80' in markup
+        has_rebus = any(rebus_board)
 
         if has_markup:
             self.puzfile.extensions[b'GEXT'] = markup
             self.puzfile._extensions_order.append(b'GEXT')
             self.puzfile.markup()
+
+        if has_rebus:
+            self.puzfile.extensions[b'GRBS'] = bytes(rebus_board)
+            self.puzfile.extensions[b'RTBL'] = rebus_table.encode(puz.ENCODING)
+            self.puzfile._extensions_order.extend([b'GRBS', b'RTBL'])
+            self.puzfile.rebus()
 
     def save_puz(self):
         if not self.output and not self.date:
