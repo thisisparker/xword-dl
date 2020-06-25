@@ -352,9 +352,13 @@ class WSJDownloader(BaseDownloader):
 
         self.date = xword_metadata.get('date-publish-analytics').split()[0].replace('/','')
 
-        self.puzfile.title = xword_metadata.get('title', '')
-        self.puzfile.author = xword_metadata.get('byline', '')
-        self.puzfile.copyright = xword_metadata.get('publisher', '')
+        fetched = {}
+        for field in ['title', 'byline', 'publisher']:
+            fetched[field] = html2text(xword_metadata.get(field, ''), bodywidth=0).strip()
+
+        self.puzfile.title = fetched.get('title')
+        self.puzfile.author = fetched.get('byline')
+        self.puzfile.copyright = fetched.get('publisher')
         self.puzfile.width = int(xword_metadata.get('gridsize').get('cols'))
         self.puzfile.height = int(xword_metadata.get('gridsize').get('rows'))
 
