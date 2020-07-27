@@ -274,12 +274,12 @@ class NewYorkerDownloader(AmuseLabsDownloader):
     def guess_url_from_date(self):
         url_format = self.dt.strftime('%Y/%m/%d')
         guessed_url = urllib.parse.urljoin(
-                'https://www.newyorker.com/crossword/puzzles-dept/',
+                'https://www.newyorker.com/puzzles-and-games-dept/crossword/',
                 url_format)
         self.find_solver(url=guessed_url)
 
     def find_latest(self):
-        index_url = "https://www.newyorker.com/crossword/puzzles-dept"
+        index_url = "https://www.newyorker.com/puzzles-and-games-dept/crossword"
         index_res = requests.get(index_url)
         index_soup = BeautifulSoup(index_res.text, "html.parser")
 
