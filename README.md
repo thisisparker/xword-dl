@@ -11,7 +11,25 @@ Currently, `xword-dl` supports:
 * USA Today
 * The Atlantic
 
-To download a puzzle, run `xword-dl` on the command line. For example, to download the latest New Yorker puzzle, you could run:
+To download a puzzle, install `xword-dl` and run it on the command line.
+
+## Installation
+
+To install `xword-dl`, download or clone this repository from Github. From a terminal, simply running
+
+```
+python setup.py install --user
+```
+
+in the downloaded directory may be enough. You probably want to install `xword-dl` and its dependencies in a dedicated virtual environment. I use `virtualenv` and `virtualenvwrapper` personally, but that's a matter of preference. If you're already feeling overwhelmed by the thought of managing Python packages, know you're not alone. The [official documentation is pretty good](https://packaging.python.org/tutorials/installing-packages/), but it's a hard problem, and it's not just you.
+
+If you are installing in a dedicated virtual environment, run the above command without the `--user` flag.
+
+## Usage
+
+Once installed, you can invoke `xword-dl`, providing the short code of the site from which to download. If you run `xword-dl` without providing a site code, it will print some usage instructions and then exit.
+
+For example, to download the latest New Yorker puzzle, you could run:
 
 ```
 xword-dl tny --latest

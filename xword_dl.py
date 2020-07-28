@@ -467,12 +467,18 @@ class USATodayDownloader(BaseDownloader):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="""
+    parser = argparse.ArgumentParser(prog='xword-dl', description="""
         xword-dl is a tool to download online crossword puzzles and save them
         locally as .puz files. It only works with supported sites, a list of which
         is found below.
         """)
     parser.set_defaults(downloader_class=None)
+
+    fullpath = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(fullpath, 'version')) as f:
+        version = f.read().strip()
+
+    parser.add_argument('-v', '--version', action='version', version=version)
 
     # I don't remember why this was in here, but it probably shouldn't be
     # parser.add_argument('url', nargs="?",
