@@ -21,7 +21,9 @@ To install `xword-dl`, download or clone this repository from Github. From a ter
 python setup.py install --user
 ```
 
-in the downloaded directory may be enough. You probably want to install `xword-dl` and its dependencies in a dedicated virtual environment. I use `virtualenv` and `virtualenvwrapper` personally, but that's a matter of preference. If you're already feeling overwhelmed by the thought of managing Python packages, know you're not alone. The [official documentation is pretty good](https://packaging.python.org/tutorials/installing-packages/), but it's a hard problem, and it's not just you.
+in the downloaded directory may be enough. 
+
+But you probably want to install `xword-dl` and its dependencies in a dedicated virtual environment. I use `virtualenv` and `virtualenvwrapper` personally, but that's a matter of preference. If you're already feeling overwhelmed by the thought of managing Python packages, know you're not alone. The [official documentation is pretty good](https://packaging.python.org/tutorials/installing-packages/), but it's a hard problem, and it's not just you. If it's any consolation, learning how to use virtual environments today on something sort of frivolous like a crossword puzzle downloader will probably save you from serious headaches in the future when the stakes are higher.
 
 If you are installing in a dedicated virtual environment, run the above command without the `--user` flag.
 
