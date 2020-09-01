@@ -321,13 +321,14 @@ class WSJDownloader(BaseDownloader):
         super().__init__(output, **kwargs)
 
         self.outlet_prefix = 'WSJ'
+        self.headers = {'User-Agent':'xword-dl'}
 
     def guess_url_from_date(self):
         pass
 
     def find_latest(self):
         url = "https://blogs.wsj.com/puzzle/category/crossword/"
-        res = requests.get(url)
+        res = requests.get(url, headers=self.headers)
         soup = BeautifulSoup(res.text, 'html.parser')
         latest_url = soup.find('h4',
                 attrs={'class':'headline'}).find('a').get('href', None)
@@ -338,7 +339,7 @@ class WSJDownloader(BaseDownloader):
         if '/puzzle/crossword/' in url:
             self.url = url
         else:
-            res = requests.get(url)
+            res = requests.get(url, headers=self.headers)
             soup = BeautifulSoup(res.text, 'html.parser')
             puzzle_link = 'https:' + soup.find('a',
                     attrs={'class':'puzzle-link'}).get('href')
@@ -346,7 +347,7 @@ class WSJDownloader(BaseDownloader):
 
     def download(self):
         self.url = self.url.replace('index.html', 'data.json')
-        json_data = requests.get(self.url).json()['data']
+        json_data = requests.get(self.url, headers=self.headers).json()['data']
         xword_metadata = json_data.get('copy', '')
         xword_data = json_data.get('grid','')
 
