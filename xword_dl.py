@@ -476,7 +476,7 @@ def main():
     parser.set_defaults(downloader_class=None)
 
     fullpath = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(fullpath, 'version')) as f:
+    with open(os.path.join(fullpath, 'xwdl', 'version')) as f:
         version = f.read().strip()
 
     parser.add_argument('-v', '--version', action='version', version=version)

@@ -24,6 +24,9 @@ setup(name='xword_dl',
         py_modules=['xword_dl'],
         python_requires='>=3.4',
         install_requires=reqs,
+        data_files=[
+            ('xwdl', ['version']),
+            ],
         entry_points={
             'console_scripts': [
                 'xword-dl=xword_dl:main',
