@@ -17,6 +17,8 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
+__version__ = '2020.9.4'
+
 class BaseDownloader:
     def __init__(self, output=None):
         self.output = output
@@ -476,10 +478,8 @@ def main():
     parser.set_defaults(downloader_class=None)
 
     fullpath = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(fullpath, 'xwdl', 'version')) as f:
-        version = f.read().strip()
 
-    parser.add_argument('-v', '--version', action='version', version=version)
+    parser.add_argument('-v', '--version', action='version', version=__version__)
 
     # I don't remember why this was in here, but it probably shouldn't be
     # parser.add_argument('url', nargs="?",
