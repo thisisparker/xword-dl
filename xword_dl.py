@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2020.9.4'
+__version__ = '2020.9.17'
 
 class BaseDownloader:
     def __init__(self, output=None):
@@ -338,13 +338,12 @@ class WSJDownloader(BaseDownloader):
         self.find_solver(url=latest_url)
 
     def find_solver(self, url):
-        if '/puzzle/crossword/' in url:
+        if '/puzzles/crossword/' in url:
             self.url = url
         else:
             res = requests.get(url, headers=self.headers)
             soup = BeautifulSoup(res.text, 'html.parser')
-            puzzle_link = 'https:' + soup.find('a',
-                    attrs={'class':'puzzle-link'}).get('href')
+            puzzle_link = soup.find('iframe').get('src')
             self.find_solver(puzzle_link)
 
     def download(self):
