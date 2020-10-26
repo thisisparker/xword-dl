@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2020.9.17'
+__version__ = '2020.10.21'
 
 class BaseDownloader:
     def __init__(self, output=None):
@@ -301,7 +301,11 @@ class NewYorkerDownloader(AmuseLabsDownloader):
  
         soup = BeautifulSoup(res.text, "html.parser")
 
-        iframe_url = soup.find('iframe', attrs={'id':'crossword'})['data-src']
+        script_tag = soup.find('script', attrs={'type': 'application/ld+json'})
+
+        json_data = json.loads(script_tag.contents[0])
+
+        iframe_url = json_data['articleBody'].strip().strip('[]')[len('#crossword: '):]
 
         query = urllib.parse.urlparse(iframe_url).query
         query_id = urllib.parse.parse_qs(query)['id']
