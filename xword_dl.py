@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2020.10.21'
+__version__ = '2020.11.9'
 
 class BaseDownloader:
     def __init__(self, output=None):
@@ -333,11 +333,22 @@ class WSJDownloader(BaseDownloader):
         pass
 
     def find_latest(self):
-        url = "https://blogs.wsj.com/puzzle/category/crossword/"
-        res = requests.get(url, headers=self.headers)
-        soup = BeautifulSoup(res.text, 'html.parser')
-        latest_url = soup.find('h4',
-                attrs={'class':'headline'}).find('a').get('href', None)
+        url = "https://www.wsj.com/news/types/crossword"
+
+        attempts = 3
+        while attempts:
+            try:
+                res = requests.get(url, headers=self.headers)
+                soup = BeautifulSoup(res.text, 'html.parser')
+                latest_url = (soup.find('main').find('h3')
+                                  .find('a').get('href', None))
+                break
+            except:
+                print("Failed to find puzzle URL. Trying again.")
+                attempts -= 1
+                time.sleep(1)
+        else:
+            print("Failed to find latest puzzle.")
 
         self.find_solver(url=latest_url)
 
