@@ -19,6 +19,13 @@ from unidecode import unidecode
 
 __version__ = '2020.11.9'
 
+def save_puzzle(puzzle, filename):
+    if not os.path.exists(filename):
+        puzzle.save(filename)
+        print("Puzzle downloaded and saved as {}.".format(filename))
+    else:
+        print("Not saving: a file named {} already exists.".format(filename))
+
 class BaseDownloader:
     def __init__(self, output=None):
         self.output = output
@@ -56,12 +63,7 @@ class BaseDownloader:
         for char in invalid_chars:
             self.output = self.output.replace(char, '')
 
-        if not os.path.exists(self.output):
-            self.puzfile.save(self.output)
-            print("Puzzle downloaded and saved as {}.".format(self.output))
-        else:
-            print("Not saving: a file named {} already exists.".format(self.output))
-
+        save_puzzle(self.puzfile, self.output)
 
 class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, output=None, **kwargs):
