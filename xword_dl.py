@@ -48,15 +48,15 @@ class BaseDownloader:
 
         self.guess_url_from_date()
 
-    def pick_filename(self):
+    def pick_filename(self, puzzle):
         filename_components = [component for component in
                                             [self.outlet_prefix, self.date,
-                                             self.puzfile.title] if component]
+                                             puzzle.title] if component]
         self.output =  " - ".join(filename_components) + '.puz'
 
     def save_puz(self, puzzle):
         if not self.output:
-            self.pick_filename()
+            self.pick_filename(puzzle)
 
         invalid_chars = '<>:"/\|?*'
 
@@ -254,8 +254,8 @@ class LATimesDownloader(AmuseLabsDownloader):
     def find_solver(self, url):
         self.url = url
 
-    def pick_filename(self):
-        split_on_dashes = self.puzfile.title.split(' - ')
+    def pick_filename(self, puzzle):
+        split_on_dashes = puzzle.title.split(' - ')
         if len(split_on_dashes) > 1:
             use_title = split_on_dashes[-1].strip()
         else:
@@ -320,7 +320,7 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         self.find_puzzle_url_from_id()
 
-    def pick_filename(self):
+    def pick_filename(self, puzzle):
         self.output =  " - ".join([self.outlet_prefix, self.date]) + '.puz'
 
 
