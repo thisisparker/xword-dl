@@ -31,7 +31,6 @@ class BaseDownloader:
         self.output = output
         if self.output and not self.output.endswith('.puz'):
             self.output = self.output + '.puz'
-        self.puzfile = puz.Puzzle()
 
         self.outlet_prefix = None
         self.date = None
@@ -98,6 +97,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         xword_data = json.loads(base64.b64decode(rawc).decode("utf-8"))
 
+        self.puzfile = puz.Puzzle()
         self.puzfile.title = xword_data.get('title', '')
         self.puzfile.author = xword_data.get('author', '')
         self.puzfile.copyright = xword_data.get('copyright', '')
@@ -375,6 +375,7 @@ class WSJDownloader(BaseDownloader):
         for field in ['title', 'byline', 'publisher']:
             fetched[field] = html2text(xword_metadata.get(field, ''), bodywidth=0).strip()
 
+        self.puzfile = puz.Puzzle()
         self.puzfile.title = fetched.get('title')
         self.puzfile.author = fetched.get('byline')
         self.puzfile.copyright = fetched.get('publisher')
@@ -450,6 +451,7 @@ class USATodayDownloader(BaseDownloader):
         else:
             print('Failed to download puzzle.')
 
+        self.puzfile = puz.Puzzle()
         self.puzfile.title = xword_data.get('Title', '')
         self.puzfile.author = ''.join([xword_data.get('Author', ''),
                                        ' / Ed. ',
