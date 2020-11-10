@@ -64,16 +64,6 @@ class BaseDownloader:
                                              puzzle.title] if component]
         return " - ".join(filename_components) + '.puz'
 
-    def save_puz(self, puzzle):
-        if self.output:
-            filename = self.output
-        else:
-            filename = self.pick_filename(puzzle)
-
-        filename = remove_invalid_chars_from_filename(filename)
-
-        save_puzzle(puzzle, filename)
-
 class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, output=None, **kwargs):
         super().__init__(output)
@@ -623,8 +613,15 @@ def main():
         dl.find_latest()
 
     puzzle = dl.download(dl.url)
-    dl.save_puz(puzzle)
 
+    if dl.output:
+        filename = dl.output
+    else:
+        filename = dl.pick_filename(puzzle)
+
+    filename = remove_invalid_chars_from_filename(filename)
+
+    save_puzzle(puzzle, filename)
 
 if __name__ == '__main__':
     main()
