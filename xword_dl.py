@@ -35,11 +35,7 @@ def remove_invalid_chars_from_filename(filename):
     return filename
 
 class BaseDownloader:
-    def __init__(self, output=None):
-        self.output = output
-        if self.output and not self.output.endswith('.puz'):
-            self.output = self.output + '.puz'
-
+    def __init__(self):
         self.outlet_prefix = None
         self.date = None
 
@@ -65,8 +61,8 @@ class BaseDownloader:
         return " - ".join(filename_components) + '.puz'
 
 class AmuseLabsDownloader(BaseDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output)
+    def __init__(self, **kwargs):
+        super().__init__()
 
     def find_latest(self):
         res = requests.get(self.picker_url)
@@ -171,8 +167,8 @@ class AmuseLabsDownloader(BaseDownloader):
 
 
 class WaPoDownloader(AmuseLabsDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.picker_url = 'https://cdn1.amuselabs.com/wapo/wp-picker?set=wapo-eb'
         self.url_from_id = 'https://cdn1.amuselabs.com/wapo/crossword?id={puzzle_id}&set=wapo-eb'
@@ -193,8 +189,8 @@ class WaPoDownloader(AmuseLabsDownloader):
 
 
 class AtlanticDownloader(AmuseLabsDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.picker_url = 'https://cdn3.amuselabs.com/atlantic/date-picker?set=atlantic'
         self.url_from_id = 'https://cdn3.amuselabs.com/atlantic/crossword?id={puzzle_id}&set=atlantic'
@@ -212,8 +208,8 @@ class AtlanticDownloader(AmuseLabsDownloader):
 
 
 class NewsdayDownloader(AmuseLabsDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.picker_url = 'https://cdn2.amuselabs.com/pmm/date-picker?set=creatorsweb'
         self.url_from_id = 'https://cdn2.amuselabs.com/pmm/crossword?id={puzzle_id}&set=creatorsweb'
@@ -231,8 +227,8 @@ class NewsdayDownloader(AmuseLabsDownloader):
 
 
 class LATimesDownloader(AmuseLabsDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.picker_url = 'https://cdn4.amuselabs.com/lat/date-picker?set=latimes'
         self.url_from_id = 'https://cdn4.amuselabs.com/lat/crossword?id={puzzle_id}&set=latimes'
@@ -268,8 +264,8 @@ class LATimesDownloader(AmuseLabsDownloader):
 
 
 class NewYorkerDownloader(AmuseLabsDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.url_from_id = 'https://cdn3.amuselabs.com/tny/crossword?id={puzzle_id}&set=tny-weekly'
 
@@ -328,8 +324,8 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
 
 class WSJDownloader(BaseDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.outlet_prefix = 'WSJ'
         self.headers = {'User-Agent':'xword-dl'}
@@ -425,8 +421,8 @@ class WSJDownloader(BaseDownloader):
 
 
 class USATodayDownloader(BaseDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output)
+    def __init__(self, **kwargs):
+        super().__init__()
 
         self.outlet_prefix = 'USA Today'
 
@@ -600,7 +596,7 @@ def main():
     if not args.downloader_class:
         sys.exit(parser.print_help())
 
-    dl = args.downloader_class(output=args.output)
+    dl = args.downloader_class()
 
     if args.date:
         entered_date = ' '.join(args.date)
@@ -614,10 +610,10 @@ def main():
 
     puzzle = dl.download(dl.url)
 
-    if dl.output:
-        filename = dl.output
-    else:
-        filename = dl.pick_filename(puzzle)
+    filename = args.output or dl.pick_filename(puzzle)
+
+    if not filename.endswith('.puz'):
+        filename = filename + '.puz'
 
     filename = remove_invalid_chars_from_filename(filename)
 
