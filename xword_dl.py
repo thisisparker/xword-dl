@@ -26,6 +26,14 @@ def save_puzzle(puzzle, filename):
     else:
         print("Not saving: a file named {} already exists.".format(filename))
 
+def remove_invalid_chars_from_filename(filename):
+    invalid_chars = '<>:"/\|?*'
+
+    for char in invalid_chars:
+        filename = filename.replace(char, '')
+
+    return filename
+
 class BaseDownloader:
     def __init__(self, output=None):
         self.output = output
@@ -57,10 +65,7 @@ class BaseDownloader:
         if not self.output:
             self.pick_filename(puzzle)
 
-        invalid_chars = '<>:"/\|?*'
-
-        for char in invalid_chars:
-            self.output = self.output.replace(char, '')
+        self.output = remove_invalid_chars_from_filename(self.output)
 
         save_puzzle(puzzle, self.output)
 
