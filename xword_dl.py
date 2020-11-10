@@ -56,6 +56,9 @@ class BaseDownloader:
         self.guess_url_from_date()
 
     def pick_filename(self, puzzle):
+        if not self.date:
+            self.guess_date_from_id()
+
         filename_components = [component for component in
                                             [self.outlet_prefix, self.date,
                                              puzzle.title] if component]
@@ -177,8 +180,6 @@ class AmuseLabsDownloader(BaseDownloader):
         return puzzle
 
     def save_puz(self, puzzle):
-        if not self.output and not self.date:
-            self.guess_date_from_id()
         super().save_puz(puzzle)
 
 
@@ -270,6 +271,9 @@ class LATimesDownloader(AmuseLabsDownloader):
         else:
             use_title = ''
 
+        if not self.date:
+            self.guess_date_from_id()
+
         filename_components = [component for component in
                                             [self.outlet_prefix, self.date,
                                              use_title] if component]
@@ -330,6 +334,9 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         self.find_puzzle_url_from_id()
 
     def pick_filename(self, puzzle):
+        if not self.date:
+            self.guess_date_from_id()
+
         return " - ".join([self.outlet_prefix, self.date]) + '.puz'
 
 
