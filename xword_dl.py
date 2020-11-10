@@ -97,12 +97,12 @@ class AmuseLabsDownloader(BaseDownloader):
 
         xword_data = json.loads(base64.b64decode(rawc).decode("utf-8"))
 
-        self.puzfile = puz.Puzzle()
-        self.puzfile.title = xword_data.get('title', '')
-        self.puzfile.author = xword_data.get('author', '')
-        self.puzfile.copyright = xword_data.get('copyright', '')
-        self.puzfile.width = xword_data.get('w')
-        self.puzfile.height = xword_data.get('h')
+        puzzle = puz.Puzzle()
+        puzzle.title = xword_data.get('title', '')
+        puzzle.author = xword_data.get('author', '')
+        puzzle.copyright = xword_data.get('copyright', '')
+        puzzle.width = xword_data.get('w')
+        puzzle.height = xword_data.get('h')
 
         markup_data = xword_data.get('cellInfos', '')
 
@@ -137,8 +137,8 @@ class AmuseLabsDownloader(BaseDownloader):
                     rebus_table += '{:2d}:{};'.format(rebus_index, cell)
                     rebus_index += 1
 
-        self.puzfile.solution = solution
-        self.puzfile.fill = fill
+        puzzle.solution = solution
+        puzzle.fill = fill
 
         placed_words = xword_data['placedWords']
         across_words = [word for word in placed_words if word['acrossNotDown']]
@@ -151,21 +151,23 @@ class AmuseLabsDownloader(BaseDownloader):
         clues = [word['clue']['clue'] for word in weirdass_puz_clue_sorting]
 
         normalized_clues = [html2text(unidecode(clue), bodywidth=0) for clue in clues]
-        self.puzfile.clues.extend(normalized_clues)
+        puzzle.clues.extend(normalized_clues)
 
         has_markup = b'\x80' in markup
         has_rebus = any(rebus_board)
 
         if has_markup:
-            self.puzfile.extensions[b'GEXT'] = markup
-            self.puzfile._extensions_order.append(b'GEXT')
-            self.puzfile.markup()
+            puzzle.extensions[b'GEXT'] = markup
+            puzzle._extensions_order.append(b'GEXT')
+            puzzle.markup()
 
         if has_rebus:
-            self.puzfile.extensions[b'GRBS'] = bytes(rebus_board)
-            self.puzfile.extensions[b'RTBL'] = rebus_table.encode(puz.ENCODING)
-            self.puzfile._extensions_order.extend([b'GRBS', b'RTBL'])
-            self.puzfile.rebus()
+            puzzle.extensions[b'GRBS'] = bytes(rebus_board)
+            puzzle.extensions[b'RTBL'] = rebus_table.encode(puz.ENCODING)
+            puzzle._extensions_order.extend([b'GRBS', b'RTBL'])
+            puzzle.rebus()
+
+        return puzzle
 
     def save_puz(self, puzzle):
         if not self.output and not self.date:
@@ -375,12 +377,12 @@ class WSJDownloader(BaseDownloader):
         for field in ['title', 'byline', 'publisher']:
             fetched[field] = html2text(xword_metadata.get(field, ''), bodywidth=0).strip()
 
-        self.puzfile = puz.Puzzle()
-        self.puzfile.title = fetched.get('title')
-        self.puzfile.author = fetched.get('byline')
-        self.puzfile.copyright = fetched.get('publisher')
-        self.puzfile.width = int(xword_metadata.get('gridsize').get('cols'))
-        self.puzfile.height = int(xword_metadata.get('gridsize').get('rows'))
+        puzzle = puz.Puzzle()
+        puzzle.title = fetched.get('title')
+        puzzle.author = fetched.get('byline')
+        puzzle.copyright = fetched.get('publisher')
+        puzzle.width = int(xword_metadata.get('gridsize').get('cols'))
+        puzzle.height = int(xword_metadata.get('gridsize').get('rows'))
 
 
         solution = ''
@@ -400,8 +402,8 @@ class WSJDownloader(BaseDownloader):
                                            and cell['style']['shapebg'] == 'circle') \
                                        else b'\x00')
 
-        self.puzfile.fill = fill
-        self.puzfile.solution = solution
+        puzzle.fill = fill
+        puzzle.solution = solution
 
         clue_list = xword_metadata['clues'][0]['clues'] + xword_metadata['clues'][1]['clues']
         sorted_clue_list = sorted(clue_list, key=lambda x: int(x['number']))
@@ -409,14 +411,16 @@ class WSJDownloader(BaseDownloader):
         clues = [clue['clue'] for clue in sorted_clue_list]
         normalized_clues = [html2text(unidecode(clue), bodywidth=0) for clue in clues]
 
-        self.puzfile.clues = normalized_clues
+        puzzle.clues = normalized_clues
 
         has_markup = b'\x80' in markup
 
         if has_markup:
-            self.puzfile.extensions[b'GEXT'] = markup
-            self.puzfile._extensions_order.append(b'GEXT')
-            self.puzfile.markup()
+            puzzle.extensions[b'GEXT'] = markup
+            puzzle._extensions_order.append(b'GEXT')
+            puzzle.markup()
+
+        return puzzle
 
 
 class USATodayDownloader(BaseDownloader):
@@ -451,18 +455,18 @@ class USATodayDownloader(BaseDownloader):
         else:
             print('Failed to download puzzle.')
 
-        self.puzfile = puz.Puzzle()
-        self.puzfile.title = xword_data.get('Title', '')
-        self.puzfile.author = ''.join([xword_data.get('Author', ''),
+        puzzle = puz.Puzzle()
+        puzzle.title = xword_data.get('Title', '')
+        puzzle.author = ''.join([xword_data.get('Author', ''),
                                        ' / Ed. ',
                                        xword_data.get('Editor', '')])
-        self.puzfile.copyright = xword_data.get('Copyright', '')
-        self.puzfile.width = int(xword_data.get('Width'))
-        self.puzfile.height = int(xword_data.get('Height'))
+        puzzle.copyright = xword_data.get('Copyright', '')
+        puzzle.width = int(xword_data.get('Width'))
+        puzzle.height = int(xword_data.get('Height'))
 
         solution = xword_data.get('AllAnswer').replace('-','.')
 
-        self.puzfile.solution = solution
+        puzzle.solution = solution
 
         fill = ''
         for letter in solution:
@@ -470,7 +474,7 @@ class USATodayDownloader(BaseDownloader):
                 fill += '.'
             else:
                 fill += '-'
-        self.puzfile.fill = fill
+        puzzle.fill = fill
 
         across_clues = xword_data['AcrossClue'].splitlines()
         down_clues = xword_data['DownClue'].splitlines()[:-1]
@@ -484,8 +488,9 @@ class USATodayDownloader(BaseDownloader):
 
         clues = [clue['clue'] for clue in clues_sorted]
 
-        self.puzfile.clues = clues
+        puzzle.clues = clues
 
+        return puzzle
 
 def main():
     parser = argparse.ArgumentParser(prog='xword-dl', description="""
@@ -606,8 +611,8 @@ def main():
     elif args.latest:
         dl.find_latest()
 
-    dl.download(dl.url)
-    dl.save_puz(dl.puzfile)
+    puzzle = dl.download(dl.url)
+    dl.save_puz(puzzle)
 
 
 if __name__ == '__main__':
