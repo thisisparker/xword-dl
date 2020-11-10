@@ -86,8 +86,8 @@ class AmuseLabsDownloader(BaseDownloader):
     def guess_date_from_id(self):
         self.date = self.id.split('_')[-1]
 
-    def download(self):
-        res = requests.get(self.url)
+    def download(self, url):
+        res = requests.get(url)
         rawc = next((line.strip() for line in res.text.splitlines()
                         if 'window.rawc' in line), None)
 
@@ -363,9 +363,9 @@ class WSJDownloader(BaseDownloader):
             puzzle_link = soup.find('iframe').get('src')
             self.find_solver(puzzle_link)
 
-    def download(self):
-        self.url = self.url.replace('index.html', 'data.json')
-        json_data = requests.get(self.url, headers=self.headers).json()['data']
+    def download(self, url):
+        json_url = url.replace('index.html', 'data.json')
+        json_data = requests.get(json_url, headers=self.headers).json()['data']
         xword_metadata = json_data.get('copy', '')
         xword_data = json_data.get('grid','')
 
@@ -436,11 +436,11 @@ class USATodayDownloader(BaseDownloader):
     def find_solver(self):
         pass
 
-    def download(self):
+    def download(self, url):
         attempts = 3
         while attempts:
             try:
-                res = requests.get(self.url)
+                res = requests.get(url)
                 xword_data = res.json()
                 break
             except json.JSONDecodeError:
@@ -604,7 +604,7 @@ def main():
     elif args.latest:
         dl.find_latest()
 
-    dl.download()
+    dl.download(dl.url)
     dl.save_puz()
 
 
