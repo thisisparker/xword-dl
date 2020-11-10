@@ -54,7 +54,7 @@ class BaseDownloader:
                                              self.puzfile.title] if component]
         self.output =  " - ".join(filename_components) + '.puz'
 
-    def save_puz(self):
+    def save_puz(self, puzzle):
         if not self.output:
             self.pick_filename()
 
@@ -63,7 +63,7 @@ class BaseDownloader:
         for char in invalid_chars:
             self.output = self.output.replace(char, '')
 
-        save_puzzle(self.puzfile, self.output)
+        save_puzzle(puzzle, self.output)
 
 class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, output=None, **kwargs):
@@ -167,10 +167,10 @@ class AmuseLabsDownloader(BaseDownloader):
             self.puzfile._extensions_order.extend([b'GRBS', b'RTBL'])
             self.puzfile.rebus()
 
-    def save_puz(self):
+    def save_puz(self, puzzle):
         if not self.output and not self.date:
             self.guess_date_from_id()
-        super().save_puz()
+        super().save_puz(puzzle)
 
 
 class WaPoDownloader(AmuseLabsDownloader):
@@ -605,7 +605,7 @@ def main():
         dl.find_latest()
 
     dl.download(dl.url)
-    dl.save_puz()
+    dl.save_puz(dl.puzfile)
 
 
 if __name__ == '__main__':
