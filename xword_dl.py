@@ -59,15 +59,17 @@ class BaseDownloader:
         filename_components = [component for component in
                                             [self.outlet_prefix, self.date,
                                              puzzle.title] if component]
-        self.output =  " - ".join(filename_components) + '.puz'
+        return " - ".join(filename_components) + '.puz'
 
     def save_puz(self, puzzle):
-        if not self.output:
-            self.pick_filename(puzzle)
+        if self.output:
+            filename = self.output
+        else:
+            filename = self.pick_filename(puzzle)
 
-        self.output = remove_invalid_chars_from_filename(self.output)
+        filename = remove_invalid_chars_from_filename(filename)
 
-        save_puzzle(puzzle, self.output)
+        save_puzzle(puzzle, filename)
 
 class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, output=None, **kwargs):
@@ -271,7 +273,7 @@ class LATimesDownloader(AmuseLabsDownloader):
         filename_components = [component for component in
                                             [self.outlet_prefix, self.date,
                                              use_title] if component]
-        self.output =  " - ".join(filename_components) + '.puz'
+        return " - ".join(filename_components) + '.puz'
 
 
 class NewYorkerDownloader(AmuseLabsDownloader):
@@ -328,7 +330,7 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         self.find_puzzle_url_from_id()
 
     def pick_filename(self, puzzle):
-        self.output =  " - ".join([self.outlet_prefix, self.date]) + '.puz'
+        return " - ".join([self.outlet_prefix, self.date]) + '.puz'
 
 
 class WSJDownloader(BaseDownloader):
