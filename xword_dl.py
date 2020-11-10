@@ -179,9 +179,6 @@ class AmuseLabsDownloader(BaseDownloader):
 
         return puzzle
 
-    def save_puz(self, puzzle):
-        super().save_puz(puzzle)
-
 
 class WaPoDownloader(AmuseLabsDownloader):
     def __init__(self, output=None, **kwargs):
