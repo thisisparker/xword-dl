@@ -19,13 +19,23 @@ from unidecode import unidecode
 
 __version__ = '2020.11.9'
 
-class BaseDownloader:
-    def __init__(self, output=None):
-        self.output = output
-        if self.output and not self.output.endswith('.puz'):
-            self.output = self.output + '.puz'
-        self.puzfile = puz.Puzzle()
+def save_puzzle(puzzle, filename):
+    if not os.path.exists(filename):
+        puzzle.save(filename)
+        print("Puzzle downloaded and saved as {}.".format(filename))
+    else:
+        print("Not saving: a file named {} already exists.".format(filename))
 
+def remove_invalid_chars_from_filename(filename):
+    invalid_chars = '<>:"/\|?*'
+
+    for char in invalid_chars:
+        filename = filename.replace(char, '')
+
+    return filename
+
+class BaseDownloader:
+    def __init__(self):
         self.outlet_prefix = None
         self.date = None
 
@@ -41,31 +51,18 @@ class BaseDownloader:
 
         self.guess_url_from_date()
 
-    def pick_filename(self):
+    def pick_filename(self, puzzle):
+        if not self.date:
+            self.guess_date_from_id()
+
         filename_components = [component for component in
                                             [self.outlet_prefix, self.date,
-                                             self.puzfile.title] if component]
-        self.output =  " - ".join(filename_components) + '.puz'
-
-    def save_puz(self):
-        if not self.output:
-            self.pick_filename()
-
-        invalid_chars = '<>:"/\|?*'
-
-        for char in invalid_chars:
-            self.output = self.output.replace(char, '')
-
-        if not os.path.exists(self.output):
-            self.puzfile.save(self.output)
-            print("Puzzle downloaded and saved as {}.".format(self.output))
-        else:
-            print("Not saving: a file named {} already exists.".format(self.output))
-
+                                             puzzle.title] if component]
+        return " - ".join(filename_components) + '.puz'
 
 class AmuseLabsDownloader(BaseDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output)
+    def __init__(self, **kwargs):
+        super().__init__()
 
     def find_latest(self):
         res = requests.get(self.picker_url)
@@ -84,8 +81,8 @@ class AmuseLabsDownloader(BaseDownloader):
     def guess_date_from_id(self):
         self.date = self.id.split('_')[-1]
 
-    def download(self):
-        res = requests.get(self.url)
+    def download(self, url):
+        res = requests.get(url)
         rawc = next((line.strip() for line in res.text.splitlines()
                         if 'window.rawc' in line), None)
 
@@ -96,11 +93,12 @@ class AmuseLabsDownloader(BaseDownloader):
 
         xword_data = json.loads(base64.b64decode(rawc).decode("utf-8"))
 
-        self.puzfile.title = xword_data.get('title', '')
-        self.puzfile.author = xword_data.get('author', '')
-        self.puzfile.copyright = xword_data.get('copyright', '')
-        self.puzfile.width = xword_data.get('w')
-        self.puzfile.height = xword_data.get('h')
+        puzzle = puz.Puzzle()
+        puzzle.title = xword_data.get('title', '')
+        puzzle.author = xword_data.get('author', '')
+        puzzle.copyright = xword_data.get('copyright', '')
+        puzzle.width = xword_data.get('w')
+        puzzle.height = xword_data.get('h')
 
         markup_data = xword_data.get('cellInfos', '')
 
@@ -135,8 +133,8 @@ class AmuseLabsDownloader(BaseDownloader):
                     rebus_table += '{:2d}:{};'.format(rebus_index, cell)
                     rebus_index += 1
 
-        self.puzfile.solution = solution
-        self.puzfile.fill = fill
+        puzzle.solution = solution
+        puzzle.fill = fill
 
         placed_words = xword_data['placedWords']
         across_words = [word for word in placed_words if word['acrossNotDown']]
@@ -149,31 +147,28 @@ class AmuseLabsDownloader(BaseDownloader):
         clues = [word['clue']['clue'] for word in weirdass_puz_clue_sorting]
 
         normalized_clues = [html2text(unidecode(clue), bodywidth=0) for clue in clues]
-        self.puzfile.clues.extend(normalized_clues)
+        puzzle.clues.extend(normalized_clues)
 
         has_markup = b'\x80' in markup
         has_rebus = any(rebus_board)
 
         if has_markup:
-            self.puzfile.extensions[b'GEXT'] = markup
-            self.puzfile._extensions_order.append(b'GEXT')
-            self.puzfile.markup()
+            puzzle.extensions[b'GEXT'] = markup
+            puzzle._extensions_order.append(b'GEXT')
+            puzzle.markup()
 
         if has_rebus:
-            self.puzfile.extensions[b'GRBS'] = bytes(rebus_board)
-            self.puzfile.extensions[b'RTBL'] = rebus_table.encode(puz.ENCODING)
-            self.puzfile._extensions_order.extend([b'GRBS', b'RTBL'])
-            self.puzfile.rebus()
+            puzzle.extensions[b'GRBS'] = bytes(rebus_board)
+            puzzle.extensions[b'RTBL'] = rebus_table.encode(puz.ENCODING)
+            puzzle._extensions_order.extend([b'GRBS', b'RTBL'])
+            puzzle.rebus()
 
-    def save_puz(self):
-        if not self.output and not self.date:
-            self.guess_date_from_id()
-        super().save_puz()
+        return puzzle
 
 
 class WaPoDownloader(AmuseLabsDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.picker_url = 'https://cdn1.amuselabs.com/wapo/wp-picker?set=wapo-eb'
         self.url_from_id = 'https://cdn1.amuselabs.com/wapo/crossword?id={puzzle_id}&set=wapo-eb'
@@ -194,8 +189,8 @@ class WaPoDownloader(AmuseLabsDownloader):
 
 
 class AtlanticDownloader(AmuseLabsDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.picker_url = 'https://cdn3.amuselabs.com/atlantic/date-picker?set=atlantic'
         self.url_from_id = 'https://cdn3.amuselabs.com/atlantic/crossword?id={puzzle_id}&set=atlantic'
@@ -213,8 +208,8 @@ class AtlanticDownloader(AmuseLabsDownloader):
 
 
 class NewsdayDownloader(AmuseLabsDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.picker_url = 'https://cdn2.amuselabs.com/pmm/date-picker?set=creatorsweb'
         self.url_from_id = 'https://cdn2.amuselabs.com/pmm/crossword?id={puzzle_id}&set=creatorsweb'
@@ -232,8 +227,8 @@ class NewsdayDownloader(AmuseLabsDownloader):
 
 
 class LATimesDownloader(AmuseLabsDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.picker_url = 'https://cdn4.amuselabs.com/lat/date-picker?set=latimes'
         self.url_from_id = 'https://cdn4.amuselabs.com/lat/crossword?id={puzzle_id}&set=latimes'
@@ -252,22 +247,25 @@ class LATimesDownloader(AmuseLabsDownloader):
     def find_solver(self, url):
         self.url = url
 
-    def pick_filename(self):
-        split_on_dashes = self.puzfile.title.split(' - ')
+    def pick_filename(self, puzzle):
+        split_on_dashes = puzzle.title.split(' - ')
         if len(split_on_dashes) > 1:
             use_title = split_on_dashes[-1].strip()
         else:
             use_title = ''
 
+        if not self.date:
+            self.guess_date_from_id()
+
         filename_components = [component for component in
                                             [self.outlet_prefix, self.date,
                                              use_title] if component]
-        self.output =  " - ".join(filename_components) + '.puz'
+        return " - ".join(filename_components) + '.puz'
 
 
 class NewYorkerDownloader(AmuseLabsDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.url_from_id = 'https://cdn3.amuselabs.com/tny/crossword?id={puzzle_id}&set=tny-weekly'
 
@@ -318,13 +316,16 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         self.find_puzzle_url_from_id()
 
-    def pick_filename(self):
-        self.output =  " - ".join([self.outlet_prefix, self.date]) + '.puz'
+    def pick_filename(self, puzzle):
+        if not self.date:
+            self.guess_date_from_id()
+
+        return " - ".join([self.outlet_prefix, self.date]) + '.puz'
 
 
 class WSJDownloader(BaseDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.outlet_prefix = 'WSJ'
         self.headers = {'User-Agent':'xword-dl'}
@@ -361,9 +362,9 @@ class WSJDownloader(BaseDownloader):
             puzzle_link = soup.find('iframe').get('src')
             self.find_solver(puzzle_link)
 
-    def download(self):
-        self.url = self.url.replace('index.html', 'data.json')
-        json_data = requests.get(self.url, headers=self.headers).json()['data']
+    def download(self, url):
+        json_url = url.replace('index.html', 'data.json')
+        json_data = requests.get(json_url, headers=self.headers).json()['data']
         xword_metadata = json_data.get('copy', '')
         xword_data = json_data.get('grid','')
 
@@ -373,11 +374,12 @@ class WSJDownloader(BaseDownloader):
         for field in ['title', 'byline', 'publisher']:
             fetched[field] = html2text(xword_metadata.get(field, ''), bodywidth=0).strip()
 
-        self.puzfile.title = fetched.get('title')
-        self.puzfile.author = fetched.get('byline')
-        self.puzfile.copyright = fetched.get('publisher')
-        self.puzfile.width = int(xword_metadata.get('gridsize').get('cols'))
-        self.puzfile.height = int(xword_metadata.get('gridsize').get('rows'))
+        puzzle = puz.Puzzle()
+        puzzle.title = fetched.get('title')
+        puzzle.author = fetched.get('byline')
+        puzzle.copyright = fetched.get('publisher')
+        puzzle.width = int(xword_metadata.get('gridsize').get('cols'))
+        puzzle.height = int(xword_metadata.get('gridsize').get('rows'))
 
 
         solution = ''
@@ -397,8 +399,8 @@ class WSJDownloader(BaseDownloader):
                                            and cell['style']['shapebg'] == 'circle') \
                                        else b'\x00')
 
-        self.puzfile.fill = fill
-        self.puzfile.solution = solution
+        puzzle.fill = fill
+        puzzle.solution = solution
 
         clue_list = xword_metadata['clues'][0]['clues'] + xword_metadata['clues'][1]['clues']
         sorted_clue_list = sorted(clue_list, key=lambda x: int(x['number']))
@@ -406,19 +408,21 @@ class WSJDownloader(BaseDownloader):
         clues = [clue['clue'] for clue in sorted_clue_list]
         normalized_clues = [html2text(unidecode(clue), bodywidth=0) for clue in clues]
 
-        self.puzfile.clues = normalized_clues
+        puzzle.clues = normalized_clues
 
         has_markup = b'\x80' in markup
 
         if has_markup:
-            self.puzfile.extensions[b'GEXT'] = markup
-            self.puzfile._extensions_order.append(b'GEXT')
-            self.puzfile.markup()
+            puzzle.extensions[b'GEXT'] = markup
+            puzzle._extensions_order.append(b'GEXT')
+            puzzle.markup()
+
+        return puzzle
 
 
 class USATodayDownloader(BaseDownloader):
-    def __init__(self, output=None, **kwargs):
-        super().__init__(output)
+    def __init__(self, **kwargs):
+        super().__init__()
 
         self.outlet_prefix = 'USA Today'
 
@@ -434,11 +438,11 @@ class USATodayDownloader(BaseDownloader):
     def find_solver(self):
         pass
 
-    def download(self):
+    def download(self, url):
         attempts = 3
         while attempts:
             try:
-                res = requests.get(self.url)
+                res = requests.get(url)
                 xword_data = res.json()
                 break
             except json.JSONDecodeError:
@@ -448,17 +452,18 @@ class USATodayDownloader(BaseDownloader):
         else:
             print('Failed to download puzzle.')
 
-        self.puzfile.title = xword_data.get('Title', '')
-        self.puzfile.author = ''.join([xword_data.get('Author', ''),
+        puzzle = puz.Puzzle()
+        puzzle.title = xword_data.get('Title', '')
+        puzzle.author = ''.join([xword_data.get('Author', ''),
                                        ' / Ed. ',
                                        xword_data.get('Editor', '')])
-        self.puzfile.copyright = xword_data.get('Copyright', '')
-        self.puzfile.width = int(xword_data.get('Width'))
-        self.puzfile.height = int(xword_data.get('Height'))
+        puzzle.copyright = xword_data.get('Copyright', '')
+        puzzle.width = int(xword_data.get('Width'))
+        puzzle.height = int(xword_data.get('Height'))
 
         solution = xword_data.get('AllAnswer').replace('-','.')
 
-        self.puzfile.solution = solution
+        puzzle.solution = solution
 
         fill = ''
         for letter in solution:
@@ -466,7 +471,7 @@ class USATodayDownloader(BaseDownloader):
                 fill += '.'
             else:
                 fill += '-'
-        self.puzfile.fill = fill
+        puzzle.fill = fill
 
         across_clues = xword_data['AcrossClue'].splitlines()
         down_clues = xword_data['DownClue'].splitlines()[:-1]
@@ -480,8 +485,9 @@ class USATodayDownloader(BaseDownloader):
 
         clues = [clue['clue'] for clue in clues_sorted]
 
-        self.puzfile.clues = clues
+        puzzle.clues = clues
 
+        return puzzle
 
 def main():
     parser = argparse.ArgumentParser(prog='xword-dl', description="""
@@ -590,7 +596,7 @@ def main():
     if not args.downloader_class:
         sys.exit(parser.print_help())
 
-    dl = args.downloader_class(output=args.output)
+    dl = args.downloader_class()
 
     if args.date:
         entered_date = ' '.join(args.date)
@@ -602,9 +608,16 @@ def main():
     elif args.latest:
         dl.find_latest()
 
-    dl.download()
-    dl.save_puz()
+    puzzle = dl.download(dl.url)
 
+    filename = args.output or dl.pick_filename(puzzle)
+
+    if not filename.endswith('.puz'):
+        filename = filename + '.puz'
+
+    filename = remove_invalid_chars_from_filename(filename)
+
+    save_puzzle(puzzle, filename)
 
 if __name__ == '__main__':
     main()
