@@ -347,9 +347,6 @@ class WSJDownloader(BaseDownloader):
         self.outlet_prefix = 'WSJ'
         self.headers = {'User-Agent':'xword-dl'}
 
-    def guess_url_from_date(self):
-        pass
-
     def find_latest(self):
         url = "https://www.wsj.com/news/types/crossword"
 
