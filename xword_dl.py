@@ -2,6 +2,7 @@
 
 import argparse
 import base64
+import datetime
 import json
 import os
 import sys
@@ -34,30 +35,35 @@ def remove_invalid_chars_from_filename(filename):
 
     return filename
 
+def parse_date(entered_date):
+    return dateparser.parse(entered_date)
+
+def parse_date_or_exit(entered_date):
+    guessed_dt = parse_date(entered_date)
+
+    if guessed_dt:
+        readable_date = guessed_dt.strftime('%A, %B %d')
+    else:
+        sys.exit('Unable to determine a date from "{}".'.format(entered_date))
+
+    return guessed_dt
+
 class BaseDownloader:
     def __init__(self):
         self.outlet_prefix = None
         self.date = None
 
-    def find_by_date(self, entered_date):
-        guessed_dt = dateparser.parse(entered_date)
-        if guessed_dt:
-            readable_date = guessed_dt.strftime('%A, %B %d')
-            print("Attempting to download a puzzle for {}.".format(readable_date))
-            self.dt = guessed_dt
-            self.date = self.dt.strftime('%Y%m%d')
-        else:
-            sys.exit('Unable to determine a date from "{}".'.format(entered_date))
+    def pick_filename(self, **kwargs):
+        title = kwargs.get(title, '')
+        date = kwargs.get(date, self.date)
 
-        self.guess_url_from_date()
-
-    def pick_filename(self, puzzle):
-        if not self.date:
-            self.guess_date_from_id()
+        date = date.strftime('%Y%m%d') if date else None
 
         filename_components = [component for component in
-                                            [self.outlet_prefix, self.date,
-                                             puzzle.title] if component]
+                                            [self.outlet_prefix,
+                                             date,
+                                             title] if component]
+
         return " - ".join(filename_components) + '.puz'
 
 class AmuseLabsDownloader(BaseDownloader):
@@ -73,13 +79,13 @@ class AmuseLabsDownloader(BaseDownloader):
             puzzle_ids = puzzles.findAll('li', attrs={'class':'tile'})
         self.id = puzzle_ids[0].get('data-id','')
 
-        self.find_puzzle_url_from_id()
+        return self.find_puzzle_url_from_id(self.id)
 
-    def find_puzzle_url_from_id(self):
-        self.url = self.url_from_id.format(puzzle_id = self.id)
+    def find_puzzle_url_from_id(self, puzzle_id):
+        return self.url_from_id.format(puzzle_id=puzzle_id)
 
-    def guess_date_from_id(self):
-        self.date = self.id.split('_')[-1]
+    def guess_date_from_id(self, puzzle_id):
+        pass
 
     def download(self, url):
         res = requests.get(url)
@@ -165,6 +171,11 @@ class AmuseLabsDownloader(BaseDownloader):
 
         return puzzle
 
+    def pick_filename(self, **kwargs):
+        if not self.date:
+            self.guess_date_from_id(self.id)
+        return super().pick_filename(**kwargs)
+
 
 class WaPoDownloader(AmuseLabsDownloader):
     def __init__(self, **kwargs):
@@ -175,14 +186,15 @@ class WaPoDownloader(AmuseLabsDownloader):
 
         self.outlet_prefix = 'WaPo'
 
-    def guess_date_from_id(self):
-        self.date = '20' + self.id.split('_')[1]
+    def guess_date_from_id(self, puzzle_id):
+        self.date = datetime.datetime.strptime('20'
+                + puzzle_id.split('_')[1], '%Y%m%d')
 
-    def guess_url_from_date(self):
-        url_formatted_date = self.dt.strftime('%y%m%d')
+    def find_by_date(self, dt):
+        url_formatted_date = dt.strftime('%y%m%d')
         self.id = 'ebirnholz_' + url_formatted_date
 
-        self.find_puzzle_url_from_id()
+        return self.find_puzzle_url_from_id(self.id)
 
     def find_solver(self, url):
         self.url = url
@@ -197,8 +209,8 @@ class AtlanticDownloader(AmuseLabsDownloader):
 
         self.outlet_prefix = 'Atlantic'
 
-    def guess_url_from_date(self):
-        url_formatted_date = self.dt.strftime('%Y%m%d')
+    def find_by_date(self, dt):
+        url_formatted_date = dt.strftime('%Y%m%d')
         self.id = 'atlantic_' + url_formatted_date
 
         self.find_puzzle_url_from_id()
@@ -271,12 +283,15 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         self.outlet_prefix = 'New Yorker'
 
-    def guess_url_from_date(self):
-        url_format = self.dt.strftime('%Y/%m/%d')
+    def set_date_from_id(self, puzzle_id):
+        self.date = datetime.datetime.strftime(puzzle_id.split('_')[-1])
+
+    def find_by_date(self, dt):
+        url_format = dt.strftime('%Y/%m/%d')
         guessed_url = urllib.parse.urljoin(
                 'https://www.newyorker.com/puzzles-and-games-dept/crossword/',
                 url_format)
-        self.find_solver(url=guessed_url)
+        return self.find_from_url(guessed_url)
 
     def find_latest(self):
         index_url = "https://www.newyorker.com/puzzles-and-games-dept/crossword"
@@ -287,11 +302,11 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         latest_absolute = urllib.parse.urljoin('https://www.newyorker.com',
                                                 latest_fragment)
 
-        self.landing_page_url = latest_absolute
+        landing_page_url = latest_absolute
 
-        self.find_solver(self.landing_page_url)
+        return self.find_from_url(landing_page_url)
 
-    def find_solver(self, url):
+    def find_from_url(self, url):
         res = requests.get(url)
 
         if res.status_code == 404:
@@ -314,11 +329,13 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         self.date = pubdate_dt.strftime('%Y%m%d')
 
-        self.find_puzzle_url_from_id()
+        return self.find_puzzle_url_from_id(self.id)
 
-    def pick_filename(self, puzzle):
+    def pick_filename(self, **kwargs):
         if not self.date:
-            self.guess_date_from_id()
+            self.set_date_from_id(self.id)
+
+        return super().pick_filename(title='')
 
         return " - ".join([self.outlet_prefix, self.date]) + '.puz'
 
@@ -349,7 +366,7 @@ class WSJDownloader(BaseDownloader):
                 attempts -= 1
                 time.sleep(1)
         else:
-            print("Failed to find latest puzzle.")
+            sys.exit("Failed to find latest puzzle.")
 
         self.find_solver(url=latest_url)
 
@@ -396,7 +413,8 @@ class WSJDownloader(BaseDownloader):
                     fill += '-'
                     solution += cell['Letter']
                     markup += (b'\x80' if (cell.get('style','')
-                                           and cell['style']['shapebg'] == 'circle') \
+                                           and cell['style']['shapebg']
+                                           == 'circle') \
                                        else b'\x00')
 
         puzzle.fill = fill
@@ -426,17 +444,17 @@ class USATodayDownloader(BaseDownloader):
 
         self.outlet_prefix = 'USA Today'
 
-    def guess_url_from_date(self):
+    def find_by_date(self, dt):
+        self.date = dt
+
         hardcoded_blob = 'https://gamedata.services.amuniversal.com/c/uupuz/l/U2FsdGVkX18CR3EauHsCV8JgqcLh1ptpjBeQ%2Bnjkzhu8zNO00WYK6b%2BaiZHnKcAD%0A9vwtmWJp2uHE9XU1bRw2gA%3D%3D/g/usaon/d/'
 
-        url_format = self.dt.strftime('%Y-%m-%d')
-        self.url = hardcoded_blob + url_format + '/data.json'
+        url_format = dt.strftime('%Y-%m-%d')
+        return hardcoded_blob + url_format + '/data.json'
 
     def find_latest(self):
-        self.find_by_date('today')
-
-    def find_solver(self):
-        pass
+        dt = parse_date_or_exit('today')
+        return self.find_by_date(dt)
 
     def download(self, url):
         attempts = 3
@@ -450,7 +468,7 @@ class USATodayDownloader(BaseDownloader):
                 attempts -= 1
                 time.sleep(1)
         else:
-            print('Failed to download puzzle.')
+            sys.exit('Failed to download puzzle.')
 
         puzzle = puz.Puzzle()
         puzzle.title = xword_data.get('Title', '')
@@ -488,6 +506,7 @@ class USATodayDownloader(BaseDownloader):
         puzzle.clues = clues
 
         return puzzle
+
 
 def main():
     parser = argparse.ArgumentParser(prog='xword-dl', description="""
@@ -599,18 +618,19 @@ def main():
     dl = args.downloader_class()
 
     if args.date:
-        entered_date = ' '.join(args.date)
-        dl.find_by_date(entered_date)
+        parsed_date = parse_date_or_exit(''.join(args.date))
+        dl.date = parsed_date
+        solver_url = dl.find_by_date(parsed_date)
 
     elif args.spec_url:
-        dl.find_solver(args.spec_url)
+        solver_url = dl.find_from_url(args.spec_url)
 
     elif args.latest:
-        dl.find_latest()
+        solver_url = dl.find_latest()
 
-    puzzle = dl.download(dl.url)
+    puzzle = dl.download(solver_url)
 
-    filename = args.output or dl.pick_filename(puzzle)
+    filename = args.output or dl.pick_filename(puzzle=puzzle)
 
     if not filename.endswith('.puz'):
         filename = filename + '.puz'
