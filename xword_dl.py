@@ -18,7 +18,7 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2020.11.9'
+__version__ = '2020.12.21'
 
 def save_puzzle(puzzle, filename):
     if not os.path.exists(filename):
@@ -53,9 +53,9 @@ class BaseDownloader:
         self.outlet_prefix = None
         self.date = None
 
-    def pick_filename(self, **kwargs):
-        title = kwargs.get(title, '')
-        date = kwargs.get(date, self.date)
+    def pick_filename(self, puzzle, **kwargs):
+        title = puzzle.title
+        date = self.date
 
         date = date.strftime('%Y%m%d') if date else None
 
@@ -365,24 +365,30 @@ class WSJDownloader(BaseDownloader):
         else:
             sys.exit("Failed to find latest puzzle.")
 
-        self.find_solver(url=latest_url)
+        return latest_url
 
     def find_solver(self, url):
         if '/puzzles/crossword/' in url:
-            self.url = url
+            return url
         else:
             res = requests.get(url, headers=self.headers)
             soup = BeautifulSoup(res.text, 'html.parser')
             puzzle_link = soup.find('iframe').get('src')
-            self.find_solver(puzzle_link)
+            return self.find_solver(puzzle_link)
 
-    def download(self, url):
-        json_url = url.replace('index.html', 'data.json')
-        json_data = requests.get(json_url, headers=self.headers).json()['data']
-        xword_metadata = json_data.get('copy', '')
-        xword_data = json_data.get('grid','')
+    def find_data_url(self, solver_url):
+        return solver_url.replace('index.html', 'data.json')
 
-        self.date = xword_metadata.get('date-publish-analytics').split()[0].replace('/','')
+    def fetch_data(self, data_url):
+        return requests.get(data_url, headers=self.headers).json()['data']
+
+    def parse_xword(self, xword_data):
+        xword_metadata = xword_data.get('copy', '')
+        xword_data = xword_data.get('grid','')
+
+        date_string = xword_metadata.get('date-publish-analytics').split()[0]
+
+        self.date = datetime.datetime.strptime(date_string, '%Y/%m/%d')
 
         fetched = {}
         for field in ['title', 'byline', 'publisher']:
@@ -431,6 +437,16 @@ class WSJDownloader(BaseDownloader):
             puzzle.extensions[b'GEXT'] = markup
             puzzle._extensions_order.append(b'GEXT')
             puzzle.markup()
+
+        return puzzle
+
+    def download(self, url):
+        solver_url = self.find_solver(url)
+        data_url = self.find_data_url(solver_url)
+
+        xword_data = self.fetch_data(data_url)
+
+        puzzle = self.parse_xword(xword_data)
 
         return puzzle
 
@@ -617,15 +633,15 @@ def main():
     if args.date:
         parsed_date = parse_date_or_exit(''.join(args.date))
         dl.date = parsed_date
-        solver_url = dl.find_by_date(parsed_date)
+        puzzle_url = dl.find_by_date(parsed_date)
 
     elif args.spec_url:
-        solver_url = dl.find_from_url(args.spec_url)
+        puzzle_url = args.spec_url
 
     elif args.latest:
-        solver_url = dl.find_latest()
+        puzzle_url = dl.find_latest()
 
-    puzzle = dl.download(solver_url)
+    puzzle = dl.download(puzzle_url)
 
     filename = args.output or dl.pick_filename(puzzle=puzzle)
 
