@@ -45,6 +45,7 @@ def parse_date_or_exit(entered_date):
 
     return guessed_dt
 
+
 class BaseDownloader:
     def __init__(self):
         self.outlet_prefix = None
@@ -130,6 +131,7 @@ class AmuseLabsDownloader(BaseDownloader):
         res = requests.get(solver_url)
         rawc = next((line.strip() for line in res.text.splitlines()
                         if 'window.rawc' in line), None)
+
         if not rawc:
             sys.exit("Crossword puzzle not found.")
 
@@ -312,7 +314,7 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         self.outlet_prefix = 'New Yorker'
 
-    def set_date_from_id(self, puzzle_id):
+    def guess_date_from_id(self, puzzle_id):
         self.date = datetime.datetime.strftime(puzzle_id.split('_')[-1])
 
     def find_by_date(self, dt):
@@ -335,7 +337,7 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         return self.find_from_url(landing_page_url)
 
-    def find_from_url(self, url):
+    def find_solver(self, url):
         res = requests.get(url)
 
         if res.status_code == 404:
@@ -361,9 +363,6 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         return self.find_puzzle_url_from_id(self.id)
 
     def pick_filename(self, puzzle, **kwargs):
-        if not self.date:
-            self.set_date_from_id(self.id)
-
         return super().pick_filename(puzzle, title='')
 
 
