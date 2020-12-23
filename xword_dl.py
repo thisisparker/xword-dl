@@ -66,6 +66,14 @@ class BaseDownloader:
 
         return " - ".join(filename_components) + '.puz'
 
+    def download(self, url):
+        solver_url = self.find_solver(url)
+        xword_data = self.fetch_data(solver_url)
+        puzzle = self.parse_xword(xword_data)
+
+        return puzzle
+
+
 class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, **kwargs):
         super().__init__()
@@ -376,10 +384,8 @@ class WSJDownloader(BaseDownloader):
             puzzle_link = soup.find('iframe').get('src')
             return self.find_solver(puzzle_link)
 
-    def find_data_url(self, solver_url):
-        return solver_url.replace('index.html', 'data.json')
-
-    def fetch_data(self, data_url):
+    def fetch_data(self, solver_url):
+        data_url = solver_url.replace('index.html', 'data.json')
         return requests.get(data_url, headers=self.headers).json()['data']
 
     def parse_xword(self, xword_data):
@@ -437,16 +443,6 @@ class WSJDownloader(BaseDownloader):
             puzzle.extensions[b'GEXT'] = markup
             puzzle._extensions_order.append(b'GEXT')
             puzzle.markup()
-
-        return puzzle
-
-    def download(self, url):
-        solver_url = self.find_solver(url)
-        data_url = self.find_data_url(solver_url)
-
-        xword_data = self.fetch_data(data_url)
-
-        puzzle = self.parse_xword(xword_data)
 
         return puzzle
 
