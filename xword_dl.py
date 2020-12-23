@@ -41,9 +41,7 @@ def parse_date(entered_date):
 def parse_date_or_exit(entered_date):
     guessed_dt = parse_date(entered_date)
 
-    if guessed_dt:
-        readable_date = guessed_dt.strftime('%A, %B %d')
-    else:
+    if not guessed_dt:
         sys.exit('Unable to determine a date from "{}".'.format(entered_date))
 
     return guessed_dt
@@ -65,6 +63,31 @@ class BaseDownloader:
                                              title] if component]
 
         return " - ".join(filename_components) + '.puz'
+
+    def find_solver(self, url):
+        """Given a URL for a puzzle, returns the essential 'solver' URL.
+
+        This is implemented in subclasses, and in instances where there is no
+        separate 'landing page' URL for a puzzle, it may be a very transparent
+        pass-through.
+        """
+        raise NotImplementedError
+
+    def fetch_data(self, solver_url):
+        """Given a URL from the find_solver function, return JSON crossword data
+
+        This is implemented in subclasses and the returned data will not be
+        standardized until later.
+        """
+        raise NotImplementedError
+
+    def parse_xword(self, xword_data):
+        """Given a blob of crossword data, parse and stuff into puz format.
+
+        This method is implemented in subclasses based on the differences in
+        the data format in situ.
+        """
+        raise NotImplementedError
 
     def download(self, url):
         solver_url = self.find_solver(url)
@@ -93,6 +116,12 @@ class AmuseLabsDownloader(BaseDownloader):
         return self.url_from_id.format(puzzle_id=puzzle_id)
 
     def guess_date_from_id(self, puzzle_id):
+        """Subclass method to set date from an AmuseLabs id, if possible.
+
+        If a date can be derived from the id, it is set as a datetime object in
+        the date property of the downloader object. This method is called when
+        picking a filename for AmuseLabs-type puzzles."""
+
         pass
 
     def find_solver(self, url):
@@ -160,12 +189,13 @@ class AmuseLabsDownloader(BaseDownloader):
         down_words = [word for word in placed_words if not word['acrossNotDown']]
 
         weirdass_puz_clue_sorting = sorted(placed_words, key=
-                                                lambda word: (word['y'], word['x'],
-                                                not word['acrossNotDown']))
+                                            lambda word: (word['y'], word['x'],
+                                                    not word['acrossNotDown']))
 
         clues = [word['clue']['clue'] for word in weirdass_puz_clue_sorting]
 
-        normalized_clues = [html2text(unidecode(clue), bodywidth=0) for clue in clues]
+        normalized_clues = [html2text(unidecode(clue), bodywidth=0)
+                                for clue in clues]
         puzzle.clues.extend(normalized_clues)
 
         has_markup = b'\x80' in markup
