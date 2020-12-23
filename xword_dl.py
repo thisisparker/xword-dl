@@ -12,7 +12,6 @@ import urllib
 import dateparser
 import puz
 import requests
-import xmltodict
 
 from bs4 import BeautifulSoup
 from html2text import html2text
