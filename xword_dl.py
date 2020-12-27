@@ -575,8 +575,13 @@ class USATodayDownloader(BaseDownloader):
 def main():
     parser = argparse.ArgumentParser(prog='xword-dl', description="""
         xword-dl is a tool to download online crossword puzzles and save them
-        locally as .puz files. It only works with supported sites, a list of which
-        is found below.
+        locally as AcrossLite-compatible .puz files. It only works with
+        supported sites, a list of which is found below.
+
+        By default, xword-dl will download the most recent puzzle available at
+        a given outlet, but some outlets support specifying by date or by URL.
+        Add --help (or -h) to an outlet command to see which options are
+        available.
         """)
     parser.set_defaults(downloader_class=None)
 
