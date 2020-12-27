@@ -378,7 +378,15 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         return self.find_puzzle_url_from_id(self.id)
 
     def pick_filename(self, puzzle, **kwargs):
-        return super().pick_filename(puzzle, title='')
+        try:
+            supra, main = puzzle.title.split(':')
+            if supra == 'The Crossword' and dateparser.parse(main):
+                title = ''
+            else:
+                title = main.strip()
+        except ValueError:
+            title = puzzle.title
+        return super().pick_filename(puzzle, title=title)
 
 
 class WSJDownloader(BaseDownloader):
