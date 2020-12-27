@@ -263,7 +263,7 @@ class AtlanticDownloader(AmuseLabsDownloader):
         url_formatted_date = dt.strftime('%Y%m%d')
         self.id = 'atlantic_' + url_formatted_date
 
-        self.find_puzzle_url_from_id()
+        return self.find_puzzle_url_from_id(self.id)
 
 
 class NewsdayDownloader(AmuseLabsDownloader):
