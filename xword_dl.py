@@ -3,6 +3,7 @@
 import argparse
 import base64
 import datetime
+import inspect
 import json
 import os
 import sys
@@ -48,7 +49,6 @@ def parse_date_or_exit(entered_date):
 
 class BaseDownloader:
     def __init__(self):
-        self.outlet_prefix = None
         self.date = None
 
     def pick_filename(self, puzzle, **kwargs):
@@ -90,6 +90,8 @@ class BaseDownloader:
         raise NotImplementedError
 
     def download(self, url):
+        """Download, parse, and return a puzzle at a given URL."""
+
         solver_url = self.find_solver(url)
         xword_data = self.fetch_data(solver_url)
         puzzle = self.parse_xword(xword_data)
@@ -122,7 +124,8 @@ class AmuseLabsDownloader(BaseDownloader):
 
         If a date can be derived from the id, it is set as a datetime object in
         the date property of the downloader object. This method is called when
-        picking a filename for AmuseLabs-type puzzles."""
+        picking a filename for AmuseLabs-type puzzles.
+        """
 
         pass
 
@@ -224,13 +227,15 @@ class AmuseLabsDownloader(BaseDownloader):
 
 
 class WaPoDownloader(AmuseLabsDownloader):
+    command = 'wp'
+    outlet = 'Washington Post'
+    outlet_prefix = 'WaPo'
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.picker_url = 'https://cdn1.amuselabs.com/wapo/wp-picker?set=wapo-eb'
         self.url_from_id = 'https://cdn1.amuselabs.com/wapo/crossword?id={puzzle_id}&set=wapo-eb'
-
-        self.outlet_prefix = 'WaPo'
 
     def guess_date_from_id(self, puzzle_id):
         self.date = datetime.datetime.strptime('20'
@@ -244,13 +249,15 @@ class WaPoDownloader(AmuseLabsDownloader):
 
 
 class AtlanticDownloader(AmuseLabsDownloader):
+    command = 'atl'
+    outlet = 'Atlantic'
+    outlet_prefix = 'Atlantic'
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.picker_url = 'https://cdn3.amuselabs.com/atlantic/date-picker?set=atlantic'
         self.url_from_id = 'https://cdn3.amuselabs.com/atlantic/crossword?id={puzzle_id}&set=atlantic'
-
-        self.outlet_prefix = 'Atlantic'
 
     def find_by_date(self, dt):
         url_formatted_date = dt.strftime('%Y%m%d')
@@ -260,13 +267,15 @@ class AtlanticDownloader(AmuseLabsDownloader):
 
 
 class NewsdayDownloader(AmuseLabsDownloader):
+    command = 'nd'
+    outlet = 'Newsday'
+    outlet_prefix = 'Newsday'
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.picker_url = 'https://cdn2.amuselabs.com/pmm/date-picker?set=creatorsweb'
         self.url_from_id = 'https://cdn2.amuselabs.com/pmm/crossword?id={puzzle_id}&set=creatorsweb'
-
-        self.outlet_prefix = 'Newsday'
 
     def guess_date_from_id(self, puzzle_id):
         date_string = puzzle_id.split('_')[2]
@@ -280,13 +289,15 @@ class NewsdayDownloader(AmuseLabsDownloader):
 
 
 class LATimesDownloader(AmuseLabsDownloader):
+    command = 'lat'
+    outlet = 'Los Angeles Times'
+    outlet_prefix = 'LA Times'
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.picker_url = 'https://cdn4.amuselabs.com/lat/date-picker?set=latimes'
         self.url_from_id = 'https://cdn4.amuselabs.com/lat/crossword?id={puzzle_id}&set=latimes'
-
-        self.outlet_prefix = 'LA Times'
 
     def guess_date_from_id(self, puzzle_id):
         date_string = ''.join([char for char in puzzle_id if char.isdigit()])
@@ -309,12 +320,14 @@ class LATimesDownloader(AmuseLabsDownloader):
 
 
 class NewYorkerDownloader(AmuseLabsDownloader):
+    command = 'tny'
+    outlet = 'New Yorker'
+    outlet_prefix = 'New Yorker'
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.url_from_id = 'https://cdn3.amuselabs.com/tny/crossword?id={puzzle_id}&set=tny-weekly'
-
-        self.outlet_prefix = 'New Yorker'
 
     def guess_date_from_id(self, puzzle_id):
         self.date = datetime.datetime.strftime(puzzle_id.split('_')[-1])
@@ -369,19 +382,36 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
 
 class WSJDownloader(BaseDownloader):
+    command = 'wsj'
+    outlet = 'Wall Street Journal'
+    outlet_prefix = 'WSJ'
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.outlet_prefix = 'WSJ'
         self.headers = {'User-Agent':'xword-dl'}
 
     def find_latest(self):
         url = "https://www.wsj.com/news/types/crossword"
 
-        res = requests.get(url, headers=self.headers)
-        soup = BeautifulSoup(res.text, 'html.parser')
-        latest_url = (soup.find('main').find('h3')
-                          .find('a').get('href', None))
+        headlines = ''
+        attempts = 5
+
+        while attempts and not headlines:
+            res = requests.get(url, headers=self.headers)
+            soup = BeautifulSoup(res.text, 'html.parser')
+            headlines = soup.find('main').find('h3')
+
+            if headlines:
+                break
+            else:
+                print('Unable to find latest puzzle. Trying again.')
+                time.sleep(2)
+                attempts -= 1
+        else:
+            sys.exit('Unable to find latest puzzle.')
+
+        latest_url = headlines.find('a').get('href', None)
 
         return latest_url
 
@@ -458,10 +488,12 @@ class WSJDownloader(BaseDownloader):
 
 
 class USATodayDownloader(BaseDownloader):
+    command = 'usa'
+    outlet = 'USA Today'
+    outlet_prefix = 'USA Today'
+
     def __init__(self, **kwargs):
         super().__init__()
-
-        self.outlet_prefix = 'USA Today'
 
     def find_by_date(self, dt):
         self.date = dt
@@ -479,8 +511,18 @@ class USATodayDownloader(BaseDownloader):
         return url
 
     def fetch_data(self, solver_url):
-        res = requests.get(solver_url)
-        xword_data = res.json()
+        attempts = 3
+        while attempts:
+            try:
+                res = requests.get(solver_url)
+                xword_data = res.json()
+                break
+            except json.JSONDecodeError:
+                print('Unable to download puzzle data. Trying again.')
+                time.sleep(2)
+                attempts -= 1
+        else:
+            sys.exit('Unable to download puzzle data.')
         return xword_data
 
     def parse_xword(self, xword_data):
@@ -567,62 +609,17 @@ def main():
                             description='Supported puzzle sources',
                             dest='subparser_name')
 
-    newyorker_parser = subparsers.add_parser('tny',
-                            aliases=['newyorker', 'nyer'],
-                            parents=[latest_parent,
-                                     date_parent,
-                                     url_parent,
-                                     extractor_parent],
-                            help="download a New Yorker puzzle")
-    newyorker_parser.set_defaults(downloader_class=NewYorkerDownloader)
-
-    newsday_parser = subparsers.add_parser('nd',
-                            aliases=['newsday'],
-                            parents=[latest_parent,
-                                     date_parent,
-                                     extractor_parent],
-                            help="download a Newsday puzzle")
-    newsday_parser.set_defaults(downloader_class=NewsdayDownloader)
-
-    wsj_parser = subparsers.add_parser('wsj',
-                            aliases=['wallstreet'],
-                            parents=[latest_parent,
-                                     url_parent,
-                                     extractor_parent],
-                            help="download a Wall Street Journal puzzle")
-    wsj_parser.set_defaults(downloader_class=WSJDownloader)
-
-    lat_parser = subparsers.add_parser('lat',
-                            aliases=['latimes'],
-                            parents=[latest_parent,
-                                     date_parent,
-                                     extractor_parent],
-                            help="download an LA Times Puzzle")
-    lat_parser.set_defaults(downloader_class=LATimesDownloader)
-
-    wapo_parser = subparsers.add_parser('wapo',
-                            aliases=['wp'],
-                            parents=[latest_parent,
-                                      date_parent,
-                                      extractor_parent],
-                            help="download a Washington Post Sunday puzzle")
-    wapo_parser.set_defaults(downloader_class=WaPoDownloader)
-
-    usatoday_parser = subparsers.add_parser('usa',
-                            aliases=[],
-                            parents=[latest_parent,
-                                      date_parent,
-                                      extractor_parent],
-                            help="download a USA Today puzzle")
-    usatoday_parser.set_defaults(downloader_class=USATodayDownloader)
-
-    atlantic_parser = subparsers.add_parser('atl',
-                            aliases=['atlantic'],
-                            parents=[latest_parent,
-                                      date_parent,
-                                      extractor_parent],
-                            help="download an Atlantic puzzle")
-    atlantic_parser.set_defaults(downloader_class=AtlanticDownloader)
+    all_classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
+    downloaders = [d for d in all_classes if issubclass(d[1], BaseDownloader)
+                                          and hasattr(d[1], 'command')]
+    for d in downloaders:
+        parents = [latest_parent, extractor_parent]
+        if hasattr(d[1], 'find_by_date'):
+            parents.insert(1, date_parent)
+        sp = subparsers.add_parser(d[1].command,
+                              parents=parents,
+                              help='download {} puzzle'.format(d[1].outlet))
+        sp.set_defaults(downloader_class=d[1])
 
     args = parser.parse_args()
 
@@ -640,29 +637,9 @@ def main():
         puzzle_url = args.spec_url
 
     elif args.latest:
-        attempts = 5
-        while attempts:
-            try:
-                puzzle_url = dl.find_latest()
-                break
-            except:
-                print('Could not find latest puzzle. Trying again.')
-                time.sleep(2)
-                attempts -= 1
-        else:
-            sys.exit('Unable to find latest puzzle.')
+        puzzle_url = dl.find_latest()
 
-    attempts = 5
-    while attempts:
-        try:
-            puzzle = dl.download(puzzle_url)
-            break
-        except:
-            print('Could not download puzzle. Trying again.')
-            time.sleep(2)
-            attempts -= 1
-    else:
-        sys.exit('Unable to download puzzle.')
+    puzzle = dl.download(puzzle_url)
 
     filename = args.output or dl.pick_filename(puzzle=puzzle)
 
