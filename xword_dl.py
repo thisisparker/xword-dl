@@ -624,6 +624,8 @@ def main():
         parents = [latest_parent, extractor_parent]
         if hasattr(d[1], 'find_by_date'):
             parents.insert(1, date_parent)
+        if d[0] in ['WSJDownloader', 'NewYorkerDownloader']:
+            parents.insert(1, url_parent)
         sp = subparsers.add_parser(d[1].command,
                               parents=parents,
                               help='download {} puzzle'.format(d[1].outlet))
