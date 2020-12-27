@@ -472,23 +472,18 @@ class USATodayDownloader(BaseDownloader):
         return hardcoded_blob + url_format + '/data.json'
 
     def find_latest(self):
-        dt = parse_date_or_exit('today')
+        dt = datetime.datetime.today()
         return self.find_by_date(dt)
 
-    def download(self, url):
-        attempts = 3
-        while attempts:
-            try:
-                res = requests.get(url)
-                xword_data = res.json()
-                break
-            except json.JSONDecodeError:
-                print('Failed to download puzzle. Trying again.')
-                attempts -= 1
-                time.sleep(1)
-        else:
-            sys.exit('Failed to download puzzle.')
+    def find_solver(self, url):
+        return url
 
+    def fetch_data(self, solver_url):
+        res = requests.get(solver_url)
+        xword_data = res.json()
+        return xword_data
+
+    def parse_xword(self, xword_data):
         puzzle = puz.Puzzle()
         puzzle.title = xword_data.get('Title', '')
         puzzle.author = ''.join([xword_data.get('Author', ''),
