@@ -101,6 +101,8 @@ class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, **kwargs):
         super().__init__()
 
+        self.id = None
+
     def find_latest(self):
         res = requests.get(self.picker_url)
         soup = BeautifulSoup(res.text, 'html.parser')
@@ -143,9 +145,9 @@ class AmuseLabsDownloader(BaseDownloader):
 
     def parse_xword(self, xword_data):
         puzzle = puz.Puzzle()
-        puzzle.title = xword_data.get('title', '')
-        puzzle.author = xword_data.get('author', '')
-        puzzle.copyright = xword_data.get('copyright', '')
+        puzzle.title = xword_data.get('title', '').strip()
+        puzzle.author = xword_data.get('author', '').strip()
+        puzzle.copyright = xword_data.get('copyright', '').strip()
         puzzle.width = xword_data.get('w')
         puzzle.height = xword_data.get('h')
 
@@ -216,7 +218,7 @@ class AmuseLabsDownloader(BaseDownloader):
         return puzzle
 
     def pick_filename(self, puzzle, **kwargs):
-        if not self.date:
+        if not self.date and self.id:
             self.guess_date_from_id(self.id)
         return super().pick_filename(puzzle, **kwargs)
 
@@ -322,7 +324,7 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         guessed_url = urllib.parse.urljoin(
                 'https://www.newyorker.com/puzzles-and-games-dept/crossword/',
                 url_format)
-        return self.find_from_url(guessed_url)
+        return guessed_url
 
     def find_latest(self):
         index_url = "https://www.newyorker.com/puzzles-and-games-dept/crossword"
@@ -335,7 +337,7 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         landing_page_url = latest_absolute
 
-        return self.find_from_url(landing_page_url)
+        return landing_page_url
 
     def find_solver(self, url):
         res = requests.get(url)
@@ -376,20 +378,10 @@ class WSJDownloader(BaseDownloader):
     def find_latest(self):
         url = "https://www.wsj.com/news/types/crossword"
 
-        attempts = 3
-        while attempts:
-            try:
-                res = requests.get(url, headers=self.headers)
-                soup = BeautifulSoup(res.text, 'html.parser')
-                latest_url = (soup.find('main').find('h3')
-                                  .find('a').get('href', None))
-                break
-            except:
-                print("Failed to find puzzle URL. Trying again.")
-                attempts -= 1
-                time.sleep(1)
-        else:
-            sys.exit("Failed to find latest puzzle.")
+        res = requests.get(url, headers=self.headers)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        latest_url = (soup.find('main').find('h3')
+                          .find('a').get('href', None))
 
         return latest_url
 
@@ -653,9 +645,29 @@ def main():
         puzzle_url = args.spec_url
 
     elif args.latest:
-        puzzle_url = dl.find_latest()
+        attempts = 5
+        while attempts:
+            try:
+                puzzle_url = dl.find_latest()
+                break
+            except:
+                print('Could not find latest puzzle. Trying again.')
+                time.sleep(2)
+                attempts -= 1
+        else:
+            sys.exit('Unable to find latest puzzle.')
 
-    puzzle = dl.download(puzzle_url)
+    attempts = 5
+    while attempts:
+        try:
+            puzzle = dl.download(puzzle_url)
+            break
+        except:
+            print('Could not download puzzle. Trying again.')
+            time.sleep(2)
+            attempts -= 1
+    else:
+        sys.exit('Unable to download puzzle.')
 
     filename = args.output or dl.pick_filename(puzzle=puzzle)
 
