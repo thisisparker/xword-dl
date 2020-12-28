@@ -1,1 +1,20 @@
 *.puz
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Unit test / coverage reports
+*,cover
+.cache
+.coverage
+.coverage.*
+.testmondata
+coverage.xml
+htmlcov/
