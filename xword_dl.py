@@ -603,6 +603,9 @@ class UniversalDownloader(AMUniversalDownloader):
             try:
                 res = requests.get(solver_url,
                         verify='cert/embed-universaluclick-com-chain.pem')
+                # That cert is required because UUclick has a misconfigured
+                # certificate chain. Ideally they will fix that and this entire
+                # fetch_data method can be removed.
                 xword_data = res.json()
                 break
             except json.JSONDecodeError:
