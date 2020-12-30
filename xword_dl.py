@@ -516,7 +516,13 @@ class AMUniversalDownloader(BaseDownloader):
         attempts = 3
         while attempts:
             try:
-                res = requests.get(solver_url)
+                res = requests.get(solver_url,
+                        verify='cert/embed-universaluclick-com-chain.pem')
+                # That cert is required because UUclick has a misconfigured
+                # certificate chain. Ideally they will fix that and this part
+                # can be removed.
+                # NOTE: the cert issue doesn't affect USA Today, but including
+                # the cert here doesn't break anything.
                 xword_data = res.json()
                 break
             except json.JSONDecodeError:
@@ -596,25 +602,6 @@ class UniversalDownloader(AMUniversalDownloader):
         super().__init__()
 
         self.url_blob = 'https://embed.universaluclick.com/c/uucom/l/U2FsdGVkX18YuMv20%2B8cekf85%2Friz1H%2FzlWW4bn0cizt8yclLsp7UYv34S77X0aX%0Axa513fPTc5RoN2wa0h4ED9QWuBURjkqWgHEZey0WFL8%3D/g/fcx/d/'
-
-    def fetch_data(self, solver_url):
-        attempts = 3
-        while attempts:
-            try:
-                res = requests.get(solver_url,
-                        verify='cert/embed-universaluclick-com-chain.pem')
-                # That cert is required because UUclick has a misconfigured
-                # certificate chain. Ideally they will fix that and this entire
-                # fetch_data method can be removed.
-                xword_data = res.json()
-                break
-            except json.JSONDecodeError:
-                print('Unable to download puzzle data. Trying again.')
-                time.sleep(2)
-                attempts -= 1
-        else:
-            sys.exit('Unable to download puzzle data.')
-        return xword_data
 
 
 def main():
