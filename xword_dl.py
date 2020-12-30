@@ -586,6 +586,7 @@ class USATodayDownloader(AMUniversalDownloader):
 
         return clue_list[:-1]
 
+
 class UniversalDownloader(AMUniversalDownloader):
     command = 'uni'
     outlet = 'Universal'
@@ -611,6 +612,7 @@ class UniversalDownloader(AMUniversalDownloader):
         else:
             sys.exit('Unable to download puzzle data.')
         return xword_data
+
 
 def main():
     parser = argparse.ArgumentParser(prog='xword-dl', description="""
@@ -665,7 +667,7 @@ def main():
     all_classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
     downloaders = [d for d in all_classes if issubclass(d[1], BaseDownloader)
                                           and hasattr(d[1], 'command')]
-    for d in downloaders:
+    for d in sorted(downloaders, key=lambda d: d[1].outlet):
         parents = [latest_parent, extractor_parent]
         if hasattr(d[1], 'find_by_date'):
             parents.insert(1, date_parent)
