@@ -18,7 +18,7 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2020.12.27'
+__version__ = '2020.12.30'
 
 def save_puzzle(puzzle, filename):
     if not os.path.exists(filename):

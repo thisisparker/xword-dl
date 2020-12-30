@@ -28,6 +28,8 @@ setup(name='xword_dl',
         author='Parker Higgins',
         author_email='parker@parkerhiggins.net',
         py_modules=['xword_dl'],
+        packages=[''],
+        package_data={'':['cert/embed-universaluclick-com-chain.pem']},
         python_requires='>=3.4',
         install_requires=reqs,
         entry_points={
