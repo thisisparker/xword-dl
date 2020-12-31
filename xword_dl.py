@@ -18,7 +18,7 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2020.12.27'
+__version__ = '2020.12.30'
 
 def save_puzzle(puzzle, filename):
     if not os.path.exists(filename):
@@ -494,22 +494,16 @@ class WSJDownloader(BaseDownloader):
 
         return puzzle
 
-
-class USATodayDownloader(BaseDownloader):
-    command = 'usa'
-    outlet = 'USA Today'
-    outlet_prefix = 'USA Today'
-
+class AMUniversalDownloader(BaseDownloader):
     def __init__(self, **kwargs):
         super().__init__()
+        self.url_blob = None
 
     def find_by_date(self, dt):
         self.date = dt
 
-        hardcoded_blob = 'https://gamedata.services.amuniversal.com/c/uupuz/l/U2FsdGVkX18CR3EauHsCV8JgqcLh1ptpjBeQ%2Bnjkzhu8zNO00WYK6b%2BaiZHnKcAD%0A9vwtmWJp2uHE9XU1bRw2gA%3D%3D/g/usaon/d/'
-
         url_format = dt.strftime('%Y-%m-%d')
-        return hardcoded_blob + url_format + '/data.json'
+        return self.url_blob + url_format + '/data.json'
 
     def find_latest(self):
         dt = datetime.datetime.today()
@@ -522,7 +516,13 @@ class USATodayDownloader(BaseDownloader):
         attempts = 3
         while attempts:
             try:
-                res = requests.get(solver_url)
+                res = requests.get(solver_url,
+                        verify='cert/embed-universaluclick-com-chain.pem')
+                # That cert is required because UUclick has a misconfigured
+                # certificate chain. Ideally they will fix that and this part
+                # can be removed.
+                # NOTE: the cert issue doesn't affect USA Today, but including
+                # the cert here doesn't break anything.
                 xword_data = res.json()
                 break
             except json.JSONDecodeError:
@@ -532,6 +532,11 @@ class USATodayDownloader(BaseDownloader):
         else:
             sys.exit('Unable to download puzzle data.')
         return xword_data
+
+    def process_clues(self, clue_list):
+        """Return clue list without any end markers"""
+
+        return clue_list
 
     def parse_xword(self, xword_data):
         puzzle = puz.Puzzle()
@@ -556,7 +561,7 @@ class USATodayDownloader(BaseDownloader):
         puzzle.fill = fill
 
         across_clues = xword_data['AcrossClue'].splitlines()
-        down_clues = xword_data['DownClue'].splitlines()[:-1]
+        down_clues = self.process_clues(xword_data['DownClue'].splitlines())
 
         clues_list = across_clues + down_clues
 
@@ -570,6 +575,33 @@ class USATodayDownloader(BaseDownloader):
         puzzle.clues = clues
 
         return puzzle
+
+
+class USATodayDownloader(AMUniversalDownloader):
+    command = 'usa'
+    outlet = 'USA Today'
+    outlet_prefix = 'USA Today'
+
+    def __init__(self, **kwargs):
+        super().__init__()
+
+        self.url_blob = 'https://gamedata.services.amuniversal.com/c/uupuz/l/U2FsdGVkX18CR3EauHsCV8JgqcLh1ptpjBeQ%2Bnjkzhu8zNO00WYK6b%2BaiZHnKcAD%0A9vwtmWJp2uHE9XU1bRw2gA%3D%3D/g/usaon/d/'
+
+    def process_clues(self, clue_list):
+        """Remove the end marker found in USA Today puzzle JSON."""
+
+        return clue_list[:-1]
+
+
+class UniversalDownloader(AMUniversalDownloader):
+    command = 'uni'
+    outlet = 'Universal'
+    outlet_prefix = 'Universal'
+
+    def __init__(self, **kwargs):
+        super().__init__()
+
+        self.url_blob = 'https://embed.universaluclick.com/c/uucom/l/U2FsdGVkX18YuMv20%2B8cekf85%2Friz1H%2FzlWW4bn0cizt8yclLsp7UYv34S77X0aX%0Axa513fPTc5RoN2wa0h4ED9QWuBURjkqWgHEZey0WFL8%3D/g/fcx/d/'
 
 
 def main():
@@ -625,7 +657,7 @@ def main():
     all_classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
     downloaders = [d for d in all_classes if issubclass(d[1], BaseDownloader)
                                           and hasattr(d[1], 'command')]
-    for d in downloaders:
+    for d in sorted(downloaders, key=lambda d: d[1].outlet):
         parents = [latest_parent, extractor_parent]
         if hasattr(d[1], 'find_by_date'):
             parents.insert(1, date_parent)
