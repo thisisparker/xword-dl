@@ -516,8 +516,10 @@ class AMUniversalDownloader(BaseDownloader):
         attempts = 3
         while attempts:
             try:
-                res = requests.get(solver_url,
-                        verify='cert/embed-universaluclick-com-chain.pem')
+                fullpath = os.path.abspath(os.path.dirname(__file__))
+                certpath = os.path.join(fullpath,
+                               'cert/embed-universaluclick-com-chain.pem')
+                res = requests.get(solver_url, verify=certpath)
                 # That cert is required because UUclick has a misconfigured
                 # certificate chain. Ideally they will fix that and this part
                 # can be removed.
