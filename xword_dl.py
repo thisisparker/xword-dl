@@ -446,7 +446,8 @@ class WSJDownloader(BaseDownloader):
 
         fetched = {}
         for field in ['title', 'byline', 'publisher']:
-            fetched[field] = html2text(xword_metadata.get(field, ''), bodywidth=0).strip()
+            fetched[field] = html2text(xword_metadata.get(field, ''),
+                                       bodywidth=0).strip()
 
         puzzle = puz.Puzzle()
         puzzle.title = fetched.get('title')
@@ -541,12 +542,16 @@ class AMUniversalDownloader(BaseDownloader):
         return clue_list
 
     def parse_xword(self, xword_data):
+        fetched = {}
+        for field in ['Title', 'Author', 'Editor', 'Copryight']:
+            fetched[field] = urllib.parse.unquote(xword_data.get(field, '')).strip()
+
         puzzle = puz.Puzzle()
-        puzzle.title = xword_data.get('Title', '')
-        puzzle.author = ''.join([xword_data.get('Author', ''),
+        puzzle.title = fetched.get('Title', '')
+        puzzle.author = ''.join([fetched.get('Author', ''),
                                        ' / Ed. ',
-                                       xword_data.get('Editor', '')])
-        puzzle.copyright = xword_data.get('Copyright', '')
+                                       fetched.get('Editor', '')])
+        puzzle.copyright = fetched.get('Copyright', '')
         puzzle.width = int(xword_data.get('Width'))
         puzzle.height = int(xword_data.get('Height'))
 
