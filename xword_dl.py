@@ -46,6 +46,25 @@ def by_keyword(keyword, date=None, filename=None):
 
     return puzzle, filename
 
+def by_url(url, filename=None):
+    netloc = urllib.parse.urlparse(url).netloc
+
+    supported_sites = [('wsj.com', WSJDownloader),
+                       ('newyorker.com', NewYorkerDownloader)]
+
+    for site, selected_downloader in supported_sites:
+        if site in netloc:
+            dl = selected_downloader()
+            puzzle = dl.download(url)
+            break
+    else:
+        raise ValueError('{} is not a supported URL.'.format(url))
+
+    filename = filename or dl.pick_filename(puzzle)
+
+    return puzzle, filename
+
+
 def get_supported_outlets():
     all_classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
     downloaders = [d for d in all_classes if issubclass(d[1], BaseDownloader)
@@ -409,9 +428,12 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         iframe_url = json_data['articleBody'].strip().strip('[]')[len('#crossword: '):]
 
-        query = urllib.parse.urlparse(iframe_url).query
-        query_id = urllib.parse.parse_qs(query)['id']
-        self.id = query_id[0]
+        try:
+            query = urllib.parse.urlparse(iframe_url).query
+            query_id = urllib.parse.parse_qs(query)['id']
+            self.id = query_id[0]
+        except KeyError:
+            raise ValueError('Cannot find puzzle at {}.'.format(url))
 
         pubdate = soup.find('time').get_text()
         pubdate_dt = dateparser.parse(pubdate)
@@ -473,7 +495,10 @@ class WSJDownloader(BaseDownloader):
         else:
             res = requests.get(url, headers=self.headers)
             soup = BeautifulSoup(res.text, 'html.parser')
-            puzzle_link = soup.find('iframe').get('src')
+            try:
+                puzzle_link = soup.find('iframe').get('src')
+            except AttributeError:
+                raise ValueError('Cannot find puzzle at {}.'.format(url))
             return self.find_solver(puzzle_link)
 
     def fetch_data(self, solver_url):
@@ -669,7 +694,7 @@ def main():
 
     parser.add_argument('-v', '--version', action='version', version=__version__)
 
-    parser.add_argument('keyword', nargs="?", help=textwrap.dedent("""\
+    parser.add_argument('source', nargs="?", help=textwrap.dedent("""\
                                 specify an outlet from which to download a puzzle.
                                 Supported keywords and outlets are:\n""") +
                                 "{}".format(get_help_text_formatted_list()))
@@ -694,14 +719,17 @@ def main():
                             default=None)
 
     args = parser.parse_args()
-    if not args.keyword:
+    if not args.source:
         sys.exit(parser.print_help())
 
     try:
-        puzzle, filename = by_keyword(args.keyword,
-                                      date=''.join(args.date),
-                                      filename=args.output)
-    except Exception as e:
+        if args.source.startswith('http'):
+            puzzle, filename = by_url(args.source)
+        else:
+            puzzle, filename = by_keyword(args.source,
+                                          date=''.join(args.date),
+                                          filename=args.output)
+    except ValueError as e:
         sys.exit(e)
 
     if not filename.endswith('.puz'):
