@@ -20,6 +20,37 @@ from unidecode import unidecode
 
 __version__ = '2020.12.30'
 
+def by_keyword(keyword, date=None, filename=None):
+    keyword_dict = {d[1].command: d[1] for d in get_supported_outlets()}
+    selected_downloader = keyword_dict.get(keyword, None)
+
+    if selected_downloader:
+        dl = selected_downloader()
+    else:
+        raise ValueError('Command {} not recognized.'.format(keyword))
+
+    if not date:
+        puzzle_url = dl.find_latest()
+    elif date and hasattr(dl, 'find_by_date'):
+        parsed_date = parse_date_or_exit(date)
+        dl.date = parsed_date
+        puzzle_url = dl.find_by_date(parsed_date)
+    else:
+        raise ValueError('Selection by date not available for {}.'.format(dl.outlet))
+
+    puzzle = dl.download(puzzle_url)
+
+    filename = filename or dl.pick_filename(puzzle)
+
+    return puzzle, filename
+
+def get_supported_outlets():
+    all_classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
+    downloaders = [d for d in all_classes if issubclass(d[1], BaseDownloader)
+                                          and hasattr(d[1], 'command')]
+
+    return downloaders
+
 def save_puzzle(puzzle, filename):
     if not os.path.exists(filename):
         puzzle.save(filename)
