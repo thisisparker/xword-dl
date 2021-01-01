@@ -73,7 +73,7 @@ def parse_date_or_exit(entered_date):
     guessed_dt = parse_date(entered_date)
 
     if not guessed_dt:
-        sys.exit('Unable to determine a date from "{}".'.format(entered_date))
+        raise ValueError('Unable to determine a date from "{}".'.format(entered_date))
 
     return guessed_dt
 
@@ -169,7 +169,7 @@ class AmuseLabsDownloader(BaseDownloader):
                         if 'window.rawc' in line), None)
 
         if not rawc:
-            sys.exit("Crossword puzzle not found.")
+            raise Exception("Crossword puzzle not found.")
 
         rawc = rawc.split("'")[1]
 
@@ -387,7 +387,7 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         res = requests.get(url)
 
         if res.status_code == 404:
-            sys.exit('Unable to find a puzzle at {}'.format(url))
+            raise ConnectionError('Unable to find a puzzle at {}'.format(url))
  
         soup = BeautifulSoup(res.text, "html.parser")
 
@@ -448,7 +448,7 @@ class WSJDownloader(BaseDownloader):
                 time.sleep(2)
                 attempts -= 1
         else:
-            sys.exit('Unable to find latest puzzle.')
+            raise Exception('Unable to find latest puzzle.')
 
         latest_url = headlines.find('a').get('href', None)
 
@@ -564,7 +564,7 @@ class AMUniversalDownloader(BaseDownloader):
                 time.sleep(2)
                 attempts -= 1
         else:
-            sys.exit('Unable to download puzzle data.')
+            raise Exception('Unable to download puzzle data.')
         return xword_data
 
     def process_clues(self, clue_list):
