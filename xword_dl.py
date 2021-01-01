@@ -7,6 +7,7 @@ import inspect
 import json
 import os
 import sys
+import textwrap
 import time
 import urllib
 
@@ -27,7 +28,7 @@ def by_keyword(keyword, date=None, filename=None):
     if selected_downloader:
         dl = selected_downloader()
     else:
-        raise ValueError('Command {} not recognized.'.format(keyword))
+        raise ValueError('Keyword {} not recognized.'.format(keyword))
 
     if not date:
         puzzle_url = dl.find_latest()
@@ -50,6 +51,13 @@ def get_supported_outlets():
                                           and hasattr(d[1], 'command')]
 
     return downloaders
+
+def get_help_text_formatted_list():
+    text = ''
+    for d in get_supported_outlets():
+        text += '{:<5} {}\n'.format(d[1].command, d[1].outlet)
+
+    return text
 
 def save_puzzle(puzzle, filename):
     if not os.path.exists(filename):
@@ -643,19 +651,15 @@ class UniversalDownloader(AMUniversalDownloader):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog='xword-dl', description="""
+    parser = argparse.ArgumentParser(prog='xword-dl', description=textwrap.dedent("""\
         xword-dl is a tool to download online crossword puzzles and save them
         locally as AcrossLite-compatible .puz files. It only works with
         supported sites, a list of which is found below.
 
         By default, xword-dl will download the most recent puzzle available at
-        a given outlet, but some outlets support specifying by date or by URL.
-        Add --help (or -h) to an outlet command to see which options are
-        available.
-        """)
-    parser.set_defaults(downloader_class=None)
-
-    fullpath = os.path.abspath(os.path.dirname(__file__))
+        a given outlet, but some outlets support specifying by date.
+        """),
+        formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-v', '--version', action='version', version=__version__)
 
@@ -663,70 +667,40 @@ def main():
     # parser.add_argument('url', nargs="?",
     #                        help='URL of puzzle to download')
 
-    extractor_parent = argparse.ArgumentParser(add_help=False)
-    extractor_parent.add_argument('-o', '--output',
-                            help="""
-                            the filename for the saved puzzle
-                            (if not provided, a default value will be used)""",
-                            default=None)
-    extractor_parent.set_defaults(date=None, spec_url=None, latest=None)
+    parser.add_argument('keyword', nargs="?", help=textwrap.dedent("""\
+                                specify an outlet from which to download a puzzle.
+                                Supported keywords and outlets are:\n""") +
+                                "{}".format(get_help_text_formatted_list()))
 
-    latest_parent = argparse.ArgumentParser(add_help=False)
-    latest_parent.add_argument('-l', '--latest',
-                            help="""
+    selector = parser.add_mutually_exclusive_group()
+
+    selector.add_argument('-l', '--latest',
+                            help=textwrap.dedent("""\
                                 select most recent available puzzle
-                                (this is the default behavior)""",
+                                (this is the default behavior)"""),
                             action='store_true',
                             default=True)
 
-    date_parent = argparse.ArgumentParser(add_help=False)
-    date_parent.add_argument('-d', '--date', nargs='*', metavar='',
-                            help='a specific puzzle date to select')
+    selector.add_argument('-d', '--date', nargs='*', metavar='',
+                            help='a specific puzzle date to select',
+                            default=[])
 
-
-    url_parent = argparse.ArgumentParser(add_help=False)
-    url_parent.add_argument('-u', '--url', metavar='URL', dest='spec_url',
-                            help='a specific puzzle URL to download')
-
-    subparsers = parser.add_subparsers(title='sites',
-                            description='Supported puzzle sources',
-                            dest='subparser_name')
-
-    all_classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
-    downloaders = [d for d in all_classes if issubclass(d[1], BaseDownloader)
-                                          and hasattr(d[1], 'command')]
-    for d in sorted(downloaders, key=lambda d: d[1].outlet):
-        parents = [latest_parent, extractor_parent]
-        if hasattr(d[1], 'find_by_date'):
-            parents.insert(1, date_parent)
-        if d[0] in ['WSJDownloader', 'NewYorkerDownloader']:
-            parents.insert(1, url_parent)
-        sp = subparsers.add_parser(d[1].command,
-                              parents=parents,
-                              help='download {} puzzle'.format(d[1].outlet))
-        sp.set_defaults(downloader_class=d[1])
+    parser.add_argument('-o', '--output',
+                            help=textwrap.dedent("""\
+                            the filename for the saved puzzle
+                            (if not provided, a default value will be used)"""),
+                            default=None)
 
     args = parser.parse_args()
-
-    if not args.downloader_class:
+    if not args.keyword:
         sys.exit(parser.print_help())
 
-    dl = args.downloader_class()
-
-    if args.date:
-        parsed_date = parse_date_or_exit(''.join(args.date))
-        dl.date = parsed_date
-        puzzle_url = dl.find_by_date(parsed_date)
-
-    elif args.spec_url:
-        puzzle_url = args.spec_url
-
-    elif args.latest:
-        puzzle_url = dl.find_latest()
-
-    puzzle = dl.download(puzzle_url)
-
-    filename = args.output or dl.pick_filename(puzzle=puzzle)
+    try:
+        puzzle, filename = by_keyword(args.keyword,
+                                      date=''.join(args.date),
+                                      filename=args.output)
+    except Exception as e:
+        sys.exit(e)
 
     if not filename.endswith('.puz'):
         filename = filename + '.puz'
