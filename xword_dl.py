@@ -406,7 +406,8 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         index_res = requests.get(index_url)
         index_soup = BeautifulSoup(index_res.text, "html.parser")
 
-        latest_fragment = next(a for a in index_soup.findAll('a') if a.find('h4'))['href']
+        latest_fragment = next(a for a in index_soup.findAll('a')
+                                    if a.find('h4'))['href']
         latest_absolute = urllib.parse.urljoin('https://www.newyorker.com',
                                                 latest_fragment)
 
@@ -682,21 +683,24 @@ class UniversalDownloader(AMUniversalDownloader):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog='xword-dl', description=textwrap.dedent("""\
+    parser = argparse.ArgumentParser(prog='xword-dl',
+                                     description=textwrap.dedent("""\
         xword-dl is a tool to download online crossword puzzles and save them
-        locally as AcrossLite-compatible .puz files. It only works with
-        supported sites, a list of which is found below.
+        locally as AcrossLite-compatible .puz files. It works with supported
+        sites, a list of which can be found below.
 
         By default, xword-dl will download the most recent puzzle available at
-        a given outlet, but some outlets support specifying by date.
+        a given outlet, and some outlets support searching by date.
         """),
         formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-v', '--version', action='version', version=__version__)
 
     parser.add_argument('source', nargs="?", help=textwrap.dedent("""\
-                                specify an outlet from which to download a puzzle.
-                                Supported keywords and outlets are:\n""") +
+                                specify a URL or a keyword to select an
+                                outlet from which to download a puzzle.
+
+                                Supported outlet keywords are:\n""") +
                                 "{}".format(get_help_text_formatted_list()))
 
     selector = parser.add_mutually_exclusive_group()
@@ -724,7 +728,8 @@ def main():
 
     try:
         if args.source.startswith('http'):
-            puzzle, filename = by_url(args.source)
+            puzzle, filename = by_url(args.source,
+                                          filename=args.output)
         else:
             puzzle, filename = by_keyword(args.source,
                                           date=''.join(args.date),
