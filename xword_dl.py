@@ -54,7 +54,7 @@ def get_supported_outlets():
 
 def get_help_text_formatted_list():
     text = ''
-    for d in get_supported_outlets():
+    for d in sorted(get_supported_outlets(), key=lambda x: x[1].outlet.lower()):
         text += '{:<5} {}\n'.format(d[1].command, d[1].outlet)
 
     return text
