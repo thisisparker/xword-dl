@@ -6,6 +6,7 @@ import datetime
 import inspect
 import json
 import os
+import shlex
 import sys
 import textwrap
 import time
@@ -62,9 +63,13 @@ def get_help_text_formatted_list():
 def save_puzzle(puzzle, filename):
     if not os.path.exists(filename):
         puzzle.save(filename)
-        print("Puzzle downloaded and saved as {}.".format(filename))
+        msg = ("Puzzle downloaded and saved as {}.".format(filename)
+                if sys.stdout.isatty()
+                else filename)
+        print(msg)
     else:
-        print("Not saving: a file named {} already exists.".format(filename))
+        print("Not saving: a file named {} already exists.".format(filename),
+                file=sys.stderr)
 
 def remove_invalid_chars_from_filename(filename):
     invalid_chars = '<>:"/\|?*'
@@ -84,7 +89,6 @@ def parse_date_or_exit(entered_date):
         raise ValueError('Unable to determine a date from "{}".'.format(entered_date))
 
     return guessed_dt
-
 
 class BaseDownloader:
     def __init__(self):
@@ -452,7 +456,8 @@ class WSJDownloader(BaseDownloader):
             if headlines:
                 break
             else:
-                print('Unable to find latest puzzle. Trying again.')
+                print('Unable to find latest puzzle. Trying again.',
+                        file=sys.stderr)
                 time.sleep(2)
                 attempts -= 1
         else:
@@ -568,7 +573,8 @@ class AMUniversalDownloader(BaseDownloader):
                 xword_data = res.json()
                 break
             except json.JSONDecodeError:
-                print('Unable to download puzzle data. Trying again.')
+                print('Unable to download puzzle data. Trying again.',
+                        file=sys.stderr)
                 time.sleep(2)
                 attempts -= 1
         else:
