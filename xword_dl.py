@@ -663,10 +663,6 @@ def main():
 
     parser.add_argument('-v', '--version', action='version', version=__version__)
 
-    # I don't remember why this was in here, but it probably shouldn't be
-    # parser.add_argument('url', nargs="?",
-    #                        help='URL of puzzle to download')
-
     parser.add_argument('keyword', nargs="?", help=textwrap.dedent("""\
                                 specify an outlet from which to download a puzzle.
                                 Supported keywords and outlets are:\n""") +
