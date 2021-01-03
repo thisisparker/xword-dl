@@ -57,7 +57,7 @@ def by_url(url, filename=None):
     dl = None
 
     supported_downloader = next((site[1] for site in supported_sites
-                                if site[0] in netloc), None)
+                                 if site[0] in netloc), None)
 
     if supported_downloader:
         dl = supported_downloader()
