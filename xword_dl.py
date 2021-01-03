@@ -78,7 +78,7 @@ def by_url(url, filename=None):
             puzzle_url = amuse_url
 
     if dl:
-        dl.download(puzzle_url)
+        puzzle = dl.download(puzzle_url)
     else:
         raise ValueError('Unable to find a puzzle at {}'.format(url))
 
