@@ -69,7 +69,7 @@ def by_url(url, filename=None):
         soup = BeautifulSoup(res.text, 'html.parser')
 
         for iframe in soup.find_all('iframe'):
-            src = iframe.get('src')
+            src = iframe.get('src', '')
             if 'amuselabs.com' in src:
                 amuse_url = src
                 break
