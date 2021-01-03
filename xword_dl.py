@@ -477,27 +477,17 @@ class WSJDownloader(BaseDownloader):
         self.headers = {'User-Agent': 'xword-dl'}
 
     def find_latest(self):
-        url = "https://www.wsj.com/news/types/crossword"
+        url = "https://www.wsj.com/news/puzzle"
 
-        headlines = ''
-        attempts = 5
+        res = requests.get(url, headers=self.headers)
+        soup = BeautifulSoup(res.text, 'html.parser')
 
-        while attempts and not headlines:
-            res = requests.get(url, headers=self.headers)
-            soup = BeautifulSoup(res.text, 'html.parser')
-            headlines = soup.find('main').find('h3')
-
-            if headlines:
+        for article in soup.find_all('article'):
+            if 'crossword' in article.find('span').get_text().lower():
+                latest_url = article.find('a').get('href')
                 break
-            else:
-                print('Unable to find latest puzzle. Trying again.',
-                      file=sys.stderr)
-                time.sleep(2)
-                attempts -= 1
         else:
-            raise Exception('Unable to find latest puzzle.')
-
-        latest_url = headlines.find('a').get('href', None)
+            raise ValueError('Unable to find latest puzzle.')
 
         return latest_url
 
