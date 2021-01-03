@@ -19,7 +19,7 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2020.12.30'
+__version__ = '2021.1.3'
 
 
 def by_keyword(keyword, date=None, filename=None):
