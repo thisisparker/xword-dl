@@ -52,7 +52,8 @@ def by_url(url, filename=None):
     netloc = urllib.parse.urlparse(url).netloc
 
     supported_sites = [('wsj.com', WSJDownloader),
-                       ('newyorker.com', NewYorkerDownloader)]
+                       ('newyorker.com', NewYorkerDownloader),
+                       ('amuselabs.com', AmuseLabsDownloader)]
 
     dl = None
 
@@ -80,7 +81,7 @@ def by_url(url, filename=None):
     if dl:
         puzzle = dl.download(puzzle_url)
     else:
-        raise ValueError('Unable to find a puzzle at {}'.format(url))
+        raise ValueError('Unable to find a puzzle at {}.'.format(url))
 
     filename = filename or dl.pick_filename(puzzle)
 
