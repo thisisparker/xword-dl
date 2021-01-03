@@ -54,13 +54,33 @@ def by_url(url, filename=None):
     supported_sites = [('wsj.com', WSJDownloader),
                        ('newyorker.com', NewYorkerDownloader)]
 
-    for site, selected_downloader in supported_sites:
-        if site in netloc:
-            dl = selected_downloader()
-            puzzle = dl.download(url)
-            break
+    dl = None
+
+    supported_downloader = next((site[1] for site in supported_sites
+                                if site[0] in netloc), None)
+
+    if supported_downloader:
+        dl = supported_downloader()
+        puzzle_url = url
     else:
-        raise ValueError('{} is not a supported URL.'.format(url))
+        amuse_url = None
+        res = requests.get(url)
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        for iframe in soup.find_all('iframe'):
+            src = iframe.get('src')
+            if 'amuselabs.com' in src:
+                amuse_url = src
+                break
+
+        if amuse_url:
+            dl = AmuseLabsDownloader()
+            puzzle_url = amuse_url
+
+    if dl:
+        dl.download(puzzle_url)
+    else:
+        raise ValueError('Unable to find a puzzle at {}'.format(url))
 
     filename = filename or dl.pick_filename(puzzle)
 
@@ -119,6 +139,9 @@ def parse_date_or_exit(entered_date):
 
 
 class BaseDownloader:
+    outlet = None
+    outlet_prefix = None
+
     def __init__(self):
         self.date = None
 
@@ -129,7 +152,7 @@ class BaseDownloader:
         date = date.strftime('%Y%m%d') if date else None
 
         filename_components = [component for component in
-                               [self.outlet_prefix,
+                               [self.outlet_prefix or puzzle.author,
                                 date,
                                 title] if component]
 
