@@ -1,16 +1,16 @@
 # xword-dl
 
-`xword-dl` is a command-line tool to download .puz files for online crossword puzzles. For a supported outlet, you can easily download the latest puzzle, or specify one from the archives.
+`xword-dl` is a command-line tool to download .puz files for online crossword puzzles from supported outlets or arbitrary URLs. For a supported outlet, you can easily download the latest puzzle, or specify one from the archives.
 
 Currently, `xword-dl` supports:
-* The Atlantic
-* The LA Times
-* The New Yorker
+* Atlantic
+* LA Times
+* New Yorker
 * Newsday
 * USA Today
 * Universal
-* The Wall Street Journal
-* The Washington Post
+* Wall Street Journal
+* Washington Post
 
 To download a puzzle, install `xword-dl` and run it on the command line.
 
@@ -48,6 +48,12 @@ To download the Newsday Saturday Stumper and save it as `stumper.puz`, you could
 
 ```
 xword-dl nd --date saturday --output stumper
+```
+
+You can also download puzzles that are embedded in AmuseLabs solvers or on supported sites by providing a URL, such as:
+
+```
+xword-dl https://rosswordpuzzles.com/2021/01/03/cover-up/
 ```
 
 The resulting .puz file can be opened with [`cursewords`](https://github.com/thisisparker/cursewords) or any other puz file reader.
