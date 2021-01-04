@@ -7,6 +7,7 @@ import inspect
 import json
 import os
 import sys
+import textwrap
 import time
 import urllib
 
@@ -18,36 +19,130 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2020.12.30'
+__version__ = '2021.1.3'
+
+
+def by_keyword(keyword, date=None, filename=None):
+    keyword_dict = {d[1].command: d[1] for d in get_supported_outlets()}
+    selected_downloader = keyword_dict.get(keyword, None)
+
+    if selected_downloader:
+        dl = selected_downloader()
+    else:
+        raise ValueError('Keyword {} not recognized.'.format(keyword))
+
+    if not date:
+        puzzle_url = dl.find_latest()
+    elif date and hasattr(dl, 'find_by_date'):
+        parsed_date = parse_date_or_exit(date)
+        dl.date = parsed_date
+        puzzle_url = dl.find_by_date(parsed_date)
+    else:
+        raise ValueError(
+            'Selection by date not available for {}.'.format(dl.outlet))
+
+    puzzle = dl.download(puzzle_url)
+
+    filename = filename or dl.pick_filename(puzzle)
+
+    return puzzle, filename
+
+
+def by_url(url, filename=None):
+    netloc = urllib.parse.urlparse(url).netloc
+
+    supported_sites = [('wsj.com', WSJDownloader),
+                       ('newyorker.com', NewYorkerDownloader),
+                       ('amuselabs.com', AmuseLabsDownloader)]
+
+    dl = None
+
+    supported_downloader = next((site[1] for site in supported_sites
+                                 if site[0] in netloc), None)
+
+    if supported_downloader:
+        dl = supported_downloader()
+        puzzle_url = url
+    else:
+        amuse_url = None
+        res = requests.get(url)
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        for iframe in soup.find_all('iframe'):
+            src = iframe.get('src', '')
+            if 'amuselabs.com' in src:
+                amuse_url = src
+                break
+
+        if amuse_url:
+            dl = AmuseLabsDownloader()
+            puzzle_url = amuse_url
+
+    if dl:
+        puzzle = dl.download(puzzle_url)
+    else:
+        raise ValueError('Unable to find a puzzle at {}.'.format(url))
+
+    filename = filename or dl.pick_filename(puzzle)
+
+    return puzzle, filename
+
+
+def get_supported_outlets():
+    all_classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
+    downloaders = [d for d in all_classes if issubclass(d[1], BaseDownloader)
+                   and hasattr(d[1], 'command')]
+
+    return downloaders
+
+
+def get_help_text_formatted_list():
+    text = ''
+    for d in sorted(get_supported_outlets(), key=lambda x: x[1].outlet.lower()):
+        text += '{:<5} {}\n'.format(d[1].command, d[1].outlet)
+
+    return text
+
 
 def save_puzzle(puzzle, filename):
     if not os.path.exists(filename):
         puzzle.save(filename)
-        print("Puzzle downloaded and saved as {}.".format(filename))
+        msg = ("Puzzle downloaded and saved as {}.".format(filename)
+               if sys.stdout.isatty()
+               else filename)
+        print(msg)
     else:
-        print("Not saving: a file named {} already exists.".format(filename))
+        print("Not saving: a file named {} already exists.".format(filename),
+              file=sys.stderr)
+
 
 def remove_invalid_chars_from_filename(filename):
-    invalid_chars = '<>:"/\|?*'
+    invalid_chars = '<>"/\|?*'
 
     for char in invalid_chars:
         filename = filename.replace(char, '')
 
     return filename
 
+
 def parse_date(entered_date):
     return dateparser.parse(entered_date)
+
 
 def parse_date_or_exit(entered_date):
     guessed_dt = parse_date(entered_date)
 
     if not guessed_dt:
-        sys.exit('Unable to determine a date from "{}".'.format(entered_date))
+        raise ValueError(
+            'Unable to determine a date from "{}".'.format(entered_date))
 
     return guessed_dt
 
 
 class BaseDownloader:
+    outlet = None
+    outlet_prefix = None
+
     def __init__(self):
         self.date = None
 
@@ -58,9 +153,9 @@ class BaseDownloader:
         date = date.strftime('%Y%m%d') if date else None
 
         filename_components = [component for component in
-                                            [self.outlet_prefix,
-                                             date,
-                                             title] if component]
+                               [self.outlet_prefix or puzzle.author,
+                                date,
+                                title] if component]
 
         return " - ".join(filename_components) + '.puz'
 
@@ -108,11 +203,11 @@ class AmuseLabsDownloader(BaseDownloader):
     def find_latest(self):
         res = requests.get(self.picker_url)
         soup = BeautifulSoup(res.text, 'html.parser')
-        puzzles = soup.find('div', attrs={'class':'puzzles'})
-        puzzle_ids = puzzles.findAll('div', attrs={'class':'tile'})
+        puzzles = soup.find('div', attrs={'class': 'puzzles'})
+        puzzle_ids = puzzles.findAll('div', attrs={'class': 'tile'})
         if not puzzle_ids:
-            puzzle_ids = puzzles.findAll('li', attrs={'class':'tile'})
-        self.id = puzzle_ids[0].get('data-id','')
+            puzzle_ids = puzzles.findAll('li', attrs={'class': 'tile'})
+        self.id = puzzle_ids[0].get('data-id', '')
 
         return self.find_puzzle_url_from_id(self.id)
 
@@ -135,10 +230,10 @@ class AmuseLabsDownloader(BaseDownloader):
     def fetch_data(self, solver_url):
         res = requests.get(solver_url)
         rawc = next((line.strip() for line in res.text.splitlines()
-                        if 'window.rawc' in line), None)
+                     if 'window.rawc' in line), None)
 
         if not rawc:
-            sys.exit("Crossword puzzle not found.")
+            raise Exception("Crossword puzzle not found.")
 
         rawc = rawc.split("'")[1]
 
@@ -157,7 +252,7 @@ class AmuseLabsDownloader(BaseDownloader):
         markup_data = xword_data.get('cellInfos', '')
 
         circled = [(square['x'], square['y']) for square in markup_data
-                                                      if square['isCircled']]
+                   if square['isCircled']]
 
         solution = ''
         fill = ''
@@ -178,7 +273,8 @@ class AmuseLabsDownloader(BaseDownloader):
                 elif len(cell) == 1:
                     solution += cell
                     fill += '-'
-                    markup += b'\x80' if (col_num, row_num) in circled else b'\x00'
+                    markup += b'\x80' if (col_num,
+                                          row_num) in circled else b'\x00'
                     rebus_board.append(0)
                 else:
                     solution += cell[0]
@@ -192,16 +288,16 @@ class AmuseLabsDownloader(BaseDownloader):
 
         placed_words = xword_data['placedWords']
         across_words = [word for word in placed_words if word['acrossNotDown']]
-        down_words = [word for word in placed_words if not word['acrossNotDown']]
+        down_words = [
+            word for word in placed_words if not word['acrossNotDown']]
 
-        weirdass_puz_clue_sorting = sorted(placed_words, key=
-                                            lambda word: (word['y'], word['x'],
-                                                    not word['acrossNotDown']))
+        weirdass_puz_clue_sorting = sorted(placed_words, key=lambda word: (word['y'], word['x'],
+                                                                           not word['acrossNotDown']))
 
         clues = [word['clue']['clue'] for word in weirdass_puz_clue_sorting]
 
         normalized_clues = [html2text(unidecode(clue), bodywidth=0)
-                                for clue in clues]
+                            for clue in clues]
         puzzle.clues.extend(normalized_clues)
 
         has_markup = b'\x80' in markup
@@ -239,7 +335,7 @@ class WaPoDownloader(AmuseLabsDownloader):
 
     def guess_date_from_id(self, puzzle_id):
         self.date = datetime.datetime.strptime('20'
-                + puzzle_id.split('_')[1], '%Y%m%d')
+                                               + puzzle_id.split('_')[1], '%Y%m%d')
 
     def find_by_date(self, dt):
         url_formatted_date = dt.strftime('%y%m%d')
@@ -335,8 +431,8 @@ class NewYorkerDownloader(AmuseLabsDownloader):
     def find_by_date(self, dt):
         url_format = dt.strftime('%Y/%m/%d')
         guessed_url = urllib.parse.urljoin(
-                'https://www.newyorker.com/puzzles-and-games-dept/crossword/',
-                url_format)
+            'https://www.newyorker.com/puzzles-and-games-dept/crossword/',
+            url_format)
         return guessed_url
 
     def find_latest(self):
@@ -344,9 +440,10 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         index_res = requests.get(index_url)
         index_soup = BeautifulSoup(index_res.text, "html.parser")
 
-        latest_fragment = next(a for a in index_soup.findAll('a') if a.find('h4'))['href']
+        latest_fragment = next(a for a in index_soup.findAll('a')
+                               if a.find('h4'))['href']
         latest_absolute = urllib.parse.urljoin('https://www.newyorker.com',
-                                                latest_fragment)
+                                               latest_fragment)
 
         landing_page_url = latest_absolute
 
@@ -356,19 +453,23 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         res = requests.get(url)
 
         if res.status_code == 404:
-            sys.exit('Unable to find a puzzle at {}'.format(url))
- 
+            raise ConnectionError('Unable to find a puzzle at {}'.format(url))
+
         soup = BeautifulSoup(res.text, "html.parser")
 
         script_tag = soup.find('script', attrs={'type': 'application/ld+json'})
 
         json_data = json.loads(script_tag.contents[0])
 
-        iframe_url = json_data['articleBody'].strip().strip('[]')[len('#crossword: '):]
+        iframe_url = json_data['articleBody'].strip().strip('[]')[
+            len('#crossword: '):]
 
-        query = urllib.parse.urlparse(iframe_url).query
-        query_id = urllib.parse.parse_qs(query)['id']
-        self.id = query_id[0]
+        try:
+            query = urllib.parse.urlparse(iframe_url).query
+            query_id = urllib.parse.parse_qs(query)['id']
+            self.id = query_id[0]
+        except KeyError:
+            raise ValueError('Cannot find puzzle at {}.'.format(url))
 
         pubdate = soup.find('time').get_text()
         pubdate_dt = dateparser.parse(pubdate)
@@ -397,29 +498,20 @@ class WSJDownloader(BaseDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.headers = {'User-Agent':'xword-dl'}
+        self.headers = {'User-Agent': 'xword-dl'}
 
     def find_latest(self):
-        url = "https://www.wsj.com/news/types/crossword"
+        url = "https://www.wsj.com/news/puzzle"
 
-        headlines = ''
-        attempts = 5
+        res = requests.get(url, headers=self.headers)
+        soup = BeautifulSoup(res.text, 'html.parser')
 
-        while attempts and not headlines:
-            res = requests.get(url, headers=self.headers)
-            soup = BeautifulSoup(res.text, 'html.parser')
-            headlines = soup.find('main').find('h3')
-
-            if headlines:
+        for article in soup.find_all('article'):
+            if 'crossword' in article.find('span').get_text().lower():
+                latest_url = article.find('a').get('href')
                 break
-            else:
-                print('Unable to find latest puzzle. Trying again.')
-                time.sleep(2)
-                attempts -= 1
         else:
-            sys.exit('Unable to find latest puzzle.')
-
-        latest_url = headlines.find('a').get('href', None)
+            raise ValueError('Unable to find latest puzzle.')
 
         return latest_url
 
@@ -429,7 +521,10 @@ class WSJDownloader(BaseDownloader):
         else:
             res = requests.get(url, headers=self.headers)
             soup = BeautifulSoup(res.text, 'html.parser')
-            puzzle_link = soup.find('iframe').get('src')
+            try:
+                puzzle_link = soup.find('iframe').get('src')
+            except AttributeError:
+                raise ValueError('Cannot find puzzle at {}.'.format(url))
             return self.find_solver(puzzle_link)
 
     def fetch_data(self, solver_url):
@@ -438,7 +533,7 @@ class WSJDownloader(BaseDownloader):
 
     def parse_xword(self, xword_data):
         xword_metadata = xword_data.get('copy', '')
-        xword_data = xword_data.get('grid','')
+        xword_data = xword_data.get('grid', '')
 
         date_string = xword_metadata.get('date-publish-analytics').split()[0]
 
@@ -446,7 +541,8 @@ class WSJDownloader(BaseDownloader):
 
         fetched = {}
         for field in ['title', 'byline', 'publisher']:
-            fetched[field] = html2text(xword_metadata.get(field, ''), bodywidth=0).strip()
+            fetched[field] = html2text(xword_metadata.get(field, ''),
+                                       bodywidth=0).strip()
 
         puzzle = puz.Puzzle()
         puzzle.title = fetched.get('title')
@@ -454,7 +550,6 @@ class WSJDownloader(BaseDownloader):
         puzzle.copyright = fetched.get('publisher')
         puzzle.width = int(xword_metadata.get('gridsize').get('cols'))
         puzzle.height = int(xword_metadata.get('gridsize').get('rows'))
-
 
         solution = ''
         fill = ''
@@ -469,19 +564,21 @@ class WSJDownloader(BaseDownloader):
                 else:
                     fill += '-'
                     solution += cell['Letter']
-                    markup += (b'\x80' if (cell.get('style','')
+                    markup += (b'\x80' if (cell.get('style', '')
                                            and cell['style']['shapebg']
-                                           == 'circle') \
-                                       else b'\x00')
+                                           == 'circle')
+                               else b'\x00')
 
         puzzle.fill = fill
         puzzle.solution = solution
 
-        clue_list = xword_metadata['clues'][0]['clues'] + xword_metadata['clues'][1]['clues']
+        clue_list = xword_metadata['clues'][0]['clues'] + \
+            xword_metadata['clues'][1]['clues']
         sorted_clue_list = sorted(clue_list, key=lambda x: int(x['number']))
 
         clues = [clue['clue'] for clue in sorted_clue_list]
-        normalized_clues = [html2text(unidecode(clue), bodywidth=0) for clue in clues]
+        normalized_clues = [
+            html2text(unidecode(clue), bodywidth=0) for clue in clues]
 
         puzzle.clues = normalized_clues
 
@@ -493,6 +590,7 @@ class WSJDownloader(BaseDownloader):
             puzzle.markup()
 
         return puzzle
+
 
 class AMUniversalDownloader(BaseDownloader):
     def __init__(self, **kwargs):
@@ -518,7 +616,7 @@ class AMUniversalDownloader(BaseDownloader):
             try:
                 fullpath = os.path.abspath(os.path.dirname(__file__))
                 certpath = os.path.join(fullpath,
-                               'cert/embed-universaluclick-com-chain.pem')
+                                        'cert/embed-universaluclick-com-chain.pem')
                 res = requests.get(solver_url, verify=certpath)
                 # That cert is required because UUclick has a misconfigured
                 # certificate chain. Ideally they will fix that and this part
@@ -528,11 +626,12 @@ class AMUniversalDownloader(BaseDownloader):
                 xword_data = res.json()
                 break
             except json.JSONDecodeError:
-                print('Unable to download puzzle data. Trying again.')
+                print('Unable to download puzzle data. Trying again.',
+                      file=sys.stderr)
                 time.sleep(2)
                 attempts -= 1
         else:
-            sys.exit('Unable to download puzzle data.')
+            raise Exception('Unable to download puzzle data.')
         return xword_data
 
     def process_clues(self, clue_list):
@@ -541,16 +640,21 @@ class AMUniversalDownloader(BaseDownloader):
         return clue_list
 
     def parse_xword(self, xword_data):
+        fetched = {}
+        for field in ['Title', 'Author', 'Editor', 'Copryight']:
+            fetched[field] = urllib.parse.unquote(
+                xword_data.get(field, '')).strip()
+
         puzzle = puz.Puzzle()
-        puzzle.title = xword_data.get('Title', '')
-        puzzle.author = ''.join([xword_data.get('Author', ''),
-                                       ' / Ed. ',
-                                       xword_data.get('Editor', '')])
-        puzzle.copyright = xword_data.get('Copyright', '')
+        puzzle.title = fetched.get('Title', '')
+        puzzle.author = ''.join([fetched.get('Author', ''),
+                                 ' / Ed. ',
+                                 fetched.get('Editor', '')])
+        puzzle.copyright = fetched.get('Copyright', '')
         puzzle.width = int(xword_data.get('Width'))
         puzzle.height = int(xword_data.get('Height'))
 
-        solution = xword_data.get('AllAnswer').replace('-','.')
+        solution = xword_data.get('AllAnswer').replace('-', '.')
 
         puzzle.solution = solution
 
@@ -567,7 +671,7 @@ class AMUniversalDownloader(BaseDownloader):
 
         clues_list = across_clues + down_clues
 
-        clues_list_stripped = [{'number':clue.split('|')[0],
+        clues_list_stripped = [{'number': clue.split('|')[0],
                                 'clue':clue.split('|')[1]} for clue in clues_list]
 
         clues_sorted = sorted(clues_list_stripped, key=lambda x: x['number'])
@@ -607,90 +711,60 @@ class UniversalDownloader(AMUniversalDownloader):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog='xword-dl', description="""
+    parser = argparse.ArgumentParser(prog='xword-dl',
+                                     description=textwrap.dedent("""\
         xword-dl is a tool to download online crossword puzzles and save them
-        locally as AcrossLite-compatible .puz files. It only works with
-        supported sites, a list of which is found below.
+        locally as AcrossLite-compatible .puz files. It works with supported
+        sites, a list of which can be found below.
 
         By default, xword-dl will download the most recent puzzle available at
-        a given outlet, but some outlets support specifying by date or by URL.
-        Add --help (or -h) to an outlet command to see which options are
-        available.
-        """)
-    parser.set_defaults(downloader_class=None)
+        a given outlet, and some outlets support searching by date.
+        """),
+                                     formatter_class=argparse.RawTextHelpFormatter)
 
-    fullpath = os.path.abspath(os.path.dirname(__file__))
+    parser.add_argument('-v', '--version',
+                        action='version', version=__version__)
 
-    parser.add_argument('-v', '--version', action='version', version=__version__)
+    parser.add_argument('source', nargs="?", help=textwrap.dedent("""\
+                                specify a URL or a keyword to select an
+                                outlet from which to download a puzzle.
 
-    # I don't remember why this was in here, but it probably shouldn't be
-    # parser.add_argument('url', nargs="?",
-    #                        help='URL of puzzle to download')
+                                Supported outlet keywords are:\n""") +
+                        "{}".format(get_help_text_formatted_list()))
 
-    extractor_parent = argparse.ArgumentParser(add_help=False)
-    extractor_parent.add_argument('-o', '--output',
-                            help="""
-                            the filename for the saved puzzle
-                            (if not provided, a default value will be used)""",
-                            default=None)
-    extractor_parent.set_defaults(date=None, spec_url=None, latest=None)
+    selector = parser.add_mutually_exclusive_group()
 
-    latest_parent = argparse.ArgumentParser(add_help=False)
-    latest_parent.add_argument('-l', '--latest',
-                            help="""
+    selector.add_argument('-l', '--latest',
+                          help=textwrap.dedent("""\
                                 select most recent available puzzle
-                                (this is the default behavior)""",
-                            action='store_true',
-                            default=True)
+                                (this is the default behavior)"""),
+                          action='store_true',
+                          default=True)
 
-    date_parent = argparse.ArgumentParser(add_help=False)
-    date_parent.add_argument('-d', '--date', nargs='*', metavar='',
-                            help='a specific puzzle date to select')
+    selector.add_argument('-d', '--date', nargs='*', metavar='',
+                          help='a specific puzzle date to select',
+                          default=[])
 
-
-    url_parent = argparse.ArgumentParser(add_help=False)
-    url_parent.add_argument('-u', '--url', metavar='URL', dest='spec_url',
-                            help='a specific puzzle URL to download')
-
-    subparsers = parser.add_subparsers(title='sites',
-                            description='Supported puzzle sources',
-                            dest='subparser_name')
-
-    all_classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
-    downloaders = [d for d in all_classes if issubclass(d[1], BaseDownloader)
-                                          and hasattr(d[1], 'command')]
-    for d in sorted(downloaders, key=lambda d: d[1].outlet):
-        parents = [latest_parent, extractor_parent]
-        if hasattr(d[1], 'find_by_date'):
-            parents.insert(1, date_parent)
-        if d[0] in ['WSJDownloader', 'NewYorkerDownloader']:
-            parents.insert(1, url_parent)
-        sp = subparsers.add_parser(d[1].command,
-                              parents=parents,
-                              help='download {} puzzle'.format(d[1].outlet))
-        sp.set_defaults(downloader_class=d[1])
+    parser.add_argument('-o', '--output',
+                        help=textwrap.dedent("""\
+                            the filename for the saved puzzle
+                            (if not provided, a default value will be used)"""),
+                        default=None)
 
     args = parser.parse_args()
-
-    if not args.downloader_class:
+    if not args.source:
         sys.exit(parser.print_help())
 
-    dl = args.downloader_class()
-
-    if args.date:
-        parsed_date = parse_date_or_exit(''.join(args.date))
-        dl.date = parsed_date
-        puzzle_url = dl.find_by_date(parsed_date)
-
-    elif args.spec_url:
-        puzzle_url = args.spec_url
-
-    elif args.latest:
-        puzzle_url = dl.find_latest()
-
-    puzzle = dl.download(puzzle_url)
-
-    filename = args.output or dl.pick_filename(puzzle=puzzle)
+    try:
+        if args.source.startswith('http'):
+            puzzle, filename = by_url(args.source,
+                                      filename=args.output)
+        else:
+            puzzle, filename = by_keyword(args.source,
+                                          date=''.join(args.date),
+                                          filename=args.output)
+    except ValueError as e:
+        sys.exit(e)
 
     if not filename.endswith('.puz'):
         filename = filename + '.puz'
@@ -698,6 +772,7 @@ def main():
     filename = remove_invalid_chars_from_filename(filename)
 
     save_puzzle(puzzle, filename)
+
 
 if __name__ == '__main__':
     main()
