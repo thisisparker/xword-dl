@@ -19,7 +19,7 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2021.1.3'
+__version__ = '2021.2.5'
 
 
 def by_keyword(keyword, date=None, filename=None):
@@ -488,6 +488,46 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         except ValueError:
             title = puzzle.title
         return super().pick_filename(puzzle, title=title)
+
+
+class VoxDownloader(AmuseLabsDownloader):
+    command = 'vox'
+    outlet = 'Vox'
+    outlet_prefix = 'Vox'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.picker_url = 'https://cdn3.amuselabs.com/vox/date-picker?set=vox'
+        self.url_from_id = 'https://cdn3.amuselabs.com/vox/crossword?id={puzzle_id}&set=vox'
+
+    def guess_date_from_id(self, puzzle_id):
+        self.date = datetime.datetime.strptime(puzzle_id.split('_')[1],
+                                               '%Y%m%d')
+
+class DailyBeastDownloader(AmuseLabsDownloader):
+    command = 'db'
+    outlet = 'Daily Beast'
+    outlet_prefix = 'Daily Beast'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.picker_url = 'https://cdn3.amuselabs.com/tdb/date-picker?set=tdb'
+        self.url_from_id = 'https://cdn3.amuselabs.com/tdb/crossword?id={puzzle_id}&set=tdb'
+
+    def parse_xword(self, xword_data):
+        puzzle = super().parse_xword(xword_data)
+
+        # Daily Beast puzzle IDs, unusually for AmuseLabs puzzles, don't include
+        # the date. This pulls it out of the puzzle title, which will work
+        # as long as that stays consistent.
+
+        datestring = ', '.join([c.strip()
+                                for c in puzzle.title.split(',', )[-2:]])
+        self.date = datetime.datetime.strptime(datestring, '%b %d, %Y')
+
+        return puzzle
 
 
 class WSJDownloader(BaseDownloader):
