@@ -21,7 +21,7 @@ from html2text import html2text
 from unidecode import unidecode
 
 
-__version__ = '2021.2.6priv'
+__version__ = '2021.2.6priv2'
 
 
 def by_keyword(keyword, date=None, filename=None):
@@ -76,7 +76,7 @@ def by_url(url, filename=None):
         soup = BeautifulSoup(res.text, 'lxml')
 
         for iframe in soup.find_all('iframe'):
-            src = iframe.get('src', '')
+            src = urllib.parse.urljoin(url, iframe.get('src', ''))
             if 'amuselabs.com' in src:
                 dl = AmuseLabsDownloader()
                 puzzle_url = src
@@ -810,7 +810,7 @@ class CrosshareDownloader(BaseDownloader):
 
         self.date = datetime.datetime.fromtimestamp(xw.get('publishTime')/1000.0)
         
-        soluion = ''
+        solution = ''
         fill = ''
         
         for char in xw.get('grid'):
@@ -871,6 +871,9 @@ class CrosswordCompilerDownloader(BaseDownloader):
             for x in range(1, puzzle.width + 1):
                 solution += cells.get((x,y))
                 fill += '.' if cells.get((x,y)) == '.' else '-'
+
+        puzzle.solution = solution
+        puzzle.fill = fill
 
         xw_clues = xw_puzzle['crossword']['clues']
 
