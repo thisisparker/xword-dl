@@ -4,6 +4,7 @@
 
 Currently, `xword-dl` supports:
 * Atlantic
+* Daily Beast
 * LA Times
 * New Yorker
 * Newsday
@@ -11,6 +12,7 @@ Currently, `xword-dl` supports:
 * Universal
 * Wall Street Journal
 * Washington Post
+* Vox
 
 To download a puzzle, install `xword-dl` and run it on the command line.
 
