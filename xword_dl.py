@@ -20,6 +20,7 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
+
 __version__ = '2021.2.6priv'
 
 
@@ -77,11 +78,14 @@ def by_url(url, filename=None):
         for iframe in soup.find_all('iframe'):
             src = iframe.get('src', '')
             if 'amuselabs.com' in src:
-                amuse_url = src
                 dl = AmuseLabsDownloader()
-                puzzle_url = amuse_url
+                puzzle_url = src
                 break
-
+            elif 'crosshare.org' in src:
+                dl = CrosshareDownloader()
+                puzzle_url = src
+                break
+               
         if not dl:
             for script in [s for s in soup.find_all('script') if s.get('src')]:
                 js_url = urllib.parse.urljoin(url, script.get('src'))
@@ -767,6 +771,65 @@ class UniversalDownloader(AMUniversalDownloader):
         self.url_blob = 'https://embed.universaluclick.com/c/uucom/l/U2FsdGVkX18YuMv20%2B8cekf85%2Friz1H%2FzlWW4bn0cizt8yclLsp7UYv34S77X0aX%0Axa513fPTc5RoN2wa0h4ED9QWuBURjkqWgHEZey0WFL8%3D/g/fcx/d/'
 
 
+class CrosshareDownloader(BaseDownloader):
+    def __init__(self, **kwargs):
+        super().__init__()
+
+    def find_solver(self, url):
+        if urllib.parse.urlparse(url).netloc == 'crosshare.org':
+            return url
+        else:
+            res = requests.get(url)
+            soup = BeautifulSoup(res.text, 'lxml')
+
+            iframes = soup.find_all('iframe')
+            for iframe in iframes:
+                if 'crosshare.org' in iframe.get('src'):
+                    return self.find_solver(iframe.get('src'))
+            else:
+                print('No Crosshare embed found')
+
+    def fetch_data(self, url):
+        res = requests.get(url)
+        soup = BeautifulSoup(res.text, 'lxml')
+        script = soup.find('script', attrs={'id':'__NEXT_DATA__'})
+
+        xword_data = json.loads(script.decode_contents())
+
+        return xword_data
+
+    def parse_xword(self, xword_data):
+        xw = xword_data.get('props').get('pageProps').get('puzzle')
+
+        puzzle = puz.Puzzle()
+
+        puzzle.title = xw.get('title')
+        puzzle.author = xw.get('guestConstructor') or xw.get('authorName')
+        puzzle.height = xw.get('size').get('rows')
+        puzzle.width = xw.get('size').get('cols')
+
+        self.date = datetime.datetime.fromtimestamp(xw.get('publishTime')/1000.0)
+        
+        soluion = ''
+        fill = ''
+        
+        for char in xw.get('grid'):
+            solution += char
+            fill += char if char == '.' else '-'
+       
+        puzzle.solution = solution
+        puzzle.fill = fill
+        
+        clues = []
+
+        for c in sorted(xw.get('clues'), key=lambda x: (x['num'], x['dir'])):
+            clues.append(c.get('clue'))
+        
+        puzzle.clues = clues
+
+        return puzzle
+
+        
 class CrosswordCompilerDownloader(BaseDownloader):
     def __init__(self, **kwargs):
         self.date = None
@@ -809,9 +872,6 @@ class CrosswordCompilerDownloader(BaseDownloader):
                 solution += cells.get((x,y))
                 fill += '.' if cells.get((x,y)) == '.' else '-'
 
-        puzzle.solution = solution
-        puzzle.fill = fill
-
         xw_clues = xw_puzzle['crossword']['clues']
 
         all_clues = xw_clues[0]['clue'] + xw_clues[1]['clue']
@@ -823,7 +883,7 @@ class CrosswordCompilerDownloader(BaseDownloader):
 
         return puzzle
 
-
+      
 class DailyPopDownloader(CrosswordCompilerDownloader):
     outlet = 'Daily Pop'
     command = 'pop'
@@ -854,7 +914,6 @@ class DailyPopDownloader(CrosswordCompilerDownloader):
         res = requests.get(url, headers=headers)
 
         return res.text
-
 
 
 def main():
