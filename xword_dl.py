@@ -157,7 +157,10 @@ class BaseDownloader:
                                 date,
                                 title] if component]
 
-        return " - ".join(filename_components) + '.puz'
+        filename = " - ".join(filename_components) + '.puz'
+        filename = remove_invalid_chars_from_filename(filename)
+
+        return filename
 
     def find_solver(self, url):
         """Given a URL for a puzzle, returns the essential 'solver' URL.
@@ -808,8 +811,6 @@ def main():
 
     if not filename.endswith('.puz'):
         filename = filename + '.puz'
-
-    filename = remove_invalid_chars_from_filename(filename)
 
     save_puzzle(puzzle, filename)
 
