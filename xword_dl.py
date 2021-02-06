@@ -20,7 +20,7 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2021.2.5'
+__version__ = '2021.2.6priv'
 
 
 def by_keyword(keyword, date=None, filename=None):
@@ -63,21 +63,34 @@ def by_url(url, filename=None):
 
     if supported_downloader:
         dl = supported_downloader()
-        puzzle_url = url
+        if supported_downloader == AmuseLabsDownloader and 'date-picker' in url:
+            dl.picker_url = url.split('&')[0]
+            setname = dl.picker_url[dl.picker_url.index('set=')+4:]
+            dl.url_from_id = dl.picker_url.replace('date-picker','crossword')+'&id={puzzle_id}'
+            puzzle_url = dl.find_latest()
+        else:
+            puzzle_url = url
     else:
-        amuse_url = None
-        res = requests.get(url)
-        soup = BeautifulSoup(res.text, 'html.parser')
+        res = requests.get(url, headers={'User-Agent':'xword-dl'})
+        soup = BeautifulSoup(res.text, 'lxml')
 
         for iframe in soup.find_all('iframe'):
             src = iframe.get('src', '')
             if 'amuselabs.com' in src:
                 amuse_url = src
+                dl = AmuseLabsDownloader()
+                puzzle_url = amuse_url
                 break
 
-        if amuse_url:
-            dl = AmuseLabsDownloader()
-            puzzle_url = amuse_url
+        if not dl:
+            for script in [s for s in soup.find_all('script') if s.get('src')]:
+                js_url = urllib.parse.urljoin(url, script.get('src'))
+                res = requests.get(js_url, headers={'User-Agent':'xword-dl'})
+                if res.text.startswith('var CrosswordPuzzleData'):
+                    dl = CrosswordCompilerDownloader()
+                    puzzle_url = js_url
+                    dl.fetch_data = dl.fetch_jsencoded_data
+                    break
 
     if dl:
         puzzle = dl.download(puzzle_url)
@@ -756,11 +769,22 @@ class UniversalDownloader(AMUniversalDownloader):
 
 class CrosswordCompilerDownloader(BaseDownloader):
     def __init__(self, **kwargs):
-        pass
+        self.date = None
+
+    def find_solver(self, url):
+        return url
+
+    def fetch_jsencoded_data(self, url):
+        res = requests.get(url, headers={'User-Agent': 'xword-dl'})
+        xw_data = res.text[len('var CrosswordPuzzleData = "'):-len('";')]
+        xw_data = xw_data.replace('\\','')
+
+        return xw_data
 
     def parse_xword(self, xword_data):
         xw = xmltodict.parse(xword_data)
-        xw_puzzle = xw['crossword-compiler']['rectangular-puzzle']
+        xw_root = xw.get('crossword-compiler') or xw.get('crossword-compiler-applet')
+        xw_puzzle = xw_root['rectangular-puzzle']
         xw_metadata = xw_puzzle['metadata']
         xw_grid = xw_puzzle['crossword']['grid']
 
@@ -808,8 +832,6 @@ class DailyPopDownloader(CrosswordCompilerDownloader):
     def __init__(self, **kwargs):
         super().__init__()
 
-    def find_solver(self, url):
-        return url
 
     def find_by_date(self, dt):
         self.date = dt
