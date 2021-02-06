@@ -14,6 +14,7 @@ import urllib
 import dateparser
 import puz
 import requests
+import xmltodict
 
 from bs4 import BeautifulSoup
 from html2text import html2text
@@ -751,6 +752,87 @@ class UniversalDownloader(AMUniversalDownloader):
         super().__init__()
 
         self.url_blob = 'https://embed.universaluclick.com/c/uucom/l/U2FsdGVkX18YuMv20%2B8cekf85%2Friz1H%2FzlWW4bn0cizt8yclLsp7UYv34S77X0aX%0Axa513fPTc5RoN2wa0h4ED9QWuBURjkqWgHEZey0WFL8%3D/g/fcx/d/'
+
+
+class CrosswordCompilerDownloader(BaseDownloader):
+    def __init__(self, **kwargs):
+        pass
+
+    def parse_xword(self, xword_data):
+        xw = xmltodict.parse(xword_data)
+        xw_puzzle = xw['crossword-compiler']['rectangular-puzzle']
+        xw_metadata = xw_puzzle['metadata']
+        xw_grid = xw_puzzle['crossword']['grid']
+
+        puzzle = puz.Puzzle()
+
+        puzzle.title = xw_metadata.get('title') or ''
+        puzzle.author = xw_metadata.get('creator') or ''
+        puzzle.copyright = xw_metadata.get('copyright') or ''
+
+        puzzle.width = int(xw_grid.get('@width'))
+        puzzle.height = int(xw_grid.get('@height'))
+
+        solution = ''
+        fill = ''
+
+        cells = {(int(cell.get('@x')), int(cell.get('@y'))):
+                    cell.get('@solution', '.')
+                    for cell in xw_grid.get('cell')}
+
+        for y in range(1, puzzle.height + 1):
+            for x in range(1, puzzle.width + 1):
+                solution += cells.get((x,y))
+                fill += '.' if cells.get((x,y)) == '.' else '-'
+
+        puzzle.solution = solution
+        puzzle.fill = fill
+
+        xw_clues = xw_puzzle['crossword']['clues']
+
+        all_clues = xw_clues[0]['clue'] + xw_clues[1]['clue']
+
+        clues = [c.get('#text') for c in
+                 sorted(all_clues, key=lambda x: int(x.get('@number')))]
+
+        puzzle.clues = clues
+
+        return puzzle
+
+
+class DailyPopDownloader(CrosswordCompilerDownloader):
+    outlet = 'Daily Pop'
+    command = 'pop'
+    outlet_prefix = 'Daily Pop'
+
+    def __init__(self, **kwargs):
+        super().__init__()
+
+    def find_solver(self, url):
+        return url
+
+    def find_by_date(self, dt):
+        self.date = dt
+
+        url_format = dt.strftime('%y%m%d')
+
+        url = 'https://api.puzzlenation.com/dailyPopCrosswords/puzzles/daily/' + url_format
+        return url
+
+    def find_latest(self):
+        dt = datetime.datetime.today()
+        return self.find_by_date(dt)
+
+    def fetch_data(self, url):
+        fullpath = os.path.abspath(os.path.dirname(__file__))
+        headerspath = os.path.join(fullpath, 'popheaders.json')
+        with open(headerspath) as f:
+            headers = json.load(f)
+
+        res = requests.get(url, headers=headers)
+
+        return res.text
+
 
 
 def main():
