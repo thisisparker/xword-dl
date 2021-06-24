@@ -21,7 +21,7 @@ from html2text import html2text
 from unidecode import unidecode
 
 
-__version__ = '2021.2.6priv2'
+__version__ = '2021.6.24priv'
 
 
 def by_keyword(keyword, date=None, filename=None):
@@ -482,7 +482,7 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         json_data = json.loads(script_tag.contents[0])
 
-        iframe_url = json_data['articleBody'].strip().strip('[]')[
+        iframe_url = json_data[0]['articleBody'].strip().strip('[]')[
             len('#crossword: '):]
 
         try:
