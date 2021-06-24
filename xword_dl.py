@@ -544,8 +544,10 @@ class DailyBeastDownloader(AmuseLabsDownloader):
         # the date. This pulls it out of the puzzle title, which will work
         # as long as that stays consistent.
 
-        datestring = ', '.join([c.strip()
-                                for c in puzzle.title.split(',', )[-2:]])
+        date_components = [c.strip() for c in puzzle.title.split(',')[-2:]]
+        date_components[0] = ' '.join([date_components[0].split()[0][:3], date_components[0].split()[1]])
+        datestring = ', '.join(date_components)
+
         self.date = datetime.datetime.strptime(datestring, '%b %d, %Y')
 
         return puzzle
