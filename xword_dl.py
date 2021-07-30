@@ -19,7 +19,7 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2021.6.24'
+__version__ = '2021.7.30'
 
 
 def by_keyword(keyword, date=None, filename=None):
@@ -126,7 +126,7 @@ def remove_invalid_chars_from_filename(filename):
 
 
 def parse_date(entered_date):
-    return dateparser.parse(entered_date)
+    return dateparser.parse(entered_date, settings={'PREFER_DATES_FROM':'past'})
 
 
 def parse_date_or_exit(entered_date):
