@@ -19,15 +19,17 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2021.7.30'
+__version__ = '2021.9.13rc1'
+CONFIG_PATH = os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
+CONFIG_PATH = os.path.join(CONFIG_PATH, 'xword-dl/xword-dl.json')
 
 
-def by_keyword(keyword, date=None, filename=None):
+def by_keyword(keyword, date=None, filename=None, **kwargs):
     keyword_dict = {d[1].command: d[1] for d in get_supported_outlets()}
     selected_downloader = keyword_dict.get(keyword, None)
 
     if selected_downloader:
-        dl = selected_downloader()
+        dl = selected_downloader(**kwargs)
     else:
         raise ValueError('Keyword {} not recognized.'.format(keyword))
 
@@ -143,7 +145,7 @@ class BaseDownloader:
     outlet = None
     outlet_prefix = None
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.date = None
 
     def pick_filename(self, puzzle, **kwargs):
@@ -657,15 +659,7 @@ class AMUniversalDownloader(BaseDownloader):
         attempts = 3
         while attempts:
             try:
-                fullpath = os.path.abspath(os.path.dirname(__file__))
-                certpath = os.path.join(fullpath,
-                                        'cert/embed-universaluclick-com-chain.pem')
-                res = requests.get(solver_url, verify=certpath)
-                # That cert is required because UUclick has a misconfigured
-                # certificate chain. Ideally they will fix that and this part
-                # can be removed.
-                # NOTE: the cert issue doesn't affect USA Today, but including
-                # the cert here doesn't break anything.
+                res = requests.get(solver_url)
                 xword_data = res.json()
                 break
             except json.JSONDecodeError:
@@ -753,6 +747,166 @@ class UniversalDownloader(AMUniversalDownloader):
         self.url_blob = 'https://embed.universaluclick.com/c/uucom/l/U2FsdGVkX18YuMv20%2B8cekf85%2Friz1H%2FzlWW4bn0cizt8yclLsp7UYv34S77X0aX%0Axa513fPTc5RoN2wa0h4ED9QWuBURjkqWgHEZey0WFL8%3D/g/fcx/d/'
 
 
+class NewYorkTimesDownloader(BaseDownloader):
+    command = 'nyt'
+    outlet = 'New York Times'
+    outlet_prefix = 'NY Times'
+
+    def __init__(self, username=None, password=None, **kwargs):
+        super().__init__()
+
+        self.url_from_id = 'https://www.nytimes.com/svc/crosswords/v2/puzzle/{}.json'
+
+        self.headers = {}
+        self.cookies = {}
+
+        if username and password:
+            self.authenticate(username, password)
+        else:
+            try:
+                with open(CONFIG_PATH) as f:
+                    config = json.load(f)
+                    self.cookies['NYT-S'] = config.get('NYT-S')
+            except:
+                raise ValueError('No credentials provided or stored.')
+
+        if not os.path.exists(CONFIG_PATH):
+            os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
+            config = self.cookies
+        else:
+            with open(CONFIG_PATH, 'r') as f:
+                config = json.load(f)
+
+        config['NYT-S'] = self.cookies['NYT-S']
+        with open(CONFIG_PATH, 'w') as f:
+            json.dump(config, f)
+
+    def authenticate(self, username, password):
+        """Given a NYT username and password, returns the NYT-S cookie value"""
+        res = requests.post('https://myaccount.nytimes.com/svc/ios/v2/login',
+                            data={'login': username, 'password': password},
+                            headers={'User-Agent': 'Mozilla/5.0',
+                                     'client-id': 'ios.crosswords'})
+
+        res.raise_for_status()
+
+        nyts_token = ''
+
+        for cookie in res.json()['data']['cookies']:
+            if cookie['name'] == 'NYT-S':
+                nyts_token = cookie['cipheredValue']
+
+        if nyts_token:
+            self.cookies.update({'NYT-S': nyts_token})
+        else:
+            raise ValueError('NYT-S cookie not found.')
+
+    def find_latest(self):
+        oracle = "https://www.nytimes.com/svc/crosswords/v2/oracle/daily.json"
+
+        res = requests.get(oracle)
+        puzzle_id = res.json()['results']['current']['puzzle_id']
+
+        url = self.url_from_id.format(puzzle_id)
+
+        return url
+
+    def find_by_date(self, dt):
+        lookup_url = 'https://www.nytimes.com/svc/crosswords/v3/puzzles.json?status=published&order=published&sort=asc&pad=false&print_date_start={}&print_date_end={}&publish_type=daily'
+
+        formatted_date = dt.strftime('%Y-%m-%d')
+
+        res = requests.get(lookup_url.format(formatted_date, formatted_date))
+
+        puzzle_id = res.json()['results'][0]['puzzle_id']
+
+        return self.url_from_id.format(puzzle_id)
+
+    def find_solver(self, url):
+        return url
+
+    def fetch_data(self, solver_url):
+        res = requests.get(solver_url, cookies=self.cookies)
+        res.raise_for_status()
+
+        return res.json()['results'][0]
+
+    def parse_xword(self, xword_data):
+        puzzle = puz.Puzzle()
+
+        metadata = xword_data.get('puzzle_meta')
+        puzzle.author = metadata.get('author').strip()
+        puzzle.copyright = metadata.get('copyright').strip()
+        puzzle.height = metadata.get('height')
+        puzzle.width = metadata.get('width')
+
+        if metadata.get('notes'):
+            puzzle.notes = metadata.get('notes')[0]['txt'].strip()
+
+        date_string = metadata.get('printDate')
+
+        self.date = datetime.datetime.strptime(date_string, '%Y-%m-%d')
+
+        puzzle.title = metadata.get('title') or self.date.strftime(
+                '%A, %B %-m, %Y')
+
+        puzzle_data = xword_data['puzzle_data']
+
+        solution = ''
+        fill = ''
+        markup = b''
+        rebus_board = []
+        rebus_index = 0
+        rebus_table = ''
+
+        for idx, square in enumerate(puzzle_data['answers']):
+            if not square:
+                solution += '.'
+                fill += '.'
+                rebus_board.append(0)
+            elif len(square) == 1:
+                solution += square
+                fill += '-'
+                rebus_board.append(0)
+            else:
+                solution += square[0][0]
+                fill += '-'
+                rebus_board.append(rebus_index + 1)
+                rebus_table += '{:2d}:{};'.format(rebus_index, square[0])
+                rebus_index += 1
+
+            markup += (b'\x80' if puzzle_data['layout'][idx] == 3 else b'\x00')
+
+        puzzle.solution = solution
+        puzzle.fill = fill
+
+        clue_list = puzzle_data['clues']['A'] + puzzle_data['clues']['D']
+        clue_list.sort(key=lambda c: c['clueNum'])
+
+        puzzle.clues = [c['value'] for c in clue_list]
+
+        if b'\x80' in markup:
+            puzzle.extensions[b'GEXT'] = markup
+            puzzle._extensions_order.append(b'GEXT')
+            puzzle.markup()
+
+        if any(rebus_board):
+            puzzle.extensions[b'GRBS'] = bytes(rebus_board)
+            puzzle.extensions[b'RTBL'] = rebus_table.encode(puz.ENCODING)
+            puzzle._extensions_order.extend([b'GRBS', b'RTBL'])
+            puzzle.rebus()
+
+        return puzzle
+
+    def pick_filename(self, puzzle, **kwargs):
+        if puzzle.title == self.date.strftime('%A, %B %-m, %Y'):
+            title = ''
+        else:
+            title = puzzle.title
+
+        return super().pick_filename(puzzle, title=title)
+
+
 def main():
     parser = argparse.ArgumentParser(prog='xword-dl',
                                      description=textwrap.dedent("""\
@@ -788,13 +942,42 @@ def main():
                           help='a specific puzzle date to select',
                           default=[])
 
+    parser.add_argument('-a', '--authenticate',
+                        help=textwrap.dedent("""\
+                            if used with the username and password flags,
+                            stores an authenticated New York Times cookie"""),
+                        action='store_true',
+                        default=False)
+
+    parser.add_argument('-u', '--username',
+                        help=textwrap.dedent("""\
+                            username for a site that requires credentials
+                            (currently only the New York Times)"""),
+                        default=None)
+
+    parser.add_argument('-p', '--password',
+                        help=textwrap.dedent("""\
+                            password for a site that requires credentials
+                            (currently only the New York Times)"""),
+                        default=None)
+
     parser.add_argument('-o', '--output',
                         help=textwrap.dedent("""\
                             the filename for the saved puzzle
                             (if not provided, a default value will be used)"""),
                         default=None)
 
+
     args = parser.parse_args()
+    if args.authenticate:
+        if not (args.username and args.password):
+            sys.exit('Authentication command must include username and password.')
+        try:
+            dl = NewYorkTimesDownloader(username=args.username, password=args.password)
+            sys.exit('Authentication successful.')
+        except Exception as e:
+            sys.exit(' '.join(['Authentication failed:', str(e)]))
+
     if not args.source:
         sys.exit(parser.print_help())
 
@@ -805,7 +988,9 @@ def main():
         else:
             puzzle, filename = by_keyword(args.source,
                                           date=''.join(args.date),
-                                          filename=args.output)
+                                          filename=args.output,
+                                          username=args.username,
+                                          password=args.password)
     except ValueError as e:
         sys.exit(e)
 
