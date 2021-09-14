@@ -3,6 +3,5 @@ bs4==0.0.1
 dateparser==1.0.0
 html2text==2020.1.16
 puzpy==0.2.5
-requests==2.25.1
-Unidecode==1.1.2
-xmltodict==0.12.0
+requests==2.26
+Unidecode==1.2.0
