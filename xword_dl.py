@@ -232,7 +232,23 @@ class AmuseLabsDownloader(BaseDownloader):
             puzzle_ids = puzzles.findAll('li', attrs={'class': 'tile'})
         self.id = puzzle_ids[0].get('data-id', '')
 
+        self.get_and_add_picker_token(res.text)
+
         return self.find_puzzle_url_from_id(self.id)
+
+    def get_and_add_picker_token(self, picker_source=None):
+        if not picker_source:
+            res = requests.get(self.picker_url)
+            picker_source = res.text
+
+        rawsps = next((line.strip() for line in picker_source.splitlines()
+                     if 'pickerParams.rawsps' in line), None)
+
+        if rawsps:
+            rawsps = rawsps.split("'")[1]
+            picker_params = json.loads(base64.b64decode(rawsps).decode("utf-8"))
+            if token := picker_params.get('pickerToken', None):
+                self.url_from_id += '&pickerToken=' + token
 
     def find_puzzle_url_from_id(self, puzzle_id):
         return self.url_from_id.format(puzzle_id=puzzle_id)
@@ -425,6 +441,8 @@ class LATimesDownloader(AmuseLabsDownloader):
     def find_by_date(self, dt):
         url_formatted_date = dt.strftime('%y%m%d')
         self.id = 'tca' + url_formatted_date
+
+        self.get_and_add_picker_token()
 
         return self.find_puzzle_url_from_id(self.id)
 
@@ -1051,7 +1069,7 @@ class NewYorkTimesDownloader(BaseDownloader):
         clue_list = puzzle_data['clues']['A'] + puzzle_data['clues']['D']
         clue_list.sort(key=lambda c: c['clueNum'])
 
-        puzzle.clues = [c['value'] for c in clue_list]
+        puzzle.clues = [unidecode(c['value']).strip() for c in clue_list]
 
         if b'\x80' in markup:
             puzzle.extensions[b'GEXT'] = markup
