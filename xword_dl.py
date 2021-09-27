@@ -15,18 +15,25 @@ import dateparser
 import puz
 import requests
 import xmltodict
+import yaml
+
+from getpass import getpass
 
 from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
 
-__version__ = '2021.9.13rc1+priv'
+__version__ = '2021.9.27+priv'
 CONFIG_PATH = os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
-CONFIG_PATH = os.path.join(CONFIG_PATH, 'xword-dl/xword-dl.json')
+CONFIG_PATH = os.path.join(CONFIG_PATH, 'xword-dl/xword-dl.yaml')
+
+if not os.path.exists(CONFIG_PATH):
+    os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
+    open(CONFIG_PATH, 'a').close()
 
 
-def by_keyword(keyword, date=None, filename=None, **kwargs):
+def by_keyword(keyword, **kwargs):
     keyword_dict = {d[1].command: d[1] for d in get_supported_outlets()}
     selected_downloader = keyword_dict.get(keyword, None)
 
@@ -34,6 +41,8 @@ def by_keyword(keyword, date=None, filename=None, **kwargs):
         dl = selected_downloader(**kwargs)
     else:
         raise ValueError('Keyword {} not recognized.'.format(keyword))
+
+    date = kwargs.get('date')
 
     if not date:
         puzzle_url = dl.find_latest()
@@ -47,7 +56,7 @@ def by_keyword(keyword, date=None, filename=None, **kwargs):
 
     puzzle = dl.download(puzzle_url)
 
-    filename = filename or dl.pick_filename(puzzle)
+    filename = kwargs.get('filename') or dl.pick_filename(puzzle)
 
     return puzzle, filename
 
@@ -159,12 +168,34 @@ def parse_date_or_exit(entered_date):
     return guessed_dt
 
 
+def update_config_file(heading, new_values_dict):
+    with open(CONFIG_PATH, 'r') as f:
+        config = yaml.safe_load(f) or {}
+
+    if heading not in config:
+        config[heading] = {}
+
+    config[heading].update(new_values_dict)
+
+    with open(CONFIG_PATH, 'w') as f:
+        yaml.dump(config, f)
+
+
 class BaseDownloader:
     outlet = None
     outlet_prefix = None
 
     def __init__(self, **kwargs):
         self.date = None
+
+        self.settings = {}
+
+        with open(CONFIG_PATH, 'r') as f:
+            config = yaml.safe_load(f) or {}
+
+        self.settings.update(config.get('general', {}))
+        self.settings.update(config.get(self.command, {}))
+        self.settings.update(kwargs)
 
     def pick_filename(self, puzzle, **kwargs):
         title = kwargs.get('title', puzzle.title)
@@ -247,7 +278,8 @@ class AmuseLabsDownloader(BaseDownloader):
         if rawsps:
             rawsps = rawsps.split("'")[1]
             picker_params = json.loads(base64.b64decode(rawsps).decode("utf-8"))
-            if token := picker_params.get('pickerToken', None):
+            token = picker_params.get('pickerToken', None)
+            if token:
                 self.url_from_id += '&pickerToken=' + token
 
     def find_puzzle_url_from_id(self, puzzle_id):
@@ -938,34 +970,27 @@ class NewYorkTimesDownloader(BaseDownloader):
     outlet = 'New York Times'
     outlet_prefix = 'NY Times'
 
-    def __init__(self, username=None, password=None, **kwargs):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.url_from_id = 'https://www.nytimes.com/svc/crosswords/v2/puzzle/{}.json'
 
         self.headers = {}
         self.cookies = {}
 
+        username = self.settings.get('username')
+        password = self.settings.get('password')
+
         if username and password:
-            self.authenticate(username, password)
+            nyts_token = self.authenticate(username, password)
+            update_config_file('nyt', {'NYT-S': nyts_token})
         else:
-            try:
-                with open(CONFIG_PATH) as f:
-                    config = json.load(f)
-                    self.cookies['NYT-S'] = config.get('NYT-S')
-            except:
-                raise ValueError('No credentials provided or stored.')
+            nyts_token = self.settings.get('NYT-S')
 
-        if not os.path.exists(CONFIG_PATH):
-            os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
-            config = self.cookies
+        if not nyts_token:
+            raise ValueError('No credentials provided or stored. Try running xword-dl nyt --authenticate')
         else:
-            with open(CONFIG_PATH, 'r') as f:
-                config = json.load(f)
-
-        config['NYT-S'] = self.cookies['NYT-S']
-        with open(CONFIG_PATH, 'w') as f:
-            json.dump(config, f)
+            self.cookies.update({'NYT-S': nyts_token})
 
     def authenticate(self, username, password):
         """Given a NYT username and password, returns the NYT-S cookie value"""
@@ -983,7 +1008,7 @@ class NewYorkTimesDownloader(BaseDownloader):
                 nyts_token = cookie['cipheredValue']
 
         if nyts_token:
-            self.cookies.update({'NYT-S': nyts_token})
+            return nyts_token
         else:
             raise ValueError('NYT-S cookie not found.')
 
@@ -1034,7 +1059,7 @@ class NewYorkTimesDownloader(BaseDownloader):
         self.date = datetime.datetime.strptime(date_string, '%Y-%m-%d')
 
         puzzle.title = metadata.get('title') or self.date.strftime(
-                '%A, %B %-m, %Y')
+                '%A, %B %d, %Y')
 
         puzzle_data = xword_data['puzzle_data']
 
@@ -1085,7 +1110,7 @@ class NewYorkTimesDownloader(BaseDownloader):
         return puzzle
 
     def pick_filename(self, puzzle, **kwargs):
-        if puzzle.title == self.date.strftime('%A, %B %-m, %Y'):
+        if puzzle.title == self.date.strftime('%A, %B %d, %Y'):
             title = ''
         else:
             title = puzzle.title
@@ -1130,8 +1155,12 @@ def main():
 
     parser.add_argument('-a', '--authenticate',
                         help=textwrap.dedent("""\
-                            if used with the username and password flags,
-                            stores an authenticated New York Times cookie"""),
+                            when used with the nyt puzzle keyword,
+                            stores an authenticated New York Times cookie
+                            without downloading a puzzle. If username
+                            or password are not provided as flags,
+                            xword-dl will prompt for those values
+                            at runtime"""),
                         action='store_true',
                         default=False)
 
@@ -1155,28 +1184,37 @@ def main():
 
 
     args = parser.parse_args()
-    if args.authenticate:
-        if not (args.username and args.password):
-            sys.exit('Authentication command must include username and password.')
+    if args.authenticate and args.source == 'nyt':
+        username = args.username or input("New York Times username: ")
+        password = args.password or getpass("Password: ")
+
         try:
-            dl = NewYorkTimesDownloader(username=args.username, password=args.password)
+            dl = NewYorkTimesDownloader(username=username, password=password)
             sys.exit('Authentication successful.')
         except Exception as e:
             sys.exit(' '.join(['Authentication failed:', str(e)]))
+    elif args.authenticate:
+        sys.exit('Authentication flag must use a puzzle outlet keyword.')
 
     if not args.source:
         sys.exit(parser.print_help())
+
+    options = {}
+    if args.username:
+        options['username'] = args.username
+    if args.password:
+        options['password'] = args.password
+    if args.output:
+        options['filename'] = args.output
+    if args.date:
+        options['date'] = ''.join(args.date)
 
     try:
         if args.source.startswith('http'):
             puzzle, filename = by_url(args.source,
                                       filename=args.output)
         else:
-            puzzle, filename = by_keyword(args.source,
-                                          date=''.join(args.date),
-                                          filename=args.output,
-                                          username=args.username,
-                                          password=args.password)
+            puzzle, filename = by_keyword(args.source, **options)
     except ValueError as e:
         sys.exit(e)
 
