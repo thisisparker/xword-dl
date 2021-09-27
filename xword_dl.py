@@ -955,12 +955,7 @@ class DailyPopDownloader(CrosswordCompilerDownloader):
         return self.find_by_date(dt)
 
     def fetch_data(self, url):
-        fullpath = os.path.abspath(os.path.dirname(__file__))
-        headerspath = os.path.join(fullpath, 'popheaders.json')
-        with open(headerspath) as f:
-            headers = json.load(f)
-
-        res = requests.get(url, headers=headers)
+        res = requests.get(url, headers=self.settings['headers'])
 
         return res.text
 
