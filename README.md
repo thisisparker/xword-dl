@@ -19,17 +19,21 @@ To download a puzzle, install `xword-dl` and run it on the command line.
 
 ## Installation
 
-To install `xword-dl`, download or clone this repository from Github. From a terminal, simply running
+The easiest way to install `xword-dl` is through `pip`. Install the latest version with:
 
 ```
-python setup.py install --user
+pip install xword-dl
 ```
 
-in the downloaded directory may be enough. 
+You can also install `xword-dl` by downloading or cloning this repository from Github. From a terminal, simply running
 
-But you probably want to install `xword-dl` and its dependencies in a dedicated virtual environment. I use `virtualenv` and `virtualenvwrapper` personally, but that's a matter of preference. If you're already feeling overwhelmed by the thought of managing Python packages, know you're not alone. The [official documentation is pretty good](https://packaging.python.org/tutorials/installing-packages/), but it's a hard problem, and it's not just you. If it's any consolation, learning how to use virtual environments today on something sort of frivolous like a crossword puzzle downloader will probably save you from serious headaches in the future when the stakes are higher.
+```
+python setup.py install
+```
 
-If you are installing in a dedicated virtual environment, run the above command without the `--user` flag.
+in the downloaded directory may be enough.
+
+But in either case, you probably want to install `xword-dl` and its dependencies in a dedicated virtual environment. I use `virtualenv` and `virtualenvwrapper` personally, but that's a matter of preference. If you're already feeling overwhelmed by the thought of managing Python packages, know you're not alone. The [official documentation is pretty good](https://packaging.python.org/tutorials/installing-packages/), but it's a hard problem, and it's not just you. If it's any consolation, learning how to use virtual environments today on something sort of frivolous like a crossword puzzle downloader will probably save you from serious headaches in the future when the stakes are higher.
 
 ## Usage
 
@@ -55,12 +59,12 @@ The argument provided after the flag is parsed pretty liberally, and you can use
 
 ### New York Times authentication
 
-New York Times puzzles are only available to download for subscribers. Attempting to download with the `nyt` keyword without authentication will fail. To authenticate, run:
+New York Times puzzles are only available to subscribers. Attempting to download with the `nyt` keyword without authentication will fail. To authenticate, run:
 
 ```
 xword-dl nyt --authenticate
 ```
 
-and you will be prompted for your New York Times username and password. (Those credentials can also be passed at runtime with the `--username` and `--password` flag.)
+and you will be prompted for your New York Times username and password. (Those credentials can also be passed at runtime with the `--username` and `--password` flags.)
 
 If authentication is successful, an authentication token will be stored in a config file. Once that token is stored, you can download puzzles with `xword-dl nyt`.
