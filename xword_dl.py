@@ -16,11 +16,13 @@ import puz
 import requests
 import yaml
 
+from getpass import getpass
+
 from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2021.9.26rc1'
+__version__ = '2021.9.26rc2'
 CONFIG_PATH = os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
 CONFIG_PATH = os.path.join(CONFIG_PATH, 'xword-dl/xword-dl.yaml')
 
@@ -818,7 +820,7 @@ class NewYorkTimesDownloader(BaseDownloader):
             nyts_token = self.settings.get('NYT-S')
 
         if not nyts_token:
-            raise ValueError('No credentials provided or stored. Try providing a username and password with the --username and --password flags.')
+            raise ValueError('No credentials provided or stored. Try running xword-dl nyt --authenticate')
         else:
             self.cookies.update({'NYT-S': nyts_token})
 
@@ -889,7 +891,7 @@ class NewYorkTimesDownloader(BaseDownloader):
         self.date = datetime.datetime.strptime(date_string, '%Y-%m-%d')
 
         puzzle.title = metadata.get('title') or self.date.strftime(
-                '%A, %B %-m, %Y')
+                '%A, %B %d, %Y')
 
         puzzle_data = xword_data['puzzle_data']
 
@@ -940,7 +942,7 @@ class NewYorkTimesDownloader(BaseDownloader):
         return puzzle
 
     def pick_filename(self, puzzle, **kwargs):
-        if puzzle.title == self.date.strftime('%A, %B %-m, %Y'):
+        if puzzle.title == self.date.strftime('%A, %B %d, %Y'):
             title = ''
         else:
             title = puzzle.title
@@ -985,9 +987,12 @@ def main():
 
     parser.add_argument('-a', '--authenticate',
                         help=textwrap.dedent("""\
-                            if used with the username and password flags,
+                            when used with the nyt puzzle keyword,
                             stores an authenticated New York Times cookie
-                            without downloading a puzzle"""),
+                            without downloading a puzzle. If username
+                            or password are not provided as flags,
+                            xword-dl will prompt for those values
+                            at runtime"""),
                         action='store_true',
                         default=False)
 
@@ -1011,14 +1016,17 @@ def main():
 
 
     args = parser.parse_args()
-    if args.authenticate:
-        if not (args.username and args.password):
-            sys.exit('Authentication command must include username and password.')
+    if args.authenticate and args.source == 'nyt':
+        username = args.username or input("New York Times username: ")
+        password = args.password or getpass("Password: ")
+
         try:
-            dl = NewYorkTimesDownloader(username=args.username, password=args.password)
+            dl = NewYorkTimesDownloader(username=username, password=password)
             sys.exit('Authentication successful.')
         except Exception as e:
             sys.exit(' '.join(['Authentication failed:', str(e)]))
+    elif args.authenticate:
+        sys.exit('Authentication flag must use a puzzle outlet keyword.')
 
     if not args.source:
         sys.exit(parser.print_help())
