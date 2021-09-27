@@ -5,3 +5,4 @@ html2text==2020.1.16
 puzpy==0.2.5
 requests==2.26
 Unidecode==1.2.0
+pyyaml==5.4.1
