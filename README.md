@@ -39,6 +39,18 @@ But in either case, you probably want to install `xword-dl` and its dependencies
 
 Once installed, you can invoke `xword-dl`, providing the short code of the site from which to download. If you run `xword-dl` without providing a site keyword, it will print some usage instructions and then exit.
 
+For example, to download the latest Newsday puzzle, you could run:
+
+```
+xword-dl nd --latest
+```
+
+or simply
+
+```
+xword-dl nd
+```
+
 You can also download puzzles that are embedded in AmuseLabs solvers or on supported sites by providing a URL, such as:
 
 ```
