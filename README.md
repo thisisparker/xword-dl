@@ -7,6 +7,7 @@ Currently, `xword-dl` supports:
 * Daily Beast
 * LA Times
 * New Yorker
+* New York Times
 * Newsday
 * USA Today
 * Universal
@@ -32,25 +33,7 @@ If you are installing in a dedicated virtual environment, run the above command 
 
 ## Usage
 
-Once installed, you can invoke `xword-dl`, providing the short code of the site from which to download. If you run `xword-dl` without providing a site code, it will print some usage instructions and then exit.
-
-For example, to download the latest New Yorker puzzle, you could run:
-
-```
-xword-dl tny --latest
-```
-
-or simply:
-
-```
-xword-dl tny
-```
-
-To download the Newsday Saturday Stumper and save it as `stumper.puz`, you could enter:
-
-```
-xword-dl nd --date saturday --output stumper
-```
+Once installed, you can invoke `xword-dl`, providing the short code of the site from which to download. If you run `xword-dl` without providing a site keyword, it will print some usage instructions and then exit.
 
 You can also download puzzles that are embedded in AmuseLabs solvers or on supported sites by providing a URL, such as:
 
@@ -58,4 +41,26 @@ You can also download puzzles that are embedded in AmuseLabs solvers or on suppo
 xword-dl https://rosswordpuzzles.com/2021/01/03/cover-up/
 ```
 
-The resulting .puz file can be opened with [`cursewords`](https://github.com/thisisparker/cursewords) or any other puz file reader.
+In either case, the resulting .puz file can be opened with [`cursewords`](https://github.com/thisisparker/cursewords) or any other puz file reader.
+
+### Specifying puzzle date
+
+Some outlets allow specification of a puzzle to download by date using the `--date` or `-d` flag. For example, to download the Universal puzzle from September 22, 2021, you could run:
+
+```
+xword-dl uni --date 9/22/21
+```
+
+The argument provided after the flag is parsed pretty liberally, and you can use relative descriptors such as "yesterday" or  "monday".
+
+### New York Times authentication
+
+New York Times puzzles are only available to download for subscribers. Attempting to download with the `nyt` keyword without authentication will fail. To authenticate, run:
+
+```
+xword-dl nyt --authenticate
+```
+
+and you will be prompted for your New York Times username and password. (Those credentials can also be passed at runtime with the `--username` and `--password` flag.)
+
+If authentication is successful, an authentication token will be stored in a config file. Once that token is stored, you can download puzzles with `xword-dl nyt`.
