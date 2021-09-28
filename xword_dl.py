@@ -878,6 +878,8 @@ class CrosshareDownloader(BaseDownloader):
         
 class CrosswordCompilerDownloader(BaseDownloader):
     def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
         self.date = None
 
     def find_solver(self, url):
