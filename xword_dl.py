@@ -23,8 +23,8 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
+__version__ = '2021.9.28+priv'
 
-__version__ = '2021.9.27+priv'
 CONFIG_PATH = os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
 CONFIG_PATH = os.path.join(CONFIG_PATH, 'xword-dl/xword-dl.yaml')
 
@@ -55,8 +55,7 @@ def by_keyword(keyword, **kwargs):
             'Selection by date not available for {}.'.format(dl.outlet))
 
     puzzle = dl.download(puzzle_url)
-
-    filename = kwargs.get('filename') or dl.pick_filename(puzzle)
+    filename = dl.pick_filename(puzzle, filename=kwargs.get('filename'))
 
     return puzzle, filename
 
@@ -194,22 +193,45 @@ class BaseDownloader:
             config = yaml.safe_load(f) or {}
 
         self.settings.update(config.get('general', {}))
-        self.settings.update(config.get(self.command, {}))
+        if hasattr(self, 'command'):
+            self.settings.update(config.get(self.command, {}))
         self.settings.update(kwargs)
 
     def pick_filename(self, puzzle, **kwargs):
+        tokens = {'outlet':  self.outlet or '',
+                  'prefix':  self.outlet_prefix or '',
+                  'title':   puzzle.title or '',
+                  'author':  puzzle.author or '',
+                  'cmd':     self.command if hasattr(self, 'command') else '',
+                 }
+
+        tokens = {t:kwargs[t] if t in kwargs else tokens[t] for t in tokens}
+
+        date = kwargs.get('date', self.date)
+
+        template = kwargs.get('filename') or self.settings.get('filename') or ''
+
+        if not template:
+            template += '%prefix' if tokens.get('prefix') else '%author'
+            template += ' - %Y%m%d' if date  else ''
+            template += ' - %title' if tokens.get('title') else ''
+
+        for token in tokens.keys():
+            replacement = (kwargs.get(token) if token in kwargs
+                           else tokens[token])
+            template = template.replace('%' + token, replacement)
+
+
+        if date:
+            template = date.strftime(template)
+
         title = kwargs.get('title', puzzle.title)
         date = kwargs.get('date', self.date)
 
-        date = date.strftime('%Y%m%d') if date else None
+        if not template.endswith('.puz'):
+            template += '.puz'
 
-        filename_components = [component for component in
-                               [self.outlet_prefix or puzzle.author,
-                                date,
-                                title] if component]
-
-        filename = " - ".join(filename_components) + '.puz'
-        filename = remove_invalid_chars_from_filename(filename)
+        filename = remove_invalid_chars_from_filename(template)
 
         return filename
 
@@ -250,7 +272,7 @@ class BaseDownloader:
 
 class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.id = None
 
@@ -481,11 +503,11 @@ class LATimesDownloader(AmuseLabsDownloader):
     def pick_filename(self, puzzle, **kwargs):
         split_on_dashes = puzzle.title.split(' - ')
         if len(split_on_dashes) > 1:
-            use_title = split_on_dashes[-1].strip()
+            title = split_on_dashes[-1].strip()
         else:
-            use_title = ''
+            title = ''
 
-        return super().pick_filename(puzzle, title=use_title)
+        return super().pick_filename(puzzle, title=title, **kwargs)
 
 
 class NewYorkerDownloader(AmuseLabsDownloader):
@@ -560,7 +582,7 @@ class NewYorkerDownloader(AmuseLabsDownloader):
                 title = main.strip()
         except ValueError:
             title = puzzle.title
-        return super().pick_filename(puzzle, title=title)
+        return super().pick_filename(puzzle, title=title, **kwargs)
 
 
 class VoxDownloader(AmuseLabsDownloader):
@@ -709,7 +731,7 @@ class WSJDownloader(BaseDownloader):
 
 class AMUniversalDownloader(BaseDownloader):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(**kwargs)
         self.url_blob = None
 
     def find_by_date(self, dt):
@@ -796,7 +818,7 @@ class USATodayDownloader(AMUniversalDownloader):
     outlet_prefix = 'USA Today'
 
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.url_blob = 'https://gamedata.services.amuniversal.com/c/uupuz/l/U2FsdGVkX18CR3EauHsCV8JgqcLh1ptpjBeQ%2Bnjkzhu8zNO00WYK6b%2BaiZHnKcAD%0A9vwtmWJp2uHE9XU1bRw2gA%3D%3D/g/usaon/d/'
 
@@ -812,7 +834,7 @@ class UniversalDownloader(AMUniversalDownloader):
     outlet_prefix = 'Universal'
 
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.url_blob = 'https://embed.universaluclick.com/c/uucom/l/U2FsdGVkX18YuMv20%2B8cekf85%2Friz1H%2FzlWW4bn0cizt8yclLsp7UYv34S77X0aX%0Axa513fPTc5RoN2wa0h4ED9QWuBURjkqWgHEZey0WFL8%3D/g/fcx/d/'
 
@@ -1112,7 +1134,7 @@ class NewYorkTimesDownloader(BaseDownloader):
         else:
             title = puzzle.title
 
-        return super().pick_filename(puzzle, title=title)
+        return super().pick_filename(puzzle, title=title, **kwargs)
 
 
 def main():
