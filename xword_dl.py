@@ -209,6 +209,7 @@ class BaseDownloader:
                   'author':  puzzle.author or '',
                   'cmd':     (self.command if hasattr(self, 'command') 
                               else self.netloc or ''),
+                  'netloc':  self.netloc or '',
                  }
 
         tokens = {t:kwargs[t] if t in kwargs else tokens[t] for t in tokens}
@@ -460,6 +461,9 @@ class AtlanticDownloader(AmuseLabsDownloader):
 
         return self.find_puzzle_url_from_id(self.id)
 
+    def guess_date_from_id(self, puzzle_id):
+        self.date = datetime.datetime.strptime(puzzle_id.split('_')[1],
+                                               '%Y%m%d')
 
 class NewsdayDownloader(AmuseLabsDownloader):
     command = 'nd'
