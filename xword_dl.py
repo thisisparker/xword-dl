@@ -191,6 +191,7 @@ class BaseDownloader:
                   'author':  puzzle.author or '',
                   'cmd':     (self.command if hasattr(self, 'command') 
                               else self.netloc or ''),
+                  'netloc':  self.netloc or '',
                  }
 
         tokens = {t:kwargs[t] if t in kwargs else tokens[t] for t in tokens}
