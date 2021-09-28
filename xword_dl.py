@@ -443,6 +443,9 @@ class AtlanticDownloader(AmuseLabsDownloader):
 
         return self.find_puzzle_url_from_id(self.id)
 
+    def guess_date_from_id(self, puzzle_id):
+        self.date = datetime.datetime.strptime(puzzle_id.split('_')[1],
+                                               '%Y%m%d')
 
 class NewsdayDownloader(AmuseLabsDownloader):
     command = 'nd'
