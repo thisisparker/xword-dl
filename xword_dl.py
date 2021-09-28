@@ -73,7 +73,7 @@ def by_url(url, filename=None):
                                  if site[0] in netloc), None)
 
     if supported_downloader:
-        dl = supported_downloader()
+        dl = supported_downloader(netloc=netloc)
         if supported_downloader == AmuseLabsDownloader and 'date-picker' in url:
             dl.picker_url = url.split('&')[0]
             setname = dl.picker_url[dl.picker_url.index('set=')+4:]
@@ -88,11 +88,11 @@ def by_url(url, filename=None):
         for iframe in soup.find_all('iframe'):
             src = urllib.parse.urljoin(url, iframe.get('src', ''))
             if 'amuselabs.com' in src:
-                dl = AmuseLabsDownloader()
+                dl = AmuseLabsDownloader(netloc=netloc)
                 puzzle_url = src
                 break
             elif 'crosshare.org' in src:
-                dl = CrosshareDownloader()
+                dl = CrosshareDownloader(netloc=netloc)
                 puzzle_url = src
                 break
                
@@ -101,7 +101,7 @@ def by_url(url, filename=None):
                 js_url = urllib.parse.urljoin(url, script.get('src'))
                 res = requests.get(js_url, headers={'User-Agent':'xword-dl'})
                 if res.text.startswith('var CrosswordPuzzleData'):
-                    dl = CrosswordCompilerDownloader()
+                    dl = CrosswordCompilerDownloader(netloc=netloc)
                     puzzle_url = js_url
                     dl.fetch_data = dl.fetch_jsencoded_data
                     break
@@ -186,6 +186,7 @@ class BaseDownloader:
 
     def __init__(self, **kwargs):
         self.date = None
+        self.netloc = None
 
         self.settings = {}
 
@@ -195,6 +196,10 @@ class BaseDownloader:
         self.settings.update(config.get('general', {}))
         if hasattr(self, 'command'):
             self.settings.update(config.get(self.command, {}))
+        elif 'netloc' in kwargs:
+            self.netloc = kwargs['netloc']
+            self.settings.update(config.get('url', {}))
+            self.settings.update(config.get(self.netloc, {}))
         self.settings.update(kwargs)
 
     def pick_filename(self, puzzle, **kwargs):
@@ -202,7 +207,8 @@ class BaseDownloader:
                   'prefix':  self.outlet_prefix or '',
                   'title':   puzzle.title or '',
                   'author':  puzzle.author or '',
-                  'cmd':     self.command if hasattr(self, 'command') else '',
+                  'cmd':     (self.command if hasattr(self, 'command') 
+                              else self.netloc or ''),
                  }
 
         tokens = {t:kwargs[t] if t in kwargs else tokens[t] for t in tokens}
@@ -841,7 +847,7 @@ class UniversalDownloader(AMUniversalDownloader):
 
 class CrosshareDownloader(BaseDownloader):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(**kwargs)
 
     def find_solver(self, url):
         if urllib.parse.urlparse(url).netloc == 'crosshare.org':
