@@ -71,7 +71,7 @@ def by_url(url, filename=None):
                                  if site[0] in netloc), None)
 
     if supported_downloader:
-        dl = supported_downloader()
+        dl = supported_downloader(netloc=netloc)
         puzzle_url = url
     else:
         amuse_url = None
@@ -85,7 +85,7 @@ def by_url(url, filename=None):
                 break
 
         if amuse_url:
-            dl = AmuseLabsDownloader()
+            dl = AmuseLabsDownloader(netloc=netloc)
             puzzle_url = amuse_url
 
     if dl:
@@ -168,6 +168,7 @@ class BaseDownloader:
 
     def __init__(self, **kwargs):
         self.date = None
+        self.netloc = None
 
         self.settings = {}
 
@@ -177,6 +178,10 @@ class BaseDownloader:
         self.settings.update(config.get('general', {}))
         if hasattr(self, 'command'):
             self.settings.update(config.get(self.command, {}))
+        elif 'netloc' in kwargs:
+            self.netloc = kwargs['netloc']
+            self.settings.update(config.get('url', {}))
+            self.settings.update(config.get(self.netloc, {}))
         self.settings.update(kwargs)
 
     def pick_filename(self, puzzle, **kwargs):
@@ -184,7 +189,8 @@ class BaseDownloader:
                   'prefix':  self.outlet_prefix or '',
                   'title':   puzzle.title or '',
                   'author':  puzzle.author or '',
-                  'cmd':     self.command if hasattr(self, 'command') else '',
+                  'cmd':     (self.command if hasattr(self, 'command') 
+                              else self.netloc or ''),
                  }
 
         tokens = {t:kwargs[t] if t in kwargs else tokens[t] for t in tokens}
