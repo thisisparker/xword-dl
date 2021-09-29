@@ -5,9 +5,9 @@
 Currently, `xword-dl` supports:
 * Atlantic
 * Daily Beast
-* LA Times
-* New Yorker
+* Los Angeles Times
 * New York Times
+* New Yorker
 * Newsday
 * USA Today
 * Universal
