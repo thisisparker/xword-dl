@@ -612,7 +612,10 @@ class DailyBeastDownloader(AmuseLabsDownloader):
 
         datestring = ', '.join([c.strip()
                                 for c in puzzle.title.split(',', )[-2:]])
-        self.date = datetime.datetime.strptime(datestring, '%b %d, %Y')
+        try:
+            self.date = datetime.datetime.strptime(datestring, '%b %d, %Y')
+        except:
+            pass
 
         return puzzle
 
