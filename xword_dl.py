@@ -861,10 +861,12 @@ class NewYorkTimesDownloader(BaseDownloader):
 
     def authenticate(self, username, password):
         """Given a NYT username and password, returns the NYT-S cookie value"""
+
         res = requests.post('https://myaccount.nytimes.com/svc/ios/v2/login',
-                            data={'login': username, 'password': password},
-                            headers={'User-Agent': 'Mozilla/5.0',
-                                     'client-id': 'ios.crosswords'})
+                data={'login': username, 'password': password},
+                headers={'User-Agent':
+                    'Crossword/20211014193428 CFNetwork/1240.0.4 Darwin/20.6.0',
+                    'client_id': 'ios.crosswords',})
 
         res.raise_for_status()
 
