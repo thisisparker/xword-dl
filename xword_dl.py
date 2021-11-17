@@ -23,7 +23,7 @@ from bs4 import BeautifulSoup
 from html2text import html2text
 from unidecode import unidecode
 
-__version__ = '2021.9.28+priv'
+__version__ = '2021.11.17priv'
 
 CONFIG_PATH = os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
 CONFIG_PATH = os.path.join(CONFIG_PATH, 'xword-dl/xword-dl.yaml')
@@ -566,7 +566,7 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         json_data = json.loads(script_tag.contents[0])
 
-        iframe_url = json_data[0]['articleBody'].strip().strip('[]')[
+        iframe_url = json_data['articleBody'].strip().strip('[]')[
             len('#crossword: '):]
 
         try:
@@ -628,11 +628,12 @@ class DailyBeastDownloader(AmuseLabsDownloader):
         # the date. This pulls it out of the puzzle title, which will work
         # as long as that stays consistent.
 
-        date_components = [c.strip() for c in puzzle.title.split(',')[-2:]]
-        date_components[0] = ' '.join([date_components[0].split()[0][:3], date_components[0].split()[1]])
-        datestring = ', '.join(date_components)
-
-        self.date = datetime.datetime.strptime(datestring, '%b %d, %Y')
+        datestring = ', '.join([c.strip()
+                                for c in puzzle.title.split(',', )[-2:]])
+        try:
+            self.date = datetime.datetime.strptime(datestring, '%b %d, %Y')
+        except:
+            pass
 
         return puzzle
 
@@ -1023,10 +1024,12 @@ class NewYorkTimesDownloader(BaseDownloader):
 
     def authenticate(self, username, password):
         """Given a NYT username and password, returns the NYT-S cookie value"""
+
         res = requests.post('https://myaccount.nytimes.com/svc/ios/v2/login',
-                            data={'login': username, 'password': password},
-                            headers={'User-Agent': 'Mozilla/5.0',
-                                     'client-id': 'ios.crosswords'})
+                data={'login': username, 'password': password},
+                headers={'User-Agent':
+                    'Crossword/20211014193428 CFNetwork/1240.0.4 Darwin/20.6.0',
+                    'client_id': 'ios.crosswords',})
 
         res.raise_for_status()
 
