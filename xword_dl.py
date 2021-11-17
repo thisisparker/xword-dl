@@ -326,8 +326,8 @@ class AmuseLabsDownloader(BaseDownloader):
     def parse_xword(self, xword_data):
         puzzle = puz.Puzzle()
         puzzle.title = unidecode(xword_data.get('title', '').strip())
-        puzzle.author = xword_data.get('author', '').strip()
-        puzzle.copyright = xword_data.get('copyright', '').strip()
+        puzzle.author = unidecode(xword_data.get('author', '').strip())
+        puzzle.copyright = unidecode(xword_data.get('copyright', '').strip())
         puzzle.width = xword_data.get('w')
         puzzle.height = xword_data.get('h')
 
