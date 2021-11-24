@@ -20,6 +20,13 @@ from getpass import getpass
 
 from bs4 import BeautifulSoup
 from html2text import html2text
+
+# This imports the _module_ unidecode, which converts Unicode strings to
+# plain ASCII. The puz format, however, can accept Latin1, which is a larger
+# subset. So the second line tells the module to leave codepoints 128-256
+# untouched, then we import the _function_ unidecode.
+import unidecode
+unidecode.Cache[0] = [chr(c) if c > 127 else '' for c in range(256)]
 from unidecode import unidecode
 
 __version__ = '2021.11.17'
