@@ -622,7 +622,7 @@ class DailyBeastDownloader(AmuseLabsDownloader):
         try:
             self.date = datetime.datetime.strptime(datestring, '%b %d, %Y')
         except:
-            pass
+            self.date = datetime.datetime.today()
 
         return puzzle
 
