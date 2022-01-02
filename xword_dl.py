@@ -941,9 +941,9 @@ class CrosswordCompilerDownloader(BaseDownloader):
 
         puzzle = puz.Puzzle()
 
-        puzzle.title = xw_metadata.get('title') or ''
-        puzzle.author = xw_metadata.get('creator') or ''
-        puzzle.copyright = xw_metadata.get('copyright') or ''
+        puzzle.title = unidecode(xw_metadata.get('title') or '')
+        puzzle.author = unidecode(xw_metadata.get('creator') or '')
+        puzzle.copyright = unidecode(xw_metadata.get('copyright') or '')
 
         puzzle.width = int(xw_grid.get('@width'))
         puzzle.height = int(xw_grid.get('@height'))
@@ -967,7 +967,7 @@ class CrosswordCompilerDownloader(BaseDownloader):
 
         all_clues = xw_clues[0]['clue'] + xw_clues[1]['clue']
 
-        clues = [c.get('#text') for c in
+        clues = [unidecode(c.get('#text')) for c in
                  sorted(all_clues, key=lambda x: int(x.get('@number')))]
 
         puzzle.clues = clues
