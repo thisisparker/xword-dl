@@ -21,9 +21,16 @@ from getpass import getpass
 
 from bs4 import BeautifulSoup
 from html2text import html2text
+
+# This imports the _module_ unidecode, which converts Unicode strings to
+# plain ASCII. The puz format, however, can accept Latin1, which is a larger
+# subset. So the second line tells the module to leave codepoints 128-256
+# untouched, then we import the _function_ unidecode.
+import unidecode
+unidecode.Cache[0] = [chr(c) if c > 127 else '' for c in range(256)]
 from unidecode import unidecode
 
-__version__ = '2021.11.17priv'
+__version__ = '2022.1.2priv'
 
 CONFIG_PATH = os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
 CONFIG_PATH = os.path.join(CONFIG_PATH, 'xword-dl/xword-dl.yaml')
@@ -344,8 +351,8 @@ class AmuseLabsDownloader(BaseDownloader):
     def parse_xword(self, xword_data):
         puzzle = puz.Puzzle()
         puzzle.title = unidecode(xword_data.get('title', '').strip())
-        puzzle.author = xword_data.get('author', '').strip()
-        puzzle.copyright = xword_data.get('copyright', '').strip()
+        puzzle.author = unidecode(xword_data.get('author', '').strip())
+        puzzle.copyright = unidecode(xword_data.get('copyright', '').strip())
         puzzle.width = xword_data.get('w')
         puzzle.height = xword_data.get('h')
 
@@ -633,7 +640,7 @@ class DailyBeastDownloader(AmuseLabsDownloader):
         try:
             self.date = datetime.datetime.strptime(datestring, '%b %d, %Y')
         except:
-            pass
+            self.date = datetime.datetime.today()
 
         return puzzle
 
