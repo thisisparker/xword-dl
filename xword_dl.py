@@ -12,6 +12,7 @@ import time
 import urllib
 
 import dateparser
+import dateparser.search
 import puz
 import requests
 import yaml
@@ -29,7 +30,7 @@ import unidecode
 unidecode.Cache[0] = [chr(c) if c > 127 else '' for c in range(256)]
 from unidecode import unidecode
 
-__version__ = '2021.11.30'
+__version__ = '2022.2.16'
 CONFIG_PATH = os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
 CONFIG_PATH = os.path.join(CONFIG_PATH, 'xword-dl/xword-dl.yaml')
 
@@ -617,11 +618,11 @@ class DailyBeastDownloader(AmuseLabsDownloader):
         # the date. This pulls it out of the puzzle title, which will work
         # as long as that stays consistent.
 
-        datestring = ', '.join([c.strip()
-                                for c in puzzle.title.split(',', )[-2:]])
-        try:
-            self.date = datetime.datetime.strptime(datestring, '%b %d, %Y')
-        except:
+        possible_dates = dateparser.search.search_dates(puzzle.title)
+
+        if possible_dates:
+            self.date = possible_dates[-1][1]
+        else:
             self.date = datetime.datetime.today()
 
         return puzzle
