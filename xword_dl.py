@@ -678,7 +678,7 @@ class WSJDownloader(BaseDownloader):
         self.date = datetime.datetime.strptime(date_string, '%Y/%m/%d')
 
         fetched = {}
-        for field in ['title', 'byline', 'publisher']:
+        for field in ['title', 'byline', 'publisher', 'description']:
             fetched[field] = html2text(xword_metadata.get(field, ''),
                                        bodywidth=0).strip()
 
@@ -688,6 +688,8 @@ class WSJDownloader(BaseDownloader):
         puzzle.copyright = fetched.get('publisher')
         puzzle.width = int(xword_metadata.get('gridsize').get('cols'))
         puzzle.height = int(xword_metadata.get('gridsize').get('rows'))
+
+        puzzle.notes = fetched.get('description')
 
         solution = ''
         fill = ''
