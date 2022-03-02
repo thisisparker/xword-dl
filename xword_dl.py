@@ -386,7 +386,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         clues = [word['clue']['clue'] for word in weirdass_puz_clue_sorting]
 
-        normalized_clues = [html2text(unidecode(clue), bodywidth=0)
+        normalized_clues = [html2text(unidecode(clue), bodywidth=0).strip()
                             for clue in clues]
         puzzle.clues.extend(normalized_clues)
 
@@ -718,7 +718,7 @@ class WSJDownloader(BaseDownloader):
 
         clues = [clue['clue'] for clue in sorted_clue_list]
         normalized_clues = [
-            html2text(unidecode(clue), bodywidth=0) for clue in clues]
+            html2text(unidecode(clue), bodywidth=0).strip() for clue in clues]
 
         puzzle.clues = normalized_clues
 
