@@ -1097,10 +1097,13 @@ def main():
     except ValueError as e:
         sys.exit(e)
 
-    if not filename.endswith('.puz'):
-        filename = filename + '.puz'
-
-    save_puzzle(puzzle, filename)
+    # specialcase the output file '-'
+    if options['filename'] == '-':
+        sys.stdout.buffer.write (puzzle.tobytes())
+    else:
+        if not filename.endswith('.puz'):
+            filename = filename + '.puz'
+        save_puzzle(puzzle, filename)
 
 
 if __name__ == '__main__':
