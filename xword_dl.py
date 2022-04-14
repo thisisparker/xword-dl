@@ -1098,7 +1098,7 @@ def main():
         sys.exit(e)
 
     # specialcase the output file '-'
-    if options['filename'] == '-':
+    if args.output == '-':
         sys.stdout.buffer.write (puzzle.tobytes())
     else:
         if not filename.endswith('.puz'):
