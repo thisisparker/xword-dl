@@ -197,7 +197,7 @@ class BaseDownloader:
                   'prefix':  self.outlet_prefix or '',
                   'title':   puzzle.title or '',
                   'author':  puzzle.author or '',
-                  'cmd':     (self.command if hasattr(self, 'command') 
+                  'cmd':     (self.command if hasattr(self, 'command')
                               else self.netloc or ''),
                   'netloc':  self.netloc or '',
                  }
@@ -327,7 +327,28 @@ class AmuseLabsDownloader(BaseDownloader):
 
         rawc = rawc.split("'")[1]
 
-        xword_data = json.loads(base64.b64decode(rawc).decode("utf-8"))
+        # helper function to decode rawc
+        # as occasionally it can be obfuscated
+        def load_rawc(rawc):
+            if '.' not in rawc:
+                return json.loads(base64.b64decode(rawc).decode("utf-8"))
+            rawcParts = rawc.split(".")
+            buffer = list(rawcParts[0])
+            key1 = rawcParts[1][::-1]
+            key = [int(k, 16) + 2 for k in key1]
+            i, segmentCount = (0, 0)
+            while i < len(buffer) - 1:
+                # reverse sections of the buffer, using key digits as lengths
+                segmentLength = min(key[segmentCount % len(key)], len(buffer) - 1)
+                for j in range(segmentLength // 2):
+                    buffer[i+j], buffer[i + segmentLength - j - 1] = buffer[i + segmentLength - j - 1], buffer[i+j]
+                i += segmentLength
+                segmentCount += 1
+
+            newRawc = ''.join(buffer)
+            return json.loads(base64.b64decode(newRawc).decode("utf-8"))
+
+        xword_data = load_rawc(rawc)
 
         return xword_data
 
