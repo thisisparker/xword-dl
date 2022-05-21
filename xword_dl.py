@@ -12,6 +12,7 @@ import time
 import urllib
 
 import dateparser
+import dateparser.search
 import puz
 import requests
 import xmltodict
@@ -30,8 +31,7 @@ import unidecode
 unidecode.Cache[0] = [chr(c) if c > 127 else '' for c in range(256)]
 from unidecode import unidecode
 
-__version__ = '2022.1.2priv'
-
+__version__ = '2022.05.21priv'
 CONFIG_PATH = os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
 CONFIG_PATH = os.path.join(CONFIG_PATH, 'xword-dl/xword-dl.yaml')
 
@@ -214,7 +214,7 @@ class BaseDownloader:
                   'prefix':  self.outlet_prefix or '',
                   'title':   puzzle.title or '',
                   'author':  puzzle.author or '',
-                  'cmd':     (self.command if hasattr(self, 'command') 
+                  'cmd':     (self.command if hasattr(self, 'command')
                               else self.netloc or ''),
                   'netloc':  self.netloc or '',
                  }
@@ -344,7 +344,29 @@ class AmuseLabsDownloader(BaseDownloader):
 
         rawc = rawc.split("'")[1]
 
-        xword_data = json.loads(base64.b64decode(rawc).decode("utf-8"))
+        # helper function to decode rawc
+        # as occasionally it can be obfuscated
+        def load_rawc(rawc):
+            if '.' not in rawc:
+                return json.loads(base64.b64decode(rawc).decode("utf-8"))
+            rawcParts = rawc.split(".")
+            buff = list(rawcParts[0])
+            key1 = rawcParts[1][::-1]
+            key = [int(k, 16) + 2 for k in key1]
+            i, segmentCount = (0, 0)
+            while i < len(buff) - 1:
+                # reverse sections of the buffer, using key digits as lengths
+                segmentLength = min(key[segmentCount % len(key)], len(buff) - i)
+                for j in range(segmentLength // 2):
+                    buff[i+j], buff[i + segmentLength - j - 1] = (
+                               buff[i + segmentLength - j - 1], buff[i+j])
+                i += segmentLength
+                segmentCount += 1
+
+            newRawc = ''.join(buff)
+            return json.loads(base64.b64decode(newRawc).decode("utf-8"))
+
+        xword_data = load_rawc(rawc)
 
         return xword_data
 
@@ -403,7 +425,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         clues = [word['clue']['clue'] for word in weirdass_puz_clue_sorting]
 
-        normalized_clues = [html2text(unidecode(clue), bodywidth=0)
+        normalized_clues = [html2text(unidecode(clue), bodywidth=0).strip()
                             for clue in clues]
         puzzle.clues.extend(normalized_clues)
 
@@ -635,11 +657,11 @@ class DailyBeastDownloader(AmuseLabsDownloader):
         # the date. This pulls it out of the puzzle title, which will work
         # as long as that stays consistent.
 
-        datestring = ', '.join([c.strip()
-                                for c in puzzle.title.split(',', )[-2:]])
-        try:
-            self.date = datetime.datetime.strptime(datestring, '%b %d, %Y')
-        except:
+        possible_dates = dateparser.search.search_dates(puzzle.title)
+
+        if possible_dates:
+            self.date = possible_dates[-1][1]
+        else:
             self.date = datetime.datetime.today()
 
         return puzzle
@@ -695,7 +717,7 @@ class WSJDownloader(BaseDownloader):
         self.date = datetime.datetime.strptime(date_string, '%Y/%m/%d')
 
         fetched = {}
-        for field in ['title', 'byline', 'publisher']:
+        for field in ['title', 'byline', 'publisher', 'description']:
             fetched[field] = html2text(xword_metadata.get(field, ''),
                                        bodywidth=0).strip()
 
@@ -705,6 +727,8 @@ class WSJDownloader(BaseDownloader):
         puzzle.copyright = fetched.get('publisher')
         puzzle.width = int(xword_metadata.get('gridsize').get('cols'))
         puzzle.height = int(xword_metadata.get('gridsize').get('rows'))
+
+        puzzle.notes = fetched.get('description')
 
         solution = ''
         fill = ''
@@ -733,7 +757,7 @@ class WSJDownloader(BaseDownloader):
 
         clues = [clue['clue'] for clue in sorted_clue_list]
         normalized_clues = [
-            html2text(unidecode(clue), bodywidth=0) for clue in clues]
+            html2text(unidecode(clue), bodywidth=0).strip() for clue in clues]
 
         puzzle.clues = normalized_clues
 
