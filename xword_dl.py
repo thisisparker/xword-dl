@@ -333,19 +333,20 @@ class AmuseLabsDownloader(BaseDownloader):
             if '.' not in rawc:
                 return json.loads(base64.b64decode(rawc).decode("utf-8"))
             rawcParts = rawc.split(".")
-            buffer = list(rawcParts[0])
+            buff = list(rawcParts[0])
             key1 = rawcParts[1][::-1]
             key = [int(k, 16) + 2 for k in key1]
             i, segmentCount = (0, 0)
-            while i < len(buffer) - 1:
+            while i < len(buff) - 1:
                 # reverse sections of the buffer, using key digits as lengths
-                segmentLength = min(key[segmentCount % len(key)], len(buffer) - 1)
+                segmentLength = min(key[segmentCount % len(key)], len(buff) - i)
                 for j in range(segmentLength // 2):
-                    buffer[i+j], buffer[i + segmentLength - j - 1] = buffer[i + segmentLength - j - 1], buffer[i+j]
+                    buff[i+j], buff[i + segmentLength - j - 1] = (
+                               buff[i + segmentLength - j - 1], buff[i+j])
                 i += segmentLength
                 segmentCount += 1
 
-            newRawc = ''.join(buffer)
+            newRawc = ''.join(buff)
             return json.loads(base64.b64decode(newRawc).decode("utf-8"))
 
         xword_data = load_rawc(rawc)
