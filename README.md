@@ -3,17 +3,17 @@
 `xword-dl` is a command-line tool to download .puz files for online crossword puzzles from supported outlets or arbitrary URLs. For a supported outlet, you can easily download the latest puzzle, or specify one from the archives.
 
 Currently, `xword-dl` supports:
-* Atlantic
-* Daily Beast
-* Los Angeles Times
-* New York Times
-* New Yorker
-* Newsday
-* USA Today
-* Universal
-* Wall Street Journal
-* Washington Post
-* Vox
+* Atlantic (atl)
+* Daily Beast (db)
+* Los Angeles Times (lat)
+* New York Times (nyt)
+* New Yorker (tny)
+* Newsday (nd)
+* USA Today (usa)
+* Universal (uni)
+* Wall Street Journal (wsj)
+* Washington Post (wp)
+* Vox (vox)
 
 To download a puzzle, install `xword-dl` and run it on the command line.
 
