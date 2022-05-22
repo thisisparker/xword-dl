@@ -30,7 +30,7 @@ import unidecode
 unidecode.Cache[0] = [chr(c) if c > 127 else '' for c in range(256)]
 from unidecode import unidecode
 
-__version__ = '2022.2.16'
+__version__ = '2022.05.21'
 CONFIG_PATH = os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
 CONFIG_PATH = os.path.join(CONFIG_PATH, 'xword-dl/xword-dl.yaml')
 
@@ -197,7 +197,7 @@ class BaseDownloader:
                   'prefix':  self.outlet_prefix or '',
                   'title':   puzzle.title or '',
                   'author':  puzzle.author or '',
-                  'cmd':     (self.command if hasattr(self, 'command') 
+                  'cmd':     (self.command if hasattr(self, 'command')
                               else self.netloc or ''),
                   'netloc':  self.netloc or '',
                  }
@@ -326,7 +326,29 @@ class AmuseLabsDownloader(BaseDownloader):
 
         rawc = rawc.split("'")[1]
 
-        xword_data = json.loads(base64.b64decode(rawc).decode("utf-8"))
+        # helper function to decode rawc
+        # as occasionally it can be obfuscated
+        def load_rawc(rawc):
+            if '.' not in rawc:
+                return json.loads(base64.b64decode(rawc).decode("utf-8"))
+            rawcParts = rawc.split(".")
+            buff = list(rawcParts[0])
+            key1 = rawcParts[1][::-1]
+            key = [int(k, 16) + 2 for k in key1]
+            i, segmentCount = (0, 0)
+            while i < len(buff) - 1:
+                # reverse sections of the buffer, using key digits as lengths
+                segmentLength = min(key[segmentCount % len(key)], len(buff) - i)
+                for j in range(segmentLength // 2):
+                    buff[i+j], buff[i + segmentLength - j - 1] = (
+                               buff[i + segmentLength - j - 1], buff[i+j])
+                i += segmentLength
+                segmentCount += 1
+
+            newRawc = ''.join(buff)
+            return json.loads(base64.b64decode(newRawc).decode("utf-8"))
+
+        xword_data = load_rawc(rawc)
 
         return xword_data
 
