@@ -330,24 +330,32 @@ class AmuseLabsDownloader(BaseDownloader):
         # helper function to decode rawc
         # as occasionally it can be obfuscated
         def load_rawc(rawc):
-            if '.' not in rawc:
+            try:
+                # the original case is just base64'd JSON
                 return json.loads(base64.b64decode(rawc).decode("utf-8"))
-            rawcParts = rawc.split(".")
-            buff = list(rawcParts[0])
-            key1 = rawcParts[1][::-1]
-            key = [int(k, 16) + 2 for k in key1]
-            i, segmentCount = (0, 0)
-            while i < len(buff) - 1:
-                # reverse sections of the buffer, using key digits as lengths
-                segmentLength = min(key[segmentCount % len(key)], len(buff) - i)
-                for j in range(segmentLength // 2):
-                    buff[i+j], buff[i + segmentLength - j - 1] = (
-                               buff[i + segmentLength - j - 1], buff[i+j])
-                i += segmentLength
-                segmentCount += 1
-
-            newRawc = ''.join(buff)
-            return json.loads(base64.b64decode(newRawc).decode("utf-8"))
+            except:
+                try:
+                    # case 2 is the first obfuscation
+                    E=rawc.split('.');A=list(E[0]);H=E[1][::-1];F=[int(A,16)+2 for A in H];B,G=0,0
+                    while B<len(A)-1:
+                        C=min(F[G%len(F)],len(A)-B)
+                        for D in range(C//2):A[B+D],A[B+C-D-1]=A[B+C-D-1],A[B+D]
+                        B+=C;G+=1
+                    newRawc=''.join(A)
+                    return json.loads(base64.b64decode(newRawc).decode("utf-8"))
+                except:
+                    # case 3 is the most recent obfuscation
+                    # we suspect H may change in which case we'd need to pull it along with rawc
+                    def amuse_b64(e):
+                        e=list(e);H='4ae90be';E=[];F=0
+                        while F<len(H):J=H[F];K=int(J,16);E.append(K);F+=1
+                        A,G,I=0,0,len(e)-1
+                        while A<I:
+                            B=E[G];B+=2;L=I-A+1;C=A;B=min(B,L);D=A+B-1
+                            while C<D:M=e[D];e[D]=e[C];e[C]=M;D-=1;C+=1
+                            A+=B;G=(G+1)%len(E)
+                        return ''.join(e)
+                    return json.loads(base64.b64decode(amuse_b64(rawc)).decode("utf-8"))
 
         xword_data = load_rawc(rawc)
 
