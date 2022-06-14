@@ -17,6 +17,8 @@ import puz
 import requests
 import yaml
 
+import re
+
 from getpass import getpass
 
 from bs4 import BeautifulSoup
@@ -326,6 +328,21 @@ class AmuseLabsDownloader(BaseDownloader):
             raise Exception("Crossword puzzle not found.")
 
         rawc = rawc.split("'")[1]
+
+        ## In some cases we need to pull the underlying JavaScript $$
+        # Find the JavaScript URL
+        m1 = re.search(r'"([^"]+c-min.js[^"]+)"', res.content.decode('utf-8'))
+        js_url = m1.groups()[0]
+        base_url = '/'.join(solver_url.split('/')[:-1])
+        js_url = base_url + '/' + js_url
+        # get the "key" from the URL
+        res2 = requests.get(js_url)
+        m2 = re.search(r'var e=function\(e\)\{var t="(.*?)"', res2.content.decode('utf-8'))
+        amuseKey = None
+        if m2 is not None:
+            amuseKey = m2.groups()[0]
+            if amuseKey == "1":
+                amuseKey = None
 
         # helper function to decode rawc
         # as occasionally it can be obfuscated
