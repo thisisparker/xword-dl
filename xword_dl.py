@@ -329,7 +329,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         rawc = rawc.split("'")[1]
 
-        ## In some cases we need to pull the underlying JavaScript $$
+        ## In some cases we need to pull the underlying JavaScript ##
         # Find the JavaScript URL
         m1 = re.search(r'"([^"]+c-min.js[^"]+)"', res.content.decode('utf-8'))
         js_url = m1.groups()[0]
