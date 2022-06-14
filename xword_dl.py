@@ -346,7 +346,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         # helper function to decode rawc
         # as occasionally it can be obfuscated
-        def load_rawc(rawc):
+        def load_rawc(rawc, amuseKey=None):
             try:
                 # the original case is just base64'd JSON
                 return json.loads(base64.b64decode(rawc).decode("utf-8"))
@@ -362,9 +362,8 @@ class AmuseLabsDownloader(BaseDownloader):
                     return json.loads(base64.b64decode(newRawc).decode("utf-8"))
                 except:
                     # case 3 is the most recent obfuscation
-                    # we suspect H may change in which case we'd need to pull it along with rawc
-                    def amuse_b64(e):
-                        e=list(e);H='4ae90be';E=[];F=0
+                    def amuse_b64(e, amuseKey=None):
+                        e=list(e);H=amuseKey;E=[];F=0
                         while F<len(H):J=H[F];K=int(J,16);E.append(K);F+=1
                         A,G,I=0,0,len(e)-1
                         while A<I:
@@ -372,9 +371,9 @@ class AmuseLabsDownloader(BaseDownloader):
                             while C<D:M=e[D];e[D]=e[C];e[C]=M;D-=1;C+=1
                             A+=B;G=(G+1)%len(E)
                         return ''.join(e)
-                    return json.loads(base64.b64decode(amuse_b64(rawc)).decode("utf-8"))
+                    return json.loads(base64.b64decode(amuse_b64(rawc, amuseKey)).decode("utf-8"))
 
-        xword_data = load_rawc(rawc)
+        xword_data = load_rawc(rawc, amuseKey=amuseKey)
 
         return xword_data
 
