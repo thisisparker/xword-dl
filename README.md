@@ -7,6 +7,7 @@ Currently, `xword-dl` supports:
 * Daily Beast (db)
 * Los Angeles Times (lat)
 * New York Times (nyt)
+* New York Times Syndicate (nyts)
 * New Yorker (tny)
 * Newsday (nd)
 * USA Today (usa)

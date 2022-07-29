@@ -1080,7 +1080,6 @@ class NewYorkTimesSyndicatedDownloader(BaseDownloader):
 
         lines = xword_data.split('\n')[2:]
 
-
         fill = ''
         solution = ''
         clues = []
