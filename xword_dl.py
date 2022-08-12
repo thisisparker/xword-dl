@@ -33,7 +33,7 @@ import unidecode
 unidecode.Cache[0] = [chr(c) if c > 127 else '' for c in range(256)]
 from unidecode import unidecode
 
-__version__ = '2022.6.20priv'
+__version__ = '2022.8.12priv'
 
 CONFIG_PATH = os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
 CONFIG_PATH = os.path.join(CONFIG_PATH, 'xword-dl/xword-dl.yaml')
@@ -96,7 +96,7 @@ def by_url(url, filename=None):
         soup = BeautifulSoup(res.text, 'lxml')
 
         for iframe in soup.find_all('iframe'):
-            src = urllib.parse.urljoin(url, iframe.get('src', ''))
+            src = urllib.parse.urljoin(url, iframe.get('src', '') or iframe.get('data-crossword-url', ''))
             if 'amuselabs.com' in src:
                 dl = AmuseLabsDownloader(netloc=netloc)
                 puzzle_url = src
