@@ -218,6 +218,7 @@ class BaseDownloader:
         for token in tokens.keys():
             replacement = (kwargs.get(token) if token in kwargs
                            else tokens[token])
+            replacement = remove_invalid_chars_from_filename(replacement)
             template = template.replace('%' + token, replacement)
 
 
@@ -230,9 +231,7 @@ class BaseDownloader:
         if not template.endswith('.puz'):
             template += '.puz'
 
-        filename = remove_invalid_chars_from_filename(template)
-
-        return filename
+        return template
 
     def find_solver(self, url):
         """Given a URL for a puzzle, returns the essential 'solver' URL.
@@ -1143,10 +1142,13 @@ def main():
     except ValueError as e:
         sys.exit(e)
 
-    if not filename.endswith('.puz'):
-        filename = filename + '.puz'
-
-    save_puzzle(puzzle, filename)
+    # specialcase the output file '-'
+    if args.output == '-':
+        sys.stdout.buffer.write (puzzle.tobytes())
+    else:
+        if not filename.endswith('.puz'):
+            filename = filename + '.puz'
+        save_puzzle(puzzle, filename)
 
 
 if __name__ == '__main__':
