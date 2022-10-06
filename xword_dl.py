@@ -40,6 +40,8 @@ if not os.path.exists(CONFIG_PATH):
     os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
     open(CONFIG_PATH, 'a').close()
 
+class XWordDLException(Exception):
+    pass
 
 def by_keyword(keyword, **kwargs):
     keyword_dict = {d[1].command: d[1] for d in get_supported_outlets()}
@@ -48,7 +50,7 @@ def by_keyword(keyword, **kwargs):
     if selected_downloader:
         dl = selected_downloader(**kwargs)
     else:
-        raise ValueError('Keyword {} not recognized.'.format(keyword))
+        raise XWordDLException('Keyword {} not recognized.'.format(keyword))
 
     date = kwargs.get('date')
 
@@ -59,7 +61,7 @@ def by_keyword(keyword, **kwargs):
         dl.date = parsed_date
         puzzle_url = dl.find_by_date(parsed_date)
     else:
-        raise ValueError(
+        raise XWordDLException(
             'Selection by date not available for {}.'.format(dl.outlet))
 
     puzzle = dl.download(puzzle_url)
@@ -101,7 +103,7 @@ def by_url(url, filename=None):
     if dl:
         puzzle = dl.download(puzzle_url)
     else:
-        raise ValueError('Unable to find a puzzle at {}.'.format(url))
+        raise XWordDLException('Unable to find a puzzle at {}.'.format(url))
 
     filename = filename or dl.pick_filename(puzzle)
 
@@ -153,7 +155,7 @@ def parse_date_or_exit(entered_date):
     guessed_dt = parse_date(entered_date)
 
     if not guessed_dt:
-        raise ValueError(
+        raise XWordDLException(
             'Unable to determine a date from "{}".'.format(entered_date))
 
     return guessed_dt
@@ -592,8 +594,10 @@ class NewYorkerDownloader(AmuseLabsDownloader):
     def find_solver(self, url):
         res = requests.get(url)
 
-        if res.status_code == 404:
-            raise ConnectionError('Unable to find a puzzle at {}'.format(url))
+        try:
+            res.raise_for_status()
+        except requests.exceptions.HTTPError:
+            raise XWordDLException('Unable to load {}'.format(url))
 
         soup = BeautifulSoup(res.text, "html.parser")
 
@@ -609,7 +613,7 @@ class NewYorkerDownloader(AmuseLabsDownloader):
             query_id = urllib.parse.parse_qs(query)['id']
             self.id = query_id[0]
         except KeyError:
-            raise ValueError('Cannot find puzzle at {}.'.format(url))
+            raise XWordDLException('Cannot find puzzle at {}.'.format(url))
 
         pubdate = soup.find('time').get_text()
         pubdate_dt = dateparser.parse(pubdate)
@@ -625,7 +629,7 @@ class NewYorkerDownloader(AmuseLabsDownloader):
                 title = ''
             else:
                 title = main.strip()
-        except ValueError:
+        except XWordDLException:
             title = puzzle.title
         return super().pick_filename(puzzle, title=title, **kwargs)
 
@@ -694,7 +698,7 @@ class WSJDownloader(BaseDownloader):
                 latest_url = article.find('a').get('href')
                 break
         else:
-            raise ValueError('Unable to find latest puzzle.')
+            raise XWordDLException('Unable to find latest puzzle.')
 
         return latest_url
 
@@ -707,7 +711,7 @@ class WSJDownloader(BaseDownloader):
             try:
                 puzzle_link = soup.find('iframe').get('src')
             except AttributeError:
-                raise ValueError('Cannot find puzzle at {}.'.format(url))
+                raise XWordDLException('Cannot find puzzle at {}.'.format(url))
             return self.find_solver(puzzle_link)
 
     def fetch_data(self, solver_url):
@@ -910,7 +914,7 @@ class NewYorkTimesDownloader(BaseDownloader):
             nyts_token = self.settings.get('NYT-S')
 
         if not nyts_token:
-            raise ValueError('No credentials provided or stored. Try running xword-dl nyt --authenticate')
+            raise XWordDLException('No credentials provided or stored. Try running xword-dl nyt --authenticate')
         else:
             self.cookies.update({'NYT-S': nyts_token})
 
@@ -934,7 +938,7 @@ class NewYorkTimesDownloader(BaseDownloader):
         if nyts_token:
             return nyts_token
         else:
-            raise ValueError('NYT-S cookie not found.')
+            raise XWordDLException('NYT-S cookie not found.')
 
     def find_latest(self):
         oracle = "https://www.nytimes.com/svc/crosswords/v2/oracle/daily.json"
@@ -985,7 +989,10 @@ class NewYorkTimesDownloader(BaseDownloader):
         puzzle.title = metadata.get('title') or self.date.strftime(
                 '%A, %B %d, %Y')
 
-        puzzle_data = xword_data['puzzle_data']
+        try:
+            puzzle_data = xword_data['puzzle_data']
+        except:
+            raise XWordDLException('Puzzle data not available. Try re-authenticating with xword-dl nyt --authenticate')
 
         solution = ''
         fill = ''
@@ -1139,7 +1146,7 @@ def main():
                                       filename=args.output)
         else:
             puzzle, filename = by_keyword(args.source, **options)
-    except ValueError as e:
+    except XWordDLException as e:
         sys.exit(e)
 
     # specialcase the output file '-'
