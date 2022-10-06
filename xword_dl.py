@@ -924,7 +924,7 @@ class NewYorkTimesDownloader(BaseDownloader):
         res = requests.post('https://myaccount.nytimes.com/svc/ios/v2/login',
                 data={'login': username, 'password': password},
                 headers={'User-Agent':
-                    'Crossword/20211014193428 CFNetwork/1240.0.4 Darwin/20.6.0',
+                    'Crossword/1844.220922 CFNetwork/1335.0.3 Darwin/21.6.0',
                     'client_id': 'ios.crosswords',})
 
         res.raise_for_status()
