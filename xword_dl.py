@@ -137,7 +137,7 @@ def save_puzzle(puzzle, filename):
 
 
 def remove_invalid_chars_from_filename(filename):
-    invalid_chars = '<>"/\|?*'
+    invalid_chars = r'<>:"/\|?*'
 
     for char in invalid_chars:
         filename = filename.replace(char, '')
