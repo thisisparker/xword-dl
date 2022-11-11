@@ -74,10 +74,18 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         self.date = pubdate_dt
 
         return self.find_puzzle_url_from_id(self.id)
+        
+    def parse_xword(self, xword_data):
+        puzzle = super().parse_xword(xword_data)
+
+        if '<' in puzzle.title:
+            puzzle.title = puzzle.title.split('<')[0]
+
+        return puzzle
 
     def pick_filename(self, puzzle, **kwargs):
         try:
-            supra, main = puzzle.title.split(':')
+            supra, main = puzzle.title.split(':', 1)
             if supra == 'The Crossword' and dateparser.parse(main):
                 title = ''
             else:
