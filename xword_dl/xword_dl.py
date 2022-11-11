@@ -17,7 +17,7 @@ from . import downloader
 
 from .util import *
 
-__version__ = '2022.8.12'
+__version__ = '2022.11.11'
 
 
 def by_keyword(keyword, **kwargs):
