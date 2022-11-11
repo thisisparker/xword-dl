@@ -1,1 +1,7 @@
 *.puz
+__pycache__/
+*.un~
+*~
+.idea/
+build/*
+dist/*
