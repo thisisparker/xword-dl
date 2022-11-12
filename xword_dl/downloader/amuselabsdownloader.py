@@ -69,7 +69,7 @@ class AmuseLabsDownloader(BaseDownloader):
                      if 'window.rawc' in line), None)
 
         if not rawc:
-            raise Exception("Crossword puzzle not found.")
+            raise XWordDLException("Crossword puzzle not found.")
 
         rawc = rawc.split("'")[1]
 
