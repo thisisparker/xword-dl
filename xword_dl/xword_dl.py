@@ -17,7 +17,8 @@ from . import downloader
 
 from .util import *
 
-__version__ = '2022.11.11'
+with open(os.path.join(os.path.dirname(__file__), 'version')) as f:
+    __version__ = f.read().strip()
 
 
 def by_keyword(keyword, **kwargs):
