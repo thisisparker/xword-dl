@@ -1,6 +1,6 @@
 import os
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -20,21 +20,20 @@ def get_version(module_path):
             raise RuntimeError("Unable to find version string.")
 
 setup(name='xword_dl',
-        version=get_version(os.path.join(here, 'xword_dl.py')),
+        version=get_version(os.path.join(here, 'xword_dl/xword_dl.py')),
         description='a download tool for online crossword puzzles',
         long_description=readme,
         long_description_content_type='text/markdown',
         url='https://github.com/thisisparker/xword-dl',
         author='Parker Higgins',
         author_email='parker@parkerhiggins.net',
-        py_modules=['xword_dl'],
-        packages=[''],
+        packages=find_packages(),
         package_data={'':['']},
         python_requires='>=3.4',
         install_requires=reqs,
         entry_points={
             'console_scripts': [
-                'xword-dl=xword_dl:main',
+                'xword-dl=xword_dl.xword_dl:main',
             ],
         },
     )
