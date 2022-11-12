@@ -10,17 +10,11 @@ with open(os.path.join(here, 'requirements.txt')) as f:
 with open(os.path.join(here, 'README.md')) as f:
     readme = f.read()
 
-def get_version(module_path):
-    with open(module_path) as f:
-        for line in f.readlines():
-            if line.startswith('__version__'):
-                delim = '"' if '"' in line else "'"
-                return line.split(delim)[1]
-        else:
-            raise RuntimeError("Unable to find version string.")
+with open(os.path.join(here, 'xword_dl', 'version')) as f:
+    version = f.read().strip()
 
 setup(name='xword_dl',
-        version=get_version(os.path.join(here, 'xword_dl/xword_dl.py')),
+        version=version,
         description='a download tool for online crossword puzzles',
         long_description=readme,
         long_description_content_type='text/markdown',
@@ -28,7 +22,8 @@ setup(name='xword_dl',
         author='Parker Higgins',
         author_email='parker@parkerhiggins.net',
         packages=find_packages(),
-        package_data={'':['']},
+        package_data={'xword_dl':['version']},
+        data_files=[('',['LICENSE'])],
         python_requires='>=3.4',
         install_requires=reqs,
         entry_points={
@@ -36,5 +31,6 @@ setup(name='xword_dl',
                 'xword-dl=xword_dl.xword_dl:main',
             ],
         },
+        license='License :: OSI Approved :: MIT License',
     )
 
