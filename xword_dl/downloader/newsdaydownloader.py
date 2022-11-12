@@ -23,6 +23,4 @@ class NewsdayDownloader(AmuseLabsDownloader):
 
         self.get_and_add_picker_token()
 
-        print(self.find_puzzle_url_from_id(self.id))
-
         return self.find_puzzle_url_from_id(self.id)
