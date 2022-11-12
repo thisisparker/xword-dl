@@ -21,4 +21,8 @@ class NewsdayDownloader(AmuseLabsDownloader):
         url_formatted_date = dt.strftime('%Y%m%d')
         self.id = 'Creators_WEB_' + url_formatted_date
 
+        self.get_and_add_picker_token()
+
+        print(self.find_puzzle_url_from_id(self.id))
+
         return self.find_puzzle_url_from_id(self.id)
