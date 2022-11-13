@@ -177,7 +177,8 @@ def main():
         password = args.password or getpass("Password: ")
 
         try:
-            dl = NewYorkTimesDownloader(username=username, password=password)
+            dl = downloader.NewYorkTimesDownloader(
+                    username=username, password=password)
             sys.exit('Authentication successful.')
         except Exception as e:
             sys.exit(' '.join(['Authentication failed:', str(e)]))
