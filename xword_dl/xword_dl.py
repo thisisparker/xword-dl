@@ -75,7 +75,7 @@ def by_url(url, filename=None):
                 break
 
         if amuse_url:
-            dl = AmuseLabsDownloader(netloc=netloc)
+            dl = downloader.AmuseLabsDownloader(netloc=netloc)
             puzzle_url = amuse_url
 
     if dl:
