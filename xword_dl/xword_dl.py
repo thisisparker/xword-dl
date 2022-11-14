@@ -53,7 +53,9 @@ def by_url(url, filename=None):
 
     supported_sites = [('wsj.com', downloader.WSJDownloader),
                        ('newyorker.com', downloader.NewYorkerDownloader),
-                       ('amuselabs.com', downloader.AmuseLabsDownloader)]
+                       ('amuselabs.com', downloader.AmuseLabsDownloader),
+                       ('theglobeandmail.com',
+                           downloader.GlobeAndMailDownloader)]
 
     dl = None
 
@@ -62,6 +64,10 @@ def by_url(url, filename=None):
 
     if supported_downloader:
         dl = supported_downloader(netloc=netloc)
+
+        if isinstance(dl, downloader.GlobeAndMailDownloader):
+            dl.date = dl.parse_date_from_url(url)
+
         puzzle_url = url
 
     else:
