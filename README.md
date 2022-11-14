@@ -5,6 +5,7 @@
 Currently, `xword-dl` supports:
 * Atlantic (atl)
 * Daily Beast (db)
+* The Globe And Mail cryptic (tgam)
 * Los Angeles Times (lat)
 * New York Times (nyt)
 * New Yorker (tny)
