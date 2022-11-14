@@ -56,8 +56,9 @@ class CrosswordCompilerDownloader(BaseDownloader):
 
         all_clues = xw_clues[0]['clue'] + xw_clues[1]['clue']
 
-        clues = [unidecode(c.get('#text')) for c in
-                 sorted(all_clues, key=lambda x: int(x.get('@number')))]
+        clues = [unidecode(c.get('#text')) + (f' ({c.get("@format", "")})'
+                    if c.get("@format") else '') for c in
+                    sorted(all_clues, key=lambda x: int(x.get('@number')))]
 
         puzzle.clues = clues
 
