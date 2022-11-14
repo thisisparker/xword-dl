@@ -63,20 +63,9 @@ def by_url(url, filename=None):
     if supported_downloader:
         dl = supported_downloader(netloc=netloc)
         puzzle_url = url
+
     else:
-        amuse_url = None
-        res = requests.get(url)
-        soup = BeautifulSoup(res.text, 'html.parser')
-
-        for iframe in soup.find_all('iframe'):
-            src = urllib.parse.urljoin(url, iframe.get('src', '') or iframe.get('data-crossword-url', ''))
-            if 'amuselabs.com' in src:
-                amuse_url = src
-                break
-
-        if amuse_url:
-            dl = downloader.AmuseLabsDownloader(netloc=netloc)
-            puzzle_url = amuse_url
+        dl, puzzle_url = parse_for_embedded_puzzle(url)
 
     if dl:
         puzzle = dl.download(puzzle_url)
@@ -86,6 +75,43 @@ def by_url(url, filename=None):
     filename = filename or dl.pick_filename(puzzle)
 
     return puzzle, filename
+
+def parse_for_embedded_puzzle(url):
+    netloc = urllib.parse.urlparse(url).netloc
+
+    res = requests.get(url, headers={'User-Agent':'xword-dl'})
+    soup = BeautifulSoup(res.text, 'html.parser')
+
+    sources = [urllib.parse.urljoin(url, iframe.get('src', '') or
+                iframe.get('data-crossword-url', '')) for iframe in
+                soup.find_all('iframe')]
+
+    sources.insert(0, url)
+
+    for src in sources:
+        if 'amuselabs.com' in src:
+            dl = downloader.AmuseLabsDownloader(netloc=netloc)
+            puzzle_url = src
+
+            return dl, puzzle_url
+
+        if not soup:
+            res = requests.get(src)
+            soup = BeautifulSoup(res.text, 'html.parser')
+
+        for script in [s for s in soup.find_all('script') if s.get('src')]:
+            js_url = urllib.parse.urljoin(url, script.get('src'))
+            res = requests.get(js_url, headers={'User-Agent':'xword-dl'})
+            if res.text.startswith('var CrosswordPuzzleData'):
+                dl = downloader.CrosswordCompilerDownloader(netloc=netloc)
+                puzzle_url = js_url
+                dl.fetch_data = dl.fetch_jsencoded_data
+
+                return dl, puzzle_url
+
+        soup = None
+
+    return None, None
 
 
 def get_supported_outlets():
