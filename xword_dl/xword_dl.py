@@ -56,7 +56,8 @@ def by_url(url, filename=None):
                        ('amuselabs.com', downloader.AmuseLabsDownloader),
                        ('theglobeandmail.com',
                            downloader.GlobeAndMailDownloader),
-                       ('nytimes.com', downloader.NewYorkTimesDownloader)]
+                       ('nytimes.com', downloader.NewYorkTimesDownloader),
+                       ('guardian.com', downloader.GuardianDownloader)]
 
     dl = None
 

@@ -17,11 +17,9 @@ class BaseDownloader:
 
         self.settings.update(config.get('general', {}))
 
-        if 'inherit_settings' in kwargs:
-            self.settings.update(config.get(kwargs.get('inherit_settings')))
-
-        if hasattr(self, 'command'):
-            self.settings.update(config.get(self.command, {}))
+        if hasattr(self, 'command') or 'inherit_settings' in kwargs:
+            self.settings.update(config.get(kwargs.get('inherit_settings'), {}))
+            self.settings.update(config.get(getattr(self, 'command', ''), {}))
         elif 'netloc' in kwargs:
             self.netloc = kwargs['netloc']
             self.settings.update(config.get('url', {}))
