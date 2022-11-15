@@ -8,6 +8,7 @@ Currently, `xword-dl` supports:
 * The Globe And Mail cryptic (tgam)
 * Los Angeles Times (lat)
 * New York Times (nyt)
+* New York Times Variety (nytv)
 * New Yorker (tny)
 * Newsday (nd)
 * USA Today (usa)
