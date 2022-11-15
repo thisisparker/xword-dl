@@ -176,13 +176,10 @@ class NewYorkTimesDownloader(BaseDownloader):
 class NewYorkTimesVarietyDownloader(NewYorkTimesDownloader):
     command = 'nytv'
     outlet = 'New York Times Variety'
-    prefix = 'NY Times Variety'
+    outlet_prefix = 'NY Times Variety'
 
     def __init__(self, **kwargs):
-        self.command = 'nyt' # sort of a hack to use the stored settings
-                             # for nyt, doesn't actually affect command
-        super().__init__(**kwargs)
-        self.command = 'nytv' # but we change it back anyway
+        super().__init__(inherit_settings='nyt', **kwargs)
 
         self.url_from_id = 'https://www.nytimes.com/svc/crosswords/v6/puzzle/variety/{}.json'
 

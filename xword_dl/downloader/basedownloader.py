@@ -16,6 +16,10 @@ class BaseDownloader:
             config = yaml.safe_load(f) or {}
 
         self.settings.update(config.get('general', {}))
+
+        if 'inherit_settings' in kwargs:
+            self.settings.update(config.get(kwargs.get('inherit_settings')))
+
         if hasattr(self, 'command'):
             self.settings.update(config.get(self.command, {}))
         elif 'netloc' in kwargs:
