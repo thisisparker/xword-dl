@@ -231,7 +231,7 @@ class NewYorkTimesVarietyDownloader(NewYorkTimesDownloader):
         puzzle.fill = fill
 
         clue_list = xword_data['body'][0]['clues']
-        clue_list.sort(key=lambda c: (c['label'], c['direction']))
+        clue_list.sort(key=lambda c: (int(c['label']), c['direction']))
 
         puzzle.clues = [c['text'][0]['plain'] for c in clue_list]
 
