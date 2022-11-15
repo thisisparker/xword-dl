@@ -55,7 +55,8 @@ def by_url(url, filename=None):
                        ('newyorker.com', downloader.NewYorkerDownloader),
                        ('amuselabs.com', downloader.AmuseLabsDownloader),
                        ('theglobeandmail.com',
-                           downloader.GlobeAndMailDownloader)]
+                           downloader.GlobeAndMailDownloader),
+                       ('nytimes.com', downloader.NewYorkTimesDownloader)]
 
     dl = None
 
@@ -67,6 +68,12 @@ def by_url(url, filename=None):
 
         if isinstance(dl, downloader.GlobeAndMailDownloader):
             dl.date = dl.parse_date_from_url(url)
+
+        if isinstance(dl, downloader.NewYorkTimesDownloader):
+            if 'variety' in url:
+                dl = downloader.NewYorkTimesVarietyDownloader(netloc=netloc)
+            dl.date = dl.parse_date_from_url(url)
+            url = dl.find_by_date(dl.date)
 
         puzzle_url = url
 
