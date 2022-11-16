@@ -35,7 +35,6 @@ class BaseDownloader:
 
         tokens = {t:kwargs[t] if t in kwargs else tokens[t] for t in tokens}
 
-        title = kwargs.get('title', puzzle.title)
         date = kwargs.get('date', self.date)
 
         template = kwargs.get('filename') or self.settings.get('filename') or ''
