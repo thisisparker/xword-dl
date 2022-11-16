@@ -155,14 +155,3 @@ class GuardianQuipticDownloader(GuardianDownloader):
         super().__init__(**kwargs)
 
         self.landing_page += '/series/quiptic'
-
-
-class GuardianGeniusDownloader(GuardianDownloader):
-    command = 'grdg'
-    outlet = 'Guardian Genius'
-    outlet_prefix = 'Guardian Genius'
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        self.landing_page += '/series/genius'
