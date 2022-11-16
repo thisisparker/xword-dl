@@ -166,14 +166,3 @@ class GuardianGeniusDownloader(GuardianDownloader):
         super().__init__(**kwargs)
 
         self.landing_page += '/series/genius'
-
-
-class GuardianAzedDownloader(GuardianDownloader):
-    command = 'grda'
-    outlet = 'Guardian Azed'
-    outlet_prefix = 'Guardian Azed'
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        self.landing_page += '/series/azed'
