@@ -79,7 +79,7 @@ Some outlets allow specification of a puzzle to download by date using the `--da
 xword-dl uni --date 9/22/21
 ```
 
-The argument provided after the flag is parsed pretty liberally, and you can use relative descriptors such as "yesterday" or  "monday".
+The argument provided after the flag is parsed pretty liberally, and you can use relative descriptors such as "yesterday" or  "monday". Use quotes if your date contains spaces (such as "June 16, 2022").
 
 ### Specifying filenames
 

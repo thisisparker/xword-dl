@@ -177,9 +177,9 @@ def main():
                           action='store_true',
                           default=True)
 
-    selector.add_argument('-d', '--date', nargs='*', metavar='',
+    selector.add_argument('-d', '--date',
                           help='a specific puzzle date to select',
-                          default=[])
+                          default=None)
 
     parser.add_argument('-a', '--authenticate',
                         help=textwrap.dedent("""\
@@ -206,8 +206,9 @@ def main():
 
     parser.add_argument('-o', '--output',
                         help=textwrap.dedent("""\
-                            the filename for the saved puzzle
-                            (if not provided, a default value will be used)"""),
+                            filename (or filename template) for the
+                            saved puzzle. (if not provided, a default value
+                            will be used)"""),
                         default=None)
 
 
@@ -236,7 +237,7 @@ def main():
     if args.output:
         options['filename'] = args.output
     if args.date:
-        options['date'] = ''.join(args.date)
+        options['date'] = args.date
 
     try:
         if args.source.startswith('http'):
