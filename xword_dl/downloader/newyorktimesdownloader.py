@@ -184,7 +184,18 @@ class NewYorkTimesVarietyDownloader(NewYorkTimesDownloader):
         self.url_from_id = 'https://www.nytimes.com/svc/crosswords/v6/puzzle/variety/{}.json'
 
     def find_latest(self):
-        raise XWordDLException('Search by latest not supported for NYT Variety puzzles. Try searching by date or passing a URL.')
+        latest_puzzles = 'https://www.nytimes.com/svc/crosswords/v3/puzzles.json?format_type=pdf%2Cnormal%2Cdiagramless&publish_type=variety%2Cassorted&sort_order=asc&sort_by=print_date&date_start={}&date_end={}'
+
+        today_string = datetime.datetime.today().strftime('%Y-%m-%d')
+        a_while_back = (datetime.datetime.today()
+                            - datetime.timedelta(days=90)).strftime('%Y-%m-%d')
+
+        res = requests.get(latest_puzzles.format(a_while_back, today_string))
+        normal_puzzles = [p for p in res.json()['results']
+                                if p['format_type'] == 'Normal']
+
+        return self.url_from_id.format(normal_puzzles[-1]['print_date'])
+
 
     def find_by_date(self, dt):
         formatted_date = dt.strftime('%Y-%m-%d')
@@ -211,7 +222,7 @@ class NewYorkTimesVarietyDownloader(NewYorkTimesDownloader):
         puzzle.title = xword_data['title']
 
         if not self.date:
-            self.date = datetime.strptime(xword_data['publicationDate'],
+            self.date = datetime.datetime.strptime(xword_data['publicationDate'],
                                           '%Y-%m-%d')
         solution = ''
         fill = ''
