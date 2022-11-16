@@ -18,7 +18,7 @@ Supported outlets:
 |*Guardian Weekend*|`grdw`|✔️||✔️|
 |*Los Angeles Times*|`lat`|✔️|✔️||
 |*New York Times*|`nyt`|✔️|✔️|✔️|
-|*New York Times Variety*|`nytv`||✔️|✔️|
+|*New York Times Variety*|`nytv`|✔️|✔️|✔️|
 |*The New Yorker*|`tny`|✔️|✔️|✔️|
 |*Newsday*|`nd`|✔️|✔️||
 |*Universal*|`uni`|✔️|✔️||
