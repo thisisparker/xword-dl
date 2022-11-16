@@ -2,20 +2,30 @@
 
 `xword-dl` is a command-line tool to download .puz files for online crossword puzzles from supported outlets or arbitrary URLs. For a supported outlet, you can easily download the latest puzzle, or specify one from the archives.
 
-Currently, `xword-dl` supports:
-* Atlantic (atl)
-* Daily Beast (db)
-* The Globe And Mail cryptic (tgam)
-* Los Angeles Times (lat)
-* New York Times (nyt)
-* New York Times Variety (nytv)
-* New Yorker (tny)
-* Newsday (nd)
-* USA Today (usa)
-* Universal (uni)
-* Wall Street Journal (wsj)
-* Washington Post (wp)
-* Vox (vox)
+`xword-dl` supports:
+
+|Outlet|Keyword|Download latest|Search by date|Search by URL|
+|------|-------|:-------------:|:------------:|:-----------:|
+|Atlantic|atl|✅|✅||
+|The Daily Beast|db|✅|||
+|The Globe And Mail cryptic|tgam|✅|✅|✅|
+|Guardian Cryptic|grdc|✅||✅|
+|Guardian Everyman|grde|✅||✅|
+|Guardian Prize|grdp|✅||✅|
+|Guardian Quick|grdq|✅||✅|
+|Guardian Quiptic|grdu|✅||✅|
+|Guardian Speedy|grds|✅||✅|
+|Guardian Weekend|grdw|✅||✅|
+|Los Angeles Times|lat|✅|✅||
+|New York Times|nyt|✅|✅|✅|
+|New York Times Variety|nytv||✅|✅|
+|The New Yorker|tny|✅|✅|✅|
+|Newsday|nd|✅|✅||
+|Universal|uni|✅|✅||
+|USA Today|usa|✅|✅||
+|Vox|vox|✅|||
+|Wall Street Journal|wsj|✅||✅|
+|Washington Post|wp|✅|✅||
 
 To download a puzzle, install `xword-dl` and run it on the command line.
 
