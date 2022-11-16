@@ -1,5 +1,3 @@
-import yaml
-
 from ..util import *
 
 class BaseDownloader:
@@ -12,18 +10,17 @@ class BaseDownloader:
 
         self.settings = {}
 
-        with open(CONFIG_PATH, 'r') as f:
-            config = yaml.safe_load(f) or {}
-
-        self.settings.update(config.get('general', {}))
+        self.settings.update(read_config_values('general'))
 
         if hasattr(self, 'command') or 'inherit_settings' in kwargs:
-            self.settings.update(config.get(kwargs.get('inherit_settings'), {}))
-            self.settings.update(config.get(getattr(self, 'command', ''), {}))
+            self.settings.update(read_config_values(
+                                    kwargs.get('inherit_settings')))
+            self.settings.update(read_config_values(
+                                    getattr(self, 'command', '')))
         elif 'netloc' in kwargs:
             self.netloc = kwargs['netloc']
-            self.settings.update(config.get('url', {}))
-            self.settings.update(config.get(self.netloc, {}))
+            self.settings.update(read_config_values('url'))
+            self.settings.update(read_config_values(self.netloc))
         self.settings.update(kwargs)
 
     def pick_filename(self, puzzle, **kwargs):
@@ -53,12 +50,8 @@ class BaseDownloader:
             replacement = remove_invalid_chars_from_filename(replacement)
             template = template.replace('%' + token, replacement)
 
-
         if date:
             template = date.strftime(template)
-
-        title = kwargs.get('title', puzzle.title)
-        date = kwargs.get('date', self.date)
 
         if not template.endswith('.puz'):
             template += '.puz'
