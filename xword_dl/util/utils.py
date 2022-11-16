@@ -22,6 +22,7 @@ if not os.path.exists(CONFIG_PATH):
 class XWordDLException(Exception):
     pass
 
+
 def save_puzzle(puzzle, filename):
     if not os.path.exists(filename):
         puzzle.save(filename)
@@ -68,3 +69,10 @@ def update_config_file(heading, new_values_dict):
 
     with open(CONFIG_PATH, 'w') as f:
         yaml.dump(config, f)
+
+
+def read_config_values(heading):
+    with open(CONFIG_PATH, 'r') as f:
+        config = yaml.safe_load(f) or {}
+
+    return config.get(heading, {})
