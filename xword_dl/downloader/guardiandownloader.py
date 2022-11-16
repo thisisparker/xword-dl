@@ -47,6 +47,9 @@ class GuardianDownloader(BaseDownloader):
 
         puzzle.title = unidecode(xword_data.get('name', ''))
 
+        if not xword_data.get('solutionAvailable'):
+            puzzle.title += ' - no solution provided'
+
         self.date = datetime.datetime.fromtimestamp(
                                         xword_data.get('date') // 1000)
 
