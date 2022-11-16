@@ -99,15 +99,20 @@ By default, files will be given a descriptive name based on puzzle metadata. If 
 
 When running `xword-dl`, a configuration file is created to store persistent settings. By default, this file is located at `~/.config/xword-dl/xword-dl.yaml`. You can manually edit this file to pass options to `xword-dl` at runtime.
 
-Most settings are specified by the command keyword. For example, you can specify that USA Today puzzles should include the constructor with the following lines:
+Most settings are specified by the command keyword. For example, if you want to save *USA Today* puzzles in this format:
+
+```
+USA Today - By Brooke Husic  Ed. Erik Agard - Right Turns - 221115.puz
+```
+
+you can specify that by editing your config file to include the following lines:
 
 ```
 usa:
   filename: '%prefix - %author - %title - %y%m%d'
 ```
 
-In addition to command keywords, you can also use the keys `general` (to apply to all puzzles), `url` (to apply to embedded puzzles selected by URL at runtime) or with a given `netloc` (to apply to embedded puzzles at a given domain or subdomain.
-
+In addition to command keywords, you can also use the keys `general` (to apply to all puzzles), `url` (to apply to embedded puzzles selected by URL at runtime) or with a given `netloc` (to apply to embedded puzzles at a given domain or subdomain).
 
 ### New York Times authentication
 
