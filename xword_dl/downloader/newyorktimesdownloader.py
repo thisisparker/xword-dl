@@ -16,7 +16,9 @@ class NewYorkTimesDownloader(BaseDownloader):
         super().__init__(**kwargs)
 
         self.url_from_id = 'https://www.nytimes.com/svc/crosswords/v2/puzzle/{}.json'
-        self.date = None
+
+        if 'url' in kwargs and not self.date:
+            self.date = self.parse_date_from_url(kwargs.get('url'))
 
         self.headers = {}
         self.cookies = {}
@@ -34,6 +36,11 @@ class NewYorkTimesDownloader(BaseDownloader):
             raise XWordDLException('No credentials provided or stored. Try running xword-dl nyt --authenticate')
         else:
             self.cookies.update({'NYT-S': nyts_token})
+
+    @staticmethod
+    def matches_url(url_components):
+        return ('nytimes.com' in url_components.netloc
+                    and 'crosswords/game/daily' in url_components.path)
 
     def authenticate(self, username, password):
         """Given a NYT username and password, returns the NYT-S cookie value"""
@@ -85,6 +92,9 @@ class NewYorkTimesDownloader(BaseDownloader):
         return self.url_from_id.format(puzzle_id)
 
     def find_solver(self, url):
+        if not url.endswith('.json'):
+            url = self.find_by_date(self.parse_date_from_url(url))
+
         return url
 
     def fetch_data(self, solver_url):
@@ -182,6 +192,11 @@ class NewYorkTimesVarietyDownloader(NewYorkTimesDownloader):
         super().__init__(inherit_settings='nyt', **kwargs)
 
         self.url_from_id = 'https://www.nytimes.com/svc/crosswords/v6/puzzle/variety/{}.json'
+
+    @staticmethod
+    def matches_url(url_components):
+        return ('nytimes.com' in url_components.netloc
+                    and 'variety' in url_components.path)
 
     def find_latest(self):
         latest_puzzles = 'https://www.nytimes.com/svc/crosswords/v3/puzzles.json?format_type=pdf%2Cnormal%2Cdiagramless&publish_type=variety%2Cassorted&sort_order=asc&sort_by=print_date&date_start={}&date_end={}'

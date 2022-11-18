@@ -43,54 +43,39 @@ def by_keyword(keyword, **kwargs):
             'Selection by date not available for {}.'.format(dl.outlet))
 
     puzzle = dl.download(puzzle_url)
-    filename = dl.pick_filename(puzzle, filename=kwargs.get('filename'))
+    filename = dl.pick_filename(puzzle)
 
     return puzzle, filename
 
 
-def by_url(url, filename=None):
-    netloc = urllib.parse.urlparse(url).netloc
-
-    supported_sites = [('wsj.com', downloader.WSJDownloader),
-                       ('newyorker.com', downloader.NewYorkerDownloader),
-                       ('amuselabs.com', downloader.AmuseLabsDownloader),
-                       ('theglobeandmail.com',
-                           downloader.GlobeAndMailDownloader),
-                       ('nytimes.com', downloader.NewYorkTimesDownloader),
-                       ('guardian.com', downloader.GuardianDownloader)]
+def by_url(url, **kwargs):
+    supported_downloaders = [d[1] for d in
+            get_supported_outlets(command_only=False)
+            if hasattr(d[1], 'matches_url')]
 
     dl = None
 
-    supported_downloader = next((site[1] for site in supported_sites
-                                 if site[0] in netloc), None)
+    for d in supported_downloaders:
+        url_components = urllib.parse.urlparse(url)
 
-    if supported_downloader:
-        dl = supported_downloader(netloc=netloc)
-
-        if isinstance(dl, downloader.GlobeAndMailDownloader):
-            dl.date = dl.parse_date_from_url(url)
-
-        if isinstance(dl, downloader.NewYorkTimesDownloader):
-            if 'variety' in url:
-                dl = downloader.NewYorkTimesVarietyDownloader(netloc=netloc)
-            dl.date = dl.parse_date_from_url(url)
-            url = dl.find_by_date(dl.date)
-
-        puzzle_url = url
-
+        if d.matches_url(url_components):
+            dl = d(url=url, **kwargs)
+            puzzle_url = url
+            break
     else:
-        dl, puzzle_url = parse_for_embedded_puzzle(url)
+        dl, puzzle_url = parse_for_embedded_puzzle(url, **kwargs)
 
     if dl:
         puzzle = dl.download(puzzle_url)
     else:
         raise XWordDLException('Unable to find a puzzle at {}.'.format(url))
 
-    filename = filename or dl.pick_filename(puzzle)
+    filename = dl.pick_filename(puzzle)
 
     return puzzle, filename
 
-def parse_for_embedded_puzzle(url):
+
+def parse_for_embedded_puzzle(url, **kwargs):
     netloc = urllib.parse.urlparse(url).netloc
 
     res = requests.get(url, headers={'User-Agent':'xword-dl'})
@@ -104,7 +89,7 @@ def parse_for_embedded_puzzle(url):
 
     for src in sources:
         if 'amuselabs.com' in src:
-            dl = downloader.AmuseLabsDownloader(netloc=netloc)
+            dl = downloader.AmuseLabsDownloader(url=url, **kwargs)
             puzzle_url = src
 
             return dl, puzzle_url
@@ -117,7 +102,7 @@ def parse_for_embedded_puzzle(url):
             js_url = urllib.parse.urljoin(url, script.get('src'))
             res = requests.get(js_url, headers={'User-Agent':'xword-dl'})
             if res.text.startswith('var CrosswordPuzzleData'):
-                dl = downloader.CrosswordCompilerDownloader(netloc=netloc)
+                dl = downloader.CrosswordCompilerDownloader(url=url, **kwargs)
                 puzzle_url = js_url
                 dl.fetch_data = dl.fetch_jsencoded_data
 
@@ -128,12 +113,14 @@ def parse_for_embedded_puzzle(url):
     return None, None
 
 
-def get_supported_outlets():
+def get_supported_outlets(command_only=True):
     all_classes = inspect.getmembers(sys.modules['xword_dl.downloader'],
                                      inspect.isclass)
     dls = [d for d in all_classes if issubclass(d[1], 
-                   downloader.BaseDownloader)
-                   and hasattr(d[1], 'command')]
+                   downloader.BaseDownloader)]
+
+    if command_only:
+        dls = [d for d in dls if hasattr(d[1], 'command')]
 
     return dls
 
@@ -241,8 +228,7 @@ def main():
 
     try:
         if args.source.startswith('http'):
-            puzzle, filename = by_url(args.source,
-                                      filename=args.output)
+            puzzle, filename = by_url(args.source, **options)
         else:
             puzzle, filename = by_keyword(args.source, **options)
     except XWordDLException as e:
