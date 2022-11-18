@@ -59,6 +59,8 @@ class BaseDownloader:
         if not template.endswith('.puz'):
             template += '.puz'
 
+        template = ' '.join(template.split())
+
         return template
 
     def find_solver(self, url):
