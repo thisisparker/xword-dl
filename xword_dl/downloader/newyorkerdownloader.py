@@ -20,6 +20,10 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         self.url_from_id = 'https://cdn3.amuselabs.com/tny/crossword?id={puzzle_id}&set=tny-weekly'
 
+    @staticmethod
+    def matches_url(url_components):
+        return ('newyorker.com' in url_components.netloc and '/puzzles-and-games-dept/crossword' in url_components.path)
+
     def guess_date_from_id(self, puzzle_id):
         self.date = datetime.datetime.strftime(puzzle_id.split('_')[-1])
 

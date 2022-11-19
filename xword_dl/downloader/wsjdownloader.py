@@ -19,6 +19,10 @@ class WSJDownloader(BaseDownloader):
 
         self.headers = {'User-Agent': 'xword-dl'}
 
+    @staticmethod
+    def matches_url(url_components):
+        return 'wsj.com' in url_components.netloc
+
     def find_latest(self):
         url = "https://www.wsj.com/news/puzzle"
 

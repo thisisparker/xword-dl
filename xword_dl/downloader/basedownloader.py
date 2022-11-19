@@ -1,3 +1,5 @@
+import urllib
+
 from ..util import *
 
 class BaseDownloader:
@@ -5,8 +7,9 @@ class BaseDownloader:
     outlet_prefix = None
 
     def __init__(self, **kwargs):
-        self.date = None
-        self.netloc = None
+        self.date = kwargs.get('date', None)
+        self.netloc = urllib.parse.urlparse(kwargs.get('url','')).netloc
+        self.filename = kwargs.get('filename', None)
 
         self.settings = {}
 
@@ -17,10 +20,10 @@ class BaseDownloader:
                                     kwargs.get('inherit_settings')))
             self.settings.update(read_config_values(
                                     getattr(self, 'command', '')))
-        elif 'netloc' in kwargs:
-            self.netloc = kwargs['netloc']
+        elif 'url' in kwargs:
             self.settings.update(read_config_values('url'))
             self.settings.update(read_config_values(self.netloc))
+
         self.settings.update(kwargs)
 
     def pick_filename(self, puzzle, **kwargs):
@@ -37,7 +40,7 @@ class BaseDownloader:
 
         date = kwargs.get('date', self.date)
 
-        template = kwargs.get('filename') or self.settings.get('filename') or ''
+        template = self.filename or self.settings.get('filename') or ''
 
         if not template:
             template += '%prefix' if tokens.get('prefix') else '%author'
@@ -55,6 +58,8 @@ class BaseDownloader:
 
         if not template.endswith('.puz'):
             template += '.puz'
+
+        template = ' '.join(template.split())
 
         return template
 

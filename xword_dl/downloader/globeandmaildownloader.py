@@ -15,7 +15,14 @@ class GlobeAndMailDownloader(CrosswordCompilerDownloader):
         self.fetch_data = self.fetch_jsencoded_data
         self.date = None
 
+        if 'url' in kwargs and not self.date:
+            self.date = self.parse_date_from_url(kwargs.get('url'))
+
         self.url_format = 'https://www.theglobeandmail.com/puzzles-and-crosswords/cryptic-crossword/?date={url_encoded_date}'
+
+    @staticmethod
+    def matches_url(url_components):
+        return 'theglobeandmail.com' in url_components.netloc
 
     def parse_date_from_url(self, url):
         queries = urllib.parse.urlparse(url).query
