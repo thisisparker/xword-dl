@@ -19,6 +19,10 @@ class AmuseLabsDownloader(BaseDownloader):
 
         self.id = None
 
+    @staticmethod
+    def matches_url(url_components):
+        return 'amuselabs.com' in url_components.netloc
+
     def find_latest(self):
         res = requests.get(self.picker_url)
         soup = BeautifulSoup(res.text, 'html.parser')

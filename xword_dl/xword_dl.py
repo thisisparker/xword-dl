@@ -43,57 +43,84 @@ def by_keyword(keyword, **kwargs):
             'Selection by date not available for {}.'.format(dl.outlet))
 
     puzzle = dl.download(puzzle_url)
-    filename = dl.pick_filename(puzzle, filename=kwargs.get('filename'))
+    filename = dl.pick_filename(puzzle)
 
     return puzzle, filename
 
 
-def by_url(url, filename=None):
-    netloc = urllib.parse.urlparse(url).netloc
-
-    supported_sites = [('wsj.com', downloader.WSJDownloader),
-                       ('newyorker.com', downloader.NewYorkerDownloader),
-                       ('amuselabs.com', downloader.AmuseLabsDownloader)]
+def by_url(url, **kwargs):
+    supported_downloaders = [d[1] for d in
+            get_supported_outlets(command_only=False)
+            if hasattr(d[1], 'matches_url')]
 
     dl = None
 
-    supported_downloader = next((site[1] for site in supported_sites
-                                 if site[0] in netloc), None)
+    for d in supported_downloaders:
+        url_components = urllib.parse.urlparse(url)
 
-    if supported_downloader:
-        dl = supported_downloader(netloc=netloc)
-        puzzle_url = url
+        if d.matches_url(url_components):
+            dl = d(url=url, **kwargs)
+            puzzle_url = url
+            break
     else:
-        amuse_url = None
-        res = requests.get(url)
-        soup = BeautifulSoup(res.text, 'html.parser')
-
-        for iframe in soup.find_all('iframe'):
-            src = urllib.parse.urljoin(url, iframe.get('src', '') or iframe.get('data-crossword-url', ''))
-            if 'amuselabs.com' in src:
-                amuse_url = src
-                break
-
-        if amuse_url:
-            dl = downloader.AmuseLabsDownloader(netloc=netloc)
-            puzzle_url = amuse_url
+        dl, puzzle_url = parse_for_embedded_puzzle(url, **kwargs)
 
     if dl:
         puzzle = dl.download(puzzle_url)
     else:
         raise XWordDLException('Unable to find a puzzle at {}.'.format(url))
 
-    filename = filename or dl.pick_filename(puzzle)
+    filename = dl.pick_filename(puzzle)
 
     return puzzle, filename
 
 
-def get_supported_outlets():
+def parse_for_embedded_puzzle(url, **kwargs):
+    netloc = urllib.parse.urlparse(url).netloc
+
+    res = requests.get(url, headers={'User-Agent':'xword-dl'})
+    soup = BeautifulSoup(res.text, 'html.parser')
+
+    sources = [urllib.parse.urljoin(url, iframe.get('src', '') or
+                iframe.get('data-crossword-url', '')) for iframe in
+                soup.find_all('iframe')]
+
+    sources.insert(0, url)
+
+    for src in sources:
+        if 'amuselabs.com' in src:
+            dl = downloader.AmuseLabsDownloader(url=url, **kwargs)
+            puzzle_url = src
+
+            return dl, puzzle_url
+
+        if not soup:
+            res = requests.get(src)
+            soup = BeautifulSoup(res.text, 'html.parser')
+
+        for script in [s for s in soup.find_all('script') if s.get('src')]:
+            js_url = urllib.parse.urljoin(url, script.get('src'))
+            res = requests.get(js_url, headers={'User-Agent':'xword-dl'})
+            if res.text.startswith('var CrosswordPuzzleData'):
+                dl = downloader.CrosswordCompilerDownloader(url=url, **kwargs)
+                puzzle_url = js_url
+                dl.fetch_data = dl.fetch_jsencoded_data
+
+                return dl, puzzle_url
+
+        soup = None
+
+    return None, None
+
+
+def get_supported_outlets(command_only=True):
     all_classes = inspect.getmembers(sys.modules['xword_dl.downloader'],
                                      inspect.isclass)
     dls = [d for d in all_classes if issubclass(d[1], 
-                   downloader.BaseDownloader)
-                   and hasattr(d[1], 'command')]
+                   downloader.BaseDownloader)]
+
+    if command_only:
+        dls = [d for d in dls if hasattr(d[1], 'command')]
 
     return dls
 
@@ -137,9 +164,9 @@ def main():
                           action='store_true',
                           default=True)
 
-    selector.add_argument('-d', '--date', nargs='*', metavar='',
+    selector.add_argument('-d', '--date',
                           help='a specific puzzle date to select',
-                          default=[])
+                          default=None)
 
     parser.add_argument('-a', '--authenticate',
                         help=textwrap.dedent("""\
@@ -166,8 +193,9 @@ def main():
 
     parser.add_argument('-o', '--output',
                         help=textwrap.dedent("""\
-                            the filename for the saved puzzle
-                            (if not provided, a default value will be used)"""),
+                            filename (or filename template) for the
+                            saved puzzle. (if not provided, a default value
+                            will be used)"""),
                         default=None)
 
 
@@ -177,7 +205,8 @@ def main():
         password = args.password or getpass("Password: ")
 
         try:
-            dl = NewYorkTimesDownloader(username=username, password=password)
+            dl = downloader.NewYorkTimesDownloader(
+                    username=username, password=password)
             sys.exit('Authentication successful.')
         except Exception as e:
             sys.exit(' '.join(['Authentication failed:', str(e)]))
@@ -195,12 +224,11 @@ def main():
     if args.output:
         options['filename'] = args.output
     if args.date:
-        options['date'] = ''.join(args.date)
+        options['date'] = args.date
 
     try:
         if args.source.startswith('http'):
-            puzzle, filename = by_url(args.source,
-                                      filename=args.output)
+            puzzle, filename = by_url(args.source, **options)
         else:
             puzzle, filename = by_keyword(args.source, **options)
     except XWordDLException as e:

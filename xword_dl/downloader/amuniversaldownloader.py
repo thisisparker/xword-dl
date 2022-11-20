@@ -1,11 +1,14 @@
 import datetime
 import json
+import sys
+import time
 import urllib
 
 import puz
 import requests
 
 from .basedownloader import BaseDownloader
+from ..util import XWordDLException
 
 class AMUniversalDownloader(BaseDownloader):
     def __init__(self, **kwargs):
@@ -38,7 +41,7 @@ class AMUniversalDownloader(BaseDownloader):
                 time.sleep(2)
                 attempts -= 1
         else:
-            raise Exception('Unable to download puzzle data.')
+            raise XWordDLException('Unable to download puzzle data.')
         return xword_data
 
     def process_clues(self, clue_list):

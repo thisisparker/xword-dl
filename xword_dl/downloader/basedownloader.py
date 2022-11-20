@@ -1,4 +1,4 @@
-import yaml
+import urllib
 
 from ..util import *
 
@@ -7,21 +7,23 @@ class BaseDownloader:
     outlet_prefix = None
 
     def __init__(self, **kwargs):
-        self.date = None
-        self.netloc = None
+        self.date = kwargs.get('date', None)
+        self.netloc = urllib.parse.urlparse(kwargs.get('url','')).netloc
+        self.filename = kwargs.get('filename', None)
 
         self.settings = {}
 
-        with open(CONFIG_PATH, 'r') as f:
-            config = yaml.safe_load(f) or {}
+        self.settings.update(read_config_values('general'))
 
-        self.settings.update(config.get('general', {}))
-        if hasattr(self, 'command'):
-            self.settings.update(config.get(self.command, {}))
-        elif 'netloc' in kwargs:
-            self.netloc = kwargs['netloc']
-            self.settings.update(config.get('url', {}))
-            self.settings.update(config.get(self.netloc, {}))
+        if hasattr(self, 'command') or 'inherit_settings' in kwargs:
+            self.settings.update(read_config_values(
+                                    kwargs.get('inherit_settings')))
+            self.settings.update(read_config_values(
+                                    getattr(self, 'command', '')))
+        elif 'url' in kwargs:
+            self.settings.update(read_config_values('url'))
+            self.settings.update(read_config_values(self.netloc))
+
         self.settings.update(kwargs)
 
     def pick_filename(self, puzzle, **kwargs):
@@ -38,7 +40,7 @@ class BaseDownloader:
 
         date = kwargs.get('date', self.date)
 
-        template = kwargs.get('filename') or self.settings.get('filename') or ''
+        template = self.filename or self.settings.get('filename') or ''
 
         if not template:
             template += '%prefix' if tokens.get('prefix') else '%author'
@@ -51,15 +53,13 @@ class BaseDownloader:
             replacement = remove_invalid_chars_from_filename(replacement)
             template = template.replace('%' + token, replacement)
 
-
         if date:
             template = date.strftime(template)
 
-        title = kwargs.get('title', puzzle.title)
-        date = kwargs.get('date', self.date)
-
         if not template.endswith('.puz'):
             template += '.puz'
+
+        template = ' '.join(template.split())
 
         return template
 
