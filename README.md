@@ -26,6 +26,7 @@ Supported outlets:
 |*Vox*|`vox`|✔️|||
 |*Wall Street Journal*|`wsj`|✔️||✔️|
 |*Washington Post*|`wp`|✔️|✔️||
+|*Mc Kinsey*|`mck`|✔️|✔️|✔️|
 
 To download a puzzle, install `xword-dl` and run it on the command line.
 
