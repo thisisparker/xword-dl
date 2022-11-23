@@ -95,8 +95,13 @@ class NewYorkTimesDownloader(BaseDownloader):
 
         try:
             res.raise_for_status()
-        except requests.exceptions.HTTPError:
-            raise XWordDLException('Puzzle data not available. Try re-authenticating with xword-dl nyt --authenticate')
+        except requests.exceptions.HTTPError as e:
+            if res.status_code == 403:
+                raise XWordDLException('Puzzle data not available. Try re-authenticating with xword-dl nyt --authenticate')
+            elif res.status_code == 404:
+                raise XWordDLException('Puzzle data not found.')
+            else:
+                raise XWordDLException('HTTP error:', e)
 
         xword_data = res.json()
         return xword_data
@@ -182,7 +187,7 @@ class NewYorkTimesVarietyDownloader(NewYorkTimesDownloader):
     def __init__(self, **kwargs):
         super().__init__(inherit_settings='nyt', **kwargs)
 
-        self.url_from_id = 'https://www.nytimes.com/svc/crosswords/v6/puzzle/variety/{}.json'
+        self.url_from_date = 'https://www.nytimes.com/svc/crosswords/v6/puzzle/variety/{}.json'
 
     @staticmethod
     def matches_url(url_components):
@@ -200,19 +205,10 @@ class NewYorkTimesVarietyDownloader(NewYorkTimesDownloader):
         normal_puzzles = [p for p in res.json()['results']
                                 if p['format_type'] == 'Normal']
 
-        return self.url_from_id.format(normal_puzzles[-1]['print_date'])
+        return self.url_from_date.format(normal_puzzles[-1]['print_date'])
 
-
-    def find_by_date(self, dt):
-        formatted_date = dt.strftime('%Y-%m-%d')
-
-        return self.url_from_id.format(formatted_date)
-
-    def fetch_data(self, solver_url):
+    def parse_xword(self, xword_data):
         try:
-            res = requests.get(solver_url, cookies=self.cookies)
-            res.raise_for_status()
-        except requests.exceptions.HTTPError:
-            raise XWordDLException('No puzzle found for that date.')
-
-        return res.json()
+            return super().parse_xword(xword_data)
+        except ValueError:
+            raise XWordDLException('Encountered error while parsing data. Maybe the selected puzzle is not a crossword?')
