@@ -12,8 +12,8 @@ from ..util import XWordDLException
 
 class McKinseyDownloader(AmuseLabsDownloader):
     command = 'mck'
-    outlet = 'Mc Kinsey'
-    outlet_prefix = 'Mc Kinsey'
+    outlet = 'The McKinsey Crossword'
+    outlet_prefix = 'McKinsey'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -75,13 +75,3 @@ class McKinseyDownloader(AmuseLabsDownloader):
         self.date = pubdate_dt
 
         return self.find_puzzle_url_from_id(self.id)
-        
-    def parse_xword(self, xword_data):
-        puzzle = super().parse_xword(xword_data)
-        
-        return puzzle
-
-    def pick_filename(self, puzzle, **kwargs):
-        title = puzzle.title
-
-        return super().pick_filename(puzzle, title=title, **kwargs)
