@@ -1,7 +1,6 @@
 import datetime
 import json
 import urllib
-import re
 
 import dateparser
 import requests
@@ -11,7 +10,7 @@ from bs4 import BeautifulSoup
 from .amuselabsdownloader import AmuseLabsDownloader
 from ..util import XWordDLException
 
-class NewYorkerDownloader(AmuseLabsDownloader):
+class DerStandardDownloader(AmuseLabsDownloader):
     command = 'std'
     outlet = 'Der Standard'
     outlet_prefix = 'Der Standard'
@@ -52,9 +51,6 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         except requests.exceptions.HTTPError:
             raise XWordDLException('Unable to load {}'.format(url))
 
-        with open('temp2.html', 'w', encoding='utf-8') as fh:
-            fh.write(str(res.text))
-
         try:
             # html embed content is encoded -> beautifulsoup parsing would not work
             query_id = list(re.findall(r'(http)(s)*(:\/\/cdn\-eu1\.amuselabs\.com\/pmm\/crossword)(\?id\=)(bd74ab46)', str(res.text)))
@@ -68,10 +64,7 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         return self.find_puzzle_url_from_id(self.id)
         
-    def parse_xword(self, xword_data):
-        puzzle = super().parse_xword(xword_data)
-
-        return puzzle
+    
 
     def pick_filename(self, puzzle, **kwargs):
         """
@@ -89,6 +82,6 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         title = str(puzzle.title)
         for umlaut, rep in umlauts.items():
-            title = re.sub(re.escape(umlaut), re.escape(rep), title)
+            title = title.replace(umlaut, rep)
 
         return super().pick_filename(puzzle, title=title, **kwargs)

@@ -8,6 +8,7 @@ Supported outlets:
 |------|-------|:-------------:|:------------:|:-----------:|
 |*Atlantic*|`atl`|✔️|✔️||
 |*The Daily Beast*|`db`|✔️|||
+|*Der Standard*|`std`|✔️||✔️|
 |*The Globe And Mail cryptic*|`tgam`|✔️|✔️|✔️|
 |*Guardian Cryptic*|`grdc`|✔️||✔️|
 |*Guardian Everyman*|`grde`|✔️||✔️|
@@ -26,7 +27,6 @@ Supported outlets:
 |*Vox*|`vox`|✔️|||
 |*Wall Street Journal*|`wsj`|✔️||✔️|
 |*Washington Post*|`wp`|✔️|✔️||
-|*Der Standard*|`std`|✔️||✔️|
 
 To download a puzzle, install `xword-dl` and run it on the command line.
 
