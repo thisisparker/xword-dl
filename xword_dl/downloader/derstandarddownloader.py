@@ -52,7 +52,7 @@ class DerStandardDownloader(AmuseLabsDownloader):
 
         try:
             # html embed content is encoded -> beautifulsoup parsing would not work
-            query_id = list(re.findall(r'(http)(s)*(:\/\/cdn\-eu1\.amuselabs\.com\/pmm\/crossword)(\?id\=)([0-9A-z]{8})', str(res.text)))
+            query_id = list(re.findall(r'(http)(s)*(:\/\/cdn\-eu1\.amuselabs\.com\/pmm\/crossword)(\?id\=)([0-9a-z]{8})', str(res.text)))
             
             if len(query_id) == 0:
                 raise XWordDLException('Cannot find puzzle at {} -> failed to retrieve amuselabs url from encoded html.'.format(url))
