@@ -73,7 +73,7 @@ class DerStandardDownloader(AmuseLabsDownloader):
             'Ö':'UE',
             'ä':'ae',
             'ö':'oe',
-            'ü':'üe',
+            'ü':'ue',
             'ß':'ss'
         }
 
