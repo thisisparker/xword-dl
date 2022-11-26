@@ -8,6 +8,7 @@ Supported outlets:
 |------|-------|:-------------:|:------------:|:-----------:|
 |*Atlantic*|`atl`|✔️|✔️||
 |*The Daily Beast*|`db`|✔️|||
+|*Der Standard*|`std`|✔️||✔️|
 |*The Globe And Mail cryptic*|`tgam`|✔️|✔️|✔️|
 |*Guardian Cryptic*|`grdc`|✔️||✔️|
 |*Guardian Everyman*|`grde`|✔️||✔️|
