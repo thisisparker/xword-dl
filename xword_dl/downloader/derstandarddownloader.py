@@ -1,6 +1,7 @@
 import datetime
 import json
 import urllib
+import re
 
 import dateparser
 import requests
@@ -39,8 +40,6 @@ class DerStandardDownloader(AmuseLabsDownloader):
 
         landing_page_url = latest_absolute
 
-        print(landing_page_url)
-
         return landing_page_url
 
     def find_solver(self, url):
@@ -53,7 +52,7 @@ class DerStandardDownloader(AmuseLabsDownloader):
 
         try:
             # html embed content is encoded -> beautifulsoup parsing would not work
-            query_id = list(re.findall(r'(http)(s)*(:\/\/cdn\-eu1\.amuselabs\.com\/pmm\/crossword)(\?id\=)(bd74ab46)', str(res.text)))
+            query_id = list(re.findall(r'(http)(s)*(:\/\/cdn\-eu1\.amuselabs\.com\/pmm\/crossword)(\?id\=)([0-9A-z]{8})', str(res.text)))
             
             if len(query_id) == 0:
                 raise XWordDLException('Cannot find puzzle at {} -> failed to retrieve amuselabs url from encoded html.'.format(url))
@@ -63,8 +62,6 @@ class DerStandardDownloader(AmuseLabsDownloader):
             raise XWordDLException('Cannot find puzzle at {}.'.format(url))
 
         return self.find_puzzle_url_from_id(self.id)
-        
-    
 
     def pick_filename(self, puzzle, **kwargs):
         """
