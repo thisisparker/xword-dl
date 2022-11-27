@@ -79,7 +79,7 @@ def parse_for_embedded_puzzle(url, **kwargs):
     netloc = urllib.parse.urlparse(url).netloc
 
     res = requests.get(url, headers={'User-Agent':'xword-dl'})
-    soup = BeautifulSoup(res.text, 'html.parser')
+    soup = BeautifulSoup(res.text, 'lxml')
 
     sources = [urllib.parse.urljoin(url, iframe.get('src', '') or
                 iframe.get('data-crossword-url', '')) for iframe in
@@ -96,7 +96,7 @@ def parse_for_embedded_puzzle(url, **kwargs):
 
         if not soup:
             res = requests.get(src)
-            soup = BeautifulSoup(res.text, 'html.parser')
+            soup = BeautifulSoup(res.text, 'lxml')
 
         for script in [s for s in soup.find_all('script') if s.get('src')]:
             js_url = urllib.parse.urljoin(url, script.get('src'))
