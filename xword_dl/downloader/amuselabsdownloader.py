@@ -1,6 +1,7 @@
 import base64
 import datetime
 import json
+import urllib
 
 import puz
 import requests
@@ -79,21 +80,17 @@ class AmuseLabsDownloader(BaseDownloader):
 
         ## In some cases we need to pull the underlying JavaScript ##
         # Find the JavaScript URL
-        m1 = re.search(r'"([^"]+c-min.js[^"]+)"', res.content.decode('utf-8'))
-        js_url = m1.groups()[0]
-        base_url = '/'.join(solver_url.split('/')[:-1])
-        js_url = base_url + '/' + js_url
+        m1 = re.search(r'"([^"]+c-min.js[^"]+)"', res.text)
+        js_url_fragment = m1.groups()[0]
+        js_url = urllib.parse.urljoin(solver_url, js_url_fragment)
+
         # get the "key" from the URL
         res2 = requests.get(js_url)
-        m2 = re.search(r'var e=function\(e\)\{var t="(.*?)"', res2.content.decode('utf-8'))
-        if m2 is None:
-            # look for the amuseKey in a different place
-            m2 = re.search(r'var i=function\(t\)\{var e="([^\"]+)"', res2.content.decode('utf-8'))
-        amuseKey = None
-        if m2 is not None:
-            amuseKey = m2.groups()[0]
-            if amuseKey == "1":
-                amuseKey = None
+
+        # matches a 7-digit hex string preceded by `="` and followed by `"`
+        m2 = re.search(r'(?<==\")([0-9a-f]{7})(?=\")', res2.text)
+
+        amuseKey = m2.groups()[0] if m2 else None
 
         # helper function to decode rawc
         # as occasionally it can be obfuscated
