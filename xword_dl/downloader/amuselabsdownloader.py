@@ -86,6 +86,9 @@ class AmuseLabsDownloader(BaseDownloader):
         # get the "key" from the URL
         res2 = requests.get(js_url)
         m2 = re.search(r'var e=function\(e\)\{var t="(.*?)"', res2.content.decode('utf-8'))
+        if m2 is None:
+            # look for the amuseKey in a different place
+            m2 = re.search(r'var i=function\(t\)\{var e="([^\"]+)"', res2.content.decode('utf-8'))
         amuseKey = None
         if m2 is not None:
             amuseKey = m2.groups()[0]
