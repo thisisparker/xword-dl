@@ -1,6 +1,7 @@
 import base64
 import datetime
 import json
+import urllib
 
 import puz
 import requests
@@ -79,18 +80,17 @@ class AmuseLabsDownloader(BaseDownloader):
 
         ## In some cases we need to pull the underlying JavaScript ##
         # Find the JavaScript URL
-        m1 = re.search(r'"([^"]+c-min.js[^"]+)"', res.content.decode('utf-8'))
-        js_url = m1.groups()[0]
-        base_url = '/'.join(solver_url.split('/')[:-1])
-        js_url = base_url + '/' + js_url
+        m1 = re.search(r'"([^"]+c-min.js[^"]+)"', res.text)
+        js_url_fragment = m1.groups()[0]
+        js_url = urllib.parse.urljoin(solver_url, js_url_fragment)
+
         # get the "key" from the URL
         res2 = requests.get(js_url)
-        m2 = re.search(r'var e=function\(e\)\{var t="(.*?)"', res2.content.decode('utf-8'))
-        amuseKey = None
-        if m2 is not None:
-            amuseKey = m2.groups()[0]
-            if amuseKey == "1":
-                amuseKey = None
+
+        # matches a 7-digit hex string preceded by `="` and followed by `"`
+        m2 = re.search(r'="([0-9a-f]{7})"', res2.text)
+
+        amuseKey = m2.groups()[0] if m2 else None
 
         # helper function to decode rawc
         # as occasionally it can be obfuscated
@@ -101,25 +101,53 @@ class AmuseLabsDownloader(BaseDownloader):
             except:
                 try:
                     # case 2 is the first obfuscation
-                    E=rawc.split('.');A=list(E[0]);H=E[1][::-1];F=[int(A,16)+2 for A in H];B,G=0,0
-                    while B<len(A)-1:
-                        C=min(F[G%len(F)],len(A)-B)
-                        for D in range(C//2):A[B+D],A[B+C-D-1]=A[B+C-D-1],A[B+D]
-                        B+=C;G+=1
+                    E = rawc.split('.')
+                    A = list(E[0])
+                    H = E[1][::-1]
+                    F = [int(A,16)+2 for A in H]
+                    B, G = 0, 0
+                    while B < len(A) - 1:
+                        C = min(F[G % len(F)], len(A) - B)
+                        for D in range(C//2):
+                            A[B+D], A[B+C-D-1] = A[B+C-D-1], A[B+D]
+                        B+=C
+                        G+=1
                     newRawc=''.join(A)
                     return json.loads(base64.b64decode(newRawc).decode("utf-8"))
                 except:
                     # case 3 is the most recent obfuscation
                     def amuse_b64(e, amuseKey=None):
-                        e=list(e);H=amuseKey;E=[];F=0
-                        while F<len(H):J=H[F];K=int(J,16);E.append(K);F+=1
-                        A,G,I=0,0,len(e)-1
-                        while A<I:
-                            B=E[G];B+=2;L=I-A+1;C=A;B=min(B,L);D=A+B-1
-                            while C<D:M=e[D];e[D]=e[C];e[C]=M;D-=1;C+=1
-                            A+=B;G=(G+1)%len(E)
+                        e = list(e)
+                        H=amuseKey
+                        E=[]
+                        F=0
+
+                        while F<len(H):
+                            J=H[F]
+                            K=int(J,16)
+                            E.append(K)
+                            F+=1
+
+                        A, G, I = 0, 0, len(e)-1
+                        while A < I:
+                            B = E[G]
+                            B += 2
+                            L = I - A + 1
+                            C = A
+                            B = min(B, L)
+                            D = A + B - 1
+                            while C < D:
+                                M = e[D]
+                                e[D] = e[C]
+                                e[C] = M
+                                D -= 1
+                                C += 1
+                            A += B
+                            G = (G + 1) % len(E)
                         return ''.join(e)
-                    return json.loads(base64.b64decode(amuse_b64(rawc, amuseKey)).decode("utf-8"))
+                    return json.loads(base64.b64decode(
+                                        amuse_b64(rawc, amuseKey)
+                                        ).decode("utf-8"))
 
         xword_data = load_rawc(rawc, amuseKey=amuseKey)
 
