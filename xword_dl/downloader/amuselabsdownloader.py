@@ -88,7 +88,7 @@ class AmuseLabsDownloader(BaseDownloader):
         res2 = requests.get(js_url)
 
         # matches a 7-digit hex string preceded by `="` and followed by `"`
-        m2 = re.search(r'(?<==\")([0-9a-f]{7})(?=\")', res2.text)
+        m2 = re.search(r'="([0-9a-f]{7})"', res2.text)
 
         amuseKey = m2.groups()[0] if m2 else None
 
