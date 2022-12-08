@@ -35,12 +35,11 @@ class DailyPopDownloader(CrosswordCompilerDownloader):
 
     def find_by_date(self, dt):
         url_formatted_date = dt.strftime('%y%m%d')
-
+        self.date = dt
         return urllib.parse.urljoin(self.api_url, url_formatted_date)
 
     def find_latest(self):
         dt = datetime.datetime.today()
-        
         return self.find_by_date(dt)
 
     def fetch_data(self, url):
