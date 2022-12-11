@@ -5,7 +5,7 @@ import puz
 import requests
 
 from .basedownloader import BaseDownloader
-from ..util import *
+from ..util import XWordDLException, join_bylines, unidecode
 
 class NewYorkTimesDownloader(BaseDownloader):
     command = 'nyt'
@@ -109,7 +109,7 @@ class NewYorkTimesDownloader(BaseDownloader):
     def parse_xword(self, xword_data):
         puzzle = puz.Puzzle()
 
-        puzzle.author = ', '.join(xword_data['constructors']).strip()
+        puzzle.author = join_bylines(xword_data['constructors'], "and").strip()
         puzzle.copyright = xword_data['copyright'].strip()
         puzzle.height = int(xword_data['body'][0]['dimensions']['height'])
         puzzle.width =  int(xword_data['body'][0]['dimensions']['width'])

@@ -34,6 +34,8 @@ def save_puzzle(puzzle, filename):
         print("Not saving: a file named {} already exists.".format(filename),
               file=sys.stderr)
 
+def join_bylines(l, and_word="&"):
+    return ', '.join(l[:-1]) + f', {and_word} ' + l[-1] if len(l) > 2 else f' {and_word} '.join(l)
 
 def remove_invalid_chars_from_filename(filename):
     invalid_chars = r'<>:"/\|?*'
