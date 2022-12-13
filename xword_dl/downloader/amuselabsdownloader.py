@@ -11,6 +11,8 @@ import re
 from bs4 import BeautifulSoup
 from html2text import html2text
 
+import pypuz
+
 from .basedownloader import BaseDownloader
 from ..util import *
 
@@ -152,6 +154,11 @@ class AmuseLabsDownloader(BaseDownloader):
         xword_data = load_rawc(rawc, amuseKey=amuseKey)
 
         return xword_data
+        
+    def parse_xword_to_pypuz(self, xword_data):
+        json_string = json.dumps(xword_data)
+        pz = pypuz.Puzzle().fromAmuseLabs(json_string)
+        return pz
 
     def parse_xword(self, xword_data):
         puzzle = puz.Puzzle()
