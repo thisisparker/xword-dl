@@ -4,6 +4,8 @@ import sys
 import dateparser
 import yaml
 
+import puz, pypuz
+
 # This imports the _module_ unidecode, which converts Unicode strings to
 # plain ASCII. The puz format, however, can accept Latin1, which is a larger
 # subset. So the second line tells the module to leave codepoints 128-256
@@ -25,7 +27,13 @@ class XWordDLException(Exception):
 
 def save_puzzle(puzzle, filename):
     if not os.path.exists(filename):
-        puzzle.save(filename)
+        if isinstance(puzzle, puz.Puzzle):
+            puzzle.save(filename)
+        elif isinstance(puzzle, pypuz.pypuz.Puzzle):
+            if filename.endswith('ipuz'):
+                puzzle.toIPuz(filename)
+            else:
+                puzzle.toPuz(filename)
         msg = ("Puzzle downloaded and saved as {}.".format(filename)
                if sys.stdout.isatty()
                else filename)
