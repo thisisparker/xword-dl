@@ -118,7 +118,7 @@ class NewYorkerCrypticDownloader(AmuseLabsDownloader):
     def find_by_date(self, dt):
         url_format = dt.strftime('%Y/%m/%d')
         guessed_url = urllib.parse.urljoin(
-            'https://www.newyorker.com/puzzles-and-games-dept/cryptic-crossword',
+            'https://www.newyorker.com/puzzles-and-games-dept/cryptic-crossword/',
             url_format)
         return guessed_url
 
