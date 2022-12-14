@@ -21,6 +21,15 @@ class CrosswordCompilerDownloader(BaseDownloader):
 
         return xw_data
 
+    def fetch_data(self, url, js_encoded=False):
+        if js_encoded:
+            return fetch_jsencoded_data(url)
+
+        res = requests.get(url, headers={'User-Agent': 'xword-dl'})
+        xw_data = res.text
+
+        return xw_data
+
     def parse_xword(self, xword_data):
         xw = xmltodict.parse(xword_data)
         xw_root = xw.get('crossword-compiler') or xw.get('crossword-compiler-applet')
