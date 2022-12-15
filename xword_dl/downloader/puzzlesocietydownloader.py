@@ -38,11 +38,39 @@ class TheModernDownloader(CrosswordCompilerDownloader):
         return url
 
     def parse_xword(self, xword_data):
-        puzzle = super().parse_xword(xword_data)
+        puzzle = super().parse_xword(xword_data, enumeration=False)
 
         if not puzzle.author:
             puzzle.author = puzzle.title[3:]
             puzzle.title = self.date.strftime('%A, %B %d, %Y')
+
+        across = [dict({'dir':'A'}, **c) for c in puzzle.clue_numbering().across]
+        down =   [dict({'dir':'D'}, **c) for c in puzzle.clue_numbering().down]
+        all_clues_numbered = sorted(across + down, key=lambda x: x['num'])
+        constructor_notes = []
+        alternate_clues   = []
+        for i in range(len(puzzle.clues)):
+            clue_dict = all_clues_numbered.pop(0)
+            clue_id = str(clue_dict['num']) + clue_dict['dir'] + ': '
+            if '@@' in puzzle.clues[i]:
+                clue, note = puzzle.clues[i].split('@@')
+                constructor_notes.append(clue_id + note.strip())
+                puzzle.clues[i] = clue.strip()
+            if '||' in puzzle.clues[i]:
+                clue, alt = puzzle.clues[i].split('||')
+                alternate_clues.append(clue_id + alt.strip())
+                puzzle.clues[i] = clue.strip()
+
+        if alternate_clues:
+            puzzle.notes += 'ALTERNATE CLUES:\n'
+            for c in alternate_clues:
+                puzzle.notes += c + '\n'
+        if constructor_notes:
+            puzzle.notes += 'CONSTRUCTOR NOTES:\n'
+            for n in constructor_notes:
+                puzzle.notes += n + '\n'
+
+        puzzle.notes.rstrip('\n')
 
         return puzzle
 
