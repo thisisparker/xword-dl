@@ -212,3 +212,29 @@ class NewYorkTimesVarietyDownloader(NewYorkTimesDownloader):
             return super().parse_xword(xword_data)
         except ValueError:
             raise XWordDLException('Encountered error while parsing data. Maybe the selected puzzle is not a crossword?')
+
+
+class NewYorkTimesMiniDownloader(NewYorkTimesDownloader):
+    command = 'nytm'
+    outlet = 'New York Times Mini'
+    outlet_prefix = 'NY Times Mini'
+
+    def __init__(self, **kwargs):
+        super().__init__(inherit_settings='nyt', **kwargs)
+
+        self.url_from_date = 'https://www.nytimes.com/svc/crosswords/v6/puzzle/mini/{}.json'
+
+    @staticmethod
+    def matches_url(url_components):
+        return ('nytimes.com' in url_components.netloc
+                    and 'mini' in url_components.path)
+
+    def find_latest(self):
+        oracle = "https://www.nytimes.com/svc/crosswords/v2/oracle/mini.json"
+
+        res = requests.get(oracle)
+        puzzle_date = res.json()['results']['current']['print_date']
+
+        url = self.url_from_date.format(puzzle_date)
+
+        return url
