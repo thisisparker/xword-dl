@@ -23,8 +23,7 @@ setup(name='xword_dl',
         author_email='parker@parkerhiggins.net',
         packages=find_packages(),
         package_data={'xword_dl':['version']},
-        data_files=[('',['LICENSE', 'requirements.txt'])],
-        python_requires='>=3.4',
+        python_requires='>=3.7',
         install_requires=reqs,
         entry_points={
             'console_scripts': [
