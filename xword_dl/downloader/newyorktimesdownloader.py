@@ -46,13 +46,16 @@ class NewYorkTimesDownloader(BaseDownloader):
     def authenticate(self, username, password):
         """Given a NYT username and password, returns the NYT-S cookie value"""
 
-        res = requests.post('https://myaccount.nytimes.com/svc/ios/v2/login',
-                data={'login': username, 'password': password},
-                headers={'User-Agent':
-                    'Crossword/1844.220922 CFNetwork/1335.0.3 Darwin/21.6.0',
-                    'client_id': 'ios.crosswords',})
+        try:
+            res = requests.post('https://myaccount.nytimes.com/svc/ios/v2/login',
+                    data={'login': username, 'password': password},
+                    headers={'User-Agent':
+                        'Crossword/1844.220922 CFNetwork/1335.0.3 Darwin/21.6.0',
+                        'client_id': 'ios.crosswords',})
 
-        res.raise_for_status()
+            res.raise_for_status()
+        except requests.HTTPError:
+            raise XWordDLException('Unable to authenticate with NYT servers. You can try manually adding an authenticated NYT-S token to your xword-dl config file. More information here: https://github.com/thisisparker/xword-dl/issues/51')
 
         nyts_token = ''
 
