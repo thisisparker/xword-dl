@@ -9,8 +9,7 @@ import requests
 import re
 
 from bs4 import BeautifulSoup
-from html2text import html2text
-
+from html_text import extract_text
 from .basedownloader import BaseDownloader
 from ..util import *
 
@@ -208,7 +207,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         clues = [word['clue']['clue'] for word in weirdass_puz_clue_sorting]
 
-        normalized_clues = [html2text(unidecode(clue), bodywidth=0).strip()
+        normalized_clues = [extract_text(unidecode(clue)).strip()
                             for clue in clues]
         puzzle.clues.extend(normalized_clues)
 

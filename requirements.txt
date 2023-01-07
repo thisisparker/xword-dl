@@ -1,7 +1,7 @@
 beautifulsoup4==4.11.1
 bs4==0.0.1
 dateparser==1.1.4
-html2text==2020.1.16
+html_text==0.5.2
 puzpy==0.2.5
 requests==2.28.1
 anyascii==0.3.1

@@ -4,7 +4,7 @@ import puz
 import requests
 
 from bs4 import BeautifulSoup
-from html2text import html2text
+from html_text import extract_text
 
 from .basedownloader import BaseDownloader
 from ..util import XWordDLException, unidecode
@@ -64,8 +64,7 @@ class WSJDownloader(BaseDownloader):
 
         fetched = {}
         for field in ['title', 'byline', 'publisher', 'description']:
-            fetched[field] = html2text(xword_metadata.get(field, ''),
-                                       bodywidth=0).strip()
+            fetched[field] = html_text(xword_metadata.get(field, '')).strip()
 
         puzzle = puz.Puzzle()
         puzzle.title = fetched.get('title')
@@ -103,7 +102,7 @@ class WSJDownloader(BaseDownloader):
 
         clues = [clue['clue'] for clue in sorted_clue_list]
         normalized_clues = [
-            html2text(unidecode(clue), bodywidth=0).strip() for clue in clues]
+            extract_text(unidecode(clue)).strip() for clue in clues]
 
         puzzle.clues = normalized_clues
 
