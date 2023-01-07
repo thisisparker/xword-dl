@@ -4,13 +4,46 @@ import sys
 import dateparser
 import yaml
 
-# This imports the _module_ unidecode, which converts Unicode strings to
+# This imports the anyascii module, which converts Unicode strings to
 # plain ASCII. The puz format, however, can accept Latin1, which is a larger
-# subset. So the second line tells the module to leave codepoints 128-256
-# untouched, then we import the _function_ unidecode.
-import unidecode
-unidecode.Cache[0] = [chr(c) if c > 127 else '' for c in range(256)]
-from unidecode import unidecode
+# subset, so we implement a copy of the anyascii function that employs the
+# same logic, but also leaves codepoints 128-255 untouched. Ideally the
+# anyascii project might be updated to support setting an "ignored character"
+# function handler so we wouldn't have to replicate the whole function.
+import anyascii
+def anyascii_latin1(string):
+    from sys import intern
+    from zlib import decompress, MAX_WBITS
+    try:
+        from importlib.resources import read_binary
+    except ImportError:
+        from pkgutil import get_data as read_binary
+
+    result = []
+    for char in string:
+        codepoint = ord(char)
+        if codepoint <= 255:
+            result.append(char)
+            continue
+        blocknum = codepoint >> 8
+        lo = codepoint & 0xff
+        try:
+            block = anyascii._blocks[blocknum]
+        except KeyError:
+            try:
+                b = read_binary('anyascii._data', '%03x' % blocknum)
+                s = decompress(b, -MAX_WBITS).decode('ascii')
+                block = tuple(map(intern, s.split('\t')))
+            except FileNotFoundError:
+                block = ()
+            anyascii._blocks[blocknum] = block
+        if len(block) > lo:
+            result.append(block[lo])
+    return ''.join(result)
+
+# Wrap the above in a cover function named unidecode to avoid having to change any callpoint code
+def unidecode(inString):
+    return anyascii_latin1(inString)
 
 CONFIG_PATH = os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
 CONFIG_PATH = os.path.join(CONFIG_PATH, 'xword-dl/xword-dl.yaml')
