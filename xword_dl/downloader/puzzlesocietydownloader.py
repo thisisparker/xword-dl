@@ -37,6 +37,12 @@ class TheModernDownloader(CrosswordCompilerDownloader):
 
         return url
 
+    def fetch_data(self, url):
+        res = requests.get(url)
+        xw_data = res.content.decode('utf-8-sig')
+
+        return xw_data
+
     def parse_xword(self, xword_data):
         puzzle = super().parse_xword(xword_data, enumeration=False)
 
