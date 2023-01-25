@@ -19,7 +19,7 @@ Supported outlets:
 |*Guardian Weekend*|`grdw`|✔️||✔️|
 |*Los Angeles Times*|`lat`|✔️|✔️||
 |*The McKinsey Crossword*|`mck`|✔️|✔️|✔️|
-|*The Modern Crossword*|`mod`|✔️||✔️|
+|*The Modern Crossword*|`mod`|✔️|✔️|✔️|
 |*New York Times*|`nyt`|✔️|✔️|✔️|
 |*New York Times Mini*|`nytm`|✔️|✔️|✔️|
 |*New York Times Variety*|`nytv`|✔️|✔️|✔️|

@@ -51,7 +51,7 @@ class WSJDownloader(BaseDownloader):
             return self.find_solver(puzzle_link)
 
     def fetch_data(self, solver_url):
-        data_url = solver_url.replace('index.html', 'data.json')
+        data_url = solver_url.rsplit('/', maxsplit=1)[0] + '/data.json'
         return requests.get(data_url, headers=self.headers).json()['data']
 
     def parse_xword(self, xword_data):
