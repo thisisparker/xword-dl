@@ -71,7 +71,8 @@ class AmuseLabsDownloader(BaseDownloader):
     def fetch_data(self, solver_url):
         res = requests.get(solver_url)
         rawc = next((line.strip() for line in res.text.splitlines()
-                     if 'window.rawc' in line), None)
+                     if ('window.rawc' in line
+                        or 'window.puzzleEnv.rawc' in line)), None)
 
         if not rawc:
             raise XWordDLException("Crossword puzzle not found.")
