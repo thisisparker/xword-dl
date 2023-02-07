@@ -59,7 +59,10 @@ class McKinseyDownloader(AmuseLabsDownloader):
 
         soup = BeautifulSoup(res.text, "html.parser")
 
-        iframe_tag = soup.select('#divArticleBody iframe[name="mckinsey"]')
+        iframe_tag = soup.select('iframe[src*="amuselabs.com"]')
+
+        if len(iframe_tag) == 0:
+            raise XWordDLException('Cannot find puzzle iframe node at {}.'.format(url))
 
         iframe_url = str(iframe_tag[0].get('src'))
 
