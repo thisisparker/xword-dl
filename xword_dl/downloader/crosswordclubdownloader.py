@@ -9,7 +9,7 @@ from .amuselabsdownloader import AmuseLabsDownloader
 from ..util import XWordDLException
 
 class CrosswordClubDownloader(AmuseLabsDownloader):
-    command = 'cc'
+    command = 'club'
     outlet = 'Crossword Club'
     outlet_prefix = 'Crossword Club'
 
