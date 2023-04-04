@@ -64,8 +64,9 @@ class CrosswordClubDownloader(AmuseLabsDownloader):
         except KeyError:
             raise XWordDLException('Cannot find puzzle at {}.'.format(url))
 
-        pubdate = url.split('/')[-1].replace('-',' ').capitalize()
+        pubdate_url_component = url.split('/')[-1] or url.split('/')[-2]
+        pubdate = pubdate_url_component.replace('-', ' ')
         pubdate_dt = dateparser.parse(pubdate)
         self.date = pubdate_dt
 
-        return self.find_puzzle_url_from_id(self.id)
+        return super().find_solver(self.find_puzzle_url_from_id(self.id))
