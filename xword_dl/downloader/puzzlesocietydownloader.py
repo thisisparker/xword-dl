@@ -66,6 +66,7 @@ class TheModernDownloader(CrosswordCompilerDownloader):
         for i in range(len(puzzle.clues)):
             clue_dict = all_clues_numbered.pop(0)
             clue_id = str(clue_dict['num']) + clue_dict['dir'] + ': '
+            puzzle.clues[i] = urllib.parse.unquote(puzzle.clues[i])
             if '@@' in puzzle.clues[i]:
                 clue, note = puzzle.clues[i].split('@@')
                 constructor_notes.append(clue_id + note.strip())
