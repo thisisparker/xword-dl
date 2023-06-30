@@ -29,10 +29,13 @@ class WSJDownloader(BaseDownloader):
         res = requests.get(url, headers=self.headers)
         soup = BeautifulSoup(res.text, 'html.parser')
 
+        exclude_urls = ['https://www.wsj.com/articles/contest-crosswords-101-how-to-solve-puzzles-11625757841']
+
         for article in soup.find_all('article'):
             if 'crossword' in article.find('span').get_text().lower():
                 latest_url = article.find('a').get('href')
-                break
+                if latest_url not in exclude_urls:
+                    break
         else:
             raise XWordDLException('Unable to find latest puzzle.')
 
