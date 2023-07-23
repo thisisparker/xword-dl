@@ -7,6 +7,7 @@ Supported outlets:
 |Outlet|Keyword|Download latest|Search by date|Search by URL|
 |------|-------|:-------------:|:------------:|:-----------:|
 |*Atlantic*|`atl`|✔️|✔️||
+|*Crossword Club*|`club`|✔️|✔️|✔️|
 |*The Daily Beast*|`db`|✔️|||
 |*Der Standard*|`std`|✔️||✔️|
 |*The Globe And Mail cryptic*|`tgam`|✔️|✔️|✔️|
