@@ -20,5 +20,11 @@ class AtlanticDownloader(AmuseLabsDownloader):
         return self.find_puzzle_url_from_id(self.id)
 
     def guess_date_from_id(self, puzzle_id):
-        self.date = datetime.datetime.strptime(puzzle_id.split('_')[1],
+        try:
+            self.date = datetime.datetime.strptime(puzzle_id.split('_')[1],
                                                '%Y%m%d')
+        # New "Caleb's Inferno" puzzles may have a different ID format
+        # with no way to guess date. At least for now, no underscore means
+        # we can identify these by this IndexError.
+        except IndexError:
+            pass
