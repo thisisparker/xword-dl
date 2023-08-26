@@ -4,10 +4,10 @@ from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-with open(os.path.join(here, 'requirements.txt')) as f:
+with open(os.path.join(here, 'requirements.txt'), encoding="utf-8") as f:
     reqs = f.read().split()
 
-with open(os.path.join(here, 'README.md')) as f:
+with open(os.path.join(here, 'README.md'), encoding="utf-8") as f:
     readme = f.read()
 
 with open(os.path.join(here, 'xword_dl', 'version')) as f:
