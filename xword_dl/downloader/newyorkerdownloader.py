@@ -20,6 +20,8 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         self.url_from_id = 'https://cdn3.amuselabs.com/tny/crossword?id={puzzle_id}&set=tny-weekly'
 
+        self.theme_title = ''
+
     @staticmethod
     def matches_url(url_components):
         return ('newyorker.com' in url_components.netloc and '/puzzles-and-games-dept/crossword' in url_components.path)
@@ -76,6 +78,12 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         self.date = pubdate_dt
 
+        theme_supra = "Today’s theme: "
+        desc = soup.find('meta',attrs={'property':
+                                       'og:description'}).get('content', '')
+        if desc.startswith(theme_supra):
+            self.theme_title = desc[len(theme_supra):].rstrip('.')
+
         return self.find_puzzle_url_from_id(self.id)
         
     def parse_xword(self, xword_data):
@@ -90,7 +98,11 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         try:
             supra, main = puzzle.title.split(':', 1)
             if supra == 'The Crossword' and dateparser.parse(main):
-                title = ''
+                if self.theme_title:
+                    title = self.theme_title
+                    puzzle.title += f' - {self.theme_title}'
+                else:
+                    title = ''
             else:
                 title = main.strip()
         except XWordDLException:
