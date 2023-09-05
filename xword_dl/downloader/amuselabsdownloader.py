@@ -90,8 +90,13 @@ class AmuseLabsDownloader(BaseDownloader):
 
         # matches a 7-digit hex string preceded by `="` and followed by `"`
         m2 = re.search(r'="([0-9a-f]{7})"', res2.text)
-
-        amuseKey = m2.groups()[0] if m2 else None
+        if m2:
+            # in this format, add 2 to each digit
+            amuseKey = [int(c,16)+2 for c in m2.groups()[0]]
+        else:
+            # otherwise, grab the new format key and do not add 2
+            amuseKey = [int(x) for x in
+                        re.findall(r'=\[\]\).push\(([0-9]{1,2})\)', res2.text)]
 
         # helper function to decode rawc
         # as occasionally it can be obfuscated
@@ -125,14 +130,12 @@ class AmuseLabsDownloader(BaseDownloader):
 
                         while F<len(H):
                             J=H[F]
-                            K=int(J,16)
-                            E.append(K)
+                            E.append(J)
                             F+=1
 
                         A, G, I = 0, 0, len(e)-1
                         while A < I:
                             B = E[G]
-                            B += 2
                             L = I - A + 1
                             C = A
                             B = min(B, L)
