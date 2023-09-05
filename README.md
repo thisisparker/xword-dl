@@ -23,7 +23,7 @@ Supported outlets:
 |*The Modern Crossword*|`mod`|✔️|✔️|✔️|
 |*New York Times*|`nyt`|✔️|✔️|✔️|
 |*New York Times Mini*|`nytm`|✔️|✔️|✔️|
-|*New York Times Variety*|`nytv`|✔️|✔️|✔️|
+|*New York Times Variety*|`nytv`||✔️||
 |*The New Yorker*|`tny`|✔️|✔️|✔️|
 |*Newsday*|`nd`|✔️|✔️||
 |*Universal*|`uni`|✔️|✔️||
