@@ -150,7 +150,7 @@ class NewYorkTimesDownloader(BaseDownloader):
                 rebus_table += '{:2d}:{};'.format(rebus_index, square['answer'])
                 rebus_index += 1
 
-            markup += (b'\x00' if square.get('type') == 1 else b'\x80')
+            markup += (b'\x00' if square.get('type', 1) == 1 else b'\x80')
 
         puzzle.solution = solution
         puzzle.fill = fill
