@@ -66,7 +66,7 @@ class WSJDownloader(BaseDownloader):
         self.date = datetime.datetime.strptime(date_string, '%Y/%m/%d')
 
         fetched = {}
-        for field in ['title', 'byline', 'publisher', 'description']:
+        for field in ['title', 'byline', 'publisher', 'crosswordadditionalcopy']:
             fetched[field] = html2text(xword_metadata.get(field) or '',
                                        bodywidth=0).strip()
 
@@ -77,7 +77,7 @@ class WSJDownloader(BaseDownloader):
         puzzle.width = int(xword_metadata.get('gridsize').get('cols'))
         puzzle.height = int(xword_metadata.get('gridsize').get('rows'))
 
-        puzzle.notes = fetched.get('description')
+        puzzle.notes = fetched.get('crosswordadditionalcopy')
 
         solution = ''
         fill = ''
@@ -85,13 +85,13 @@ class WSJDownloader(BaseDownloader):
 
         for row in xword_data:
             for cell in row:
-                if not cell['Letter']:
+                if cell.get('Blank'):
                     fill += '.'
                     solution += '.'
                     markup += b'\x00'
                 else:
                     fill += '-'
-                    solution += cell['Letter']
+                    solution += cell['Letter'] or 'X'
                     markup += (b'\x80' if (cell.get('style', '')
                                            and cell['style']['shapebg']
                                            == 'circle')
@@ -99,6 +99,9 @@ class WSJDownloader(BaseDownloader):
 
         puzzle.fill = fill
         puzzle.solution = solution
+
+        if all(c in ['.', 'X'] for c in puzzle.solution):
+            puzzle.solution_state = 0x0002
 
         clue_list = xword_metadata['clues'][0]['clues'] + \
             xword_metadata['clues'][1]['clues']
