@@ -125,11 +125,29 @@ class USATodayDownloader(BaseDownloader):
 
     def find_by_date(self, dt):
         self.date = dt
+        url = f'http://picayune.uclick.com/comics/usaon/data/usaon{dt:%y%m%d}-data.xml'
+        try:
+            res = requests.head(url)
+            res.raise_for_status()
+        except:
+            raise XWordDLException('Unable to find puzzle for date provided.')
 
-        return f'http://picayune.uclick.com/comics/usaon/data/usaon{dt:%y%m%d}-data.xml'
+        return url
 
     def find_latest(self):
-        return self.find_by_date(datetime.datetime.today())
+        check_date = datetime.datetime.today()
+        days_to_check = 3
+        while days_to_check:
+            try:
+                url = self.find_by_date(check_date)
+                break
+            except XWordDLException:
+                days_to_check -= 1
+                check_date -= datetime.timedelta(1)
+        else:
+            raise XWordDLException('Unable to find latest puzzle.')
+
+        return url
 
     def find_solver(self, url):
         return url
