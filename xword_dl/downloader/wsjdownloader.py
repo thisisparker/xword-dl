@@ -67,8 +67,8 @@ class WSJDownloader(BaseDownloader):
 
         fetched = {}
         for field in ['title', 'byline', 'publisher', 'crosswordadditionalcopy']:
-            fetched[field] = html2text(xword_metadata.get(field) or '',
-                                       bodywidth=0).strip()
+            fetched[field] = unidecode(html2text(xword_metadata.get(field) or '',
+                                       bodywidth=0)).strip()
 
         puzzle = puz.Puzzle()
         puzzle.title = fetched.get('title')
