@@ -81,6 +81,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         ## In some cases we need to pull the underlying JavaScript ##
         # Find the JavaScript URL
+        amuseKey = None
         m1 = re.search(r'"([^"]+c-min.js[^"]+)"', res.text)
         js_url_fragment = m1.groups()[0]
         js_url = urllib.parse.urljoin(solver_url, js_url_fragment)
@@ -97,6 +98,20 @@ class AmuseLabsDownloader(BaseDownloader):
             # otherwise, grab the new format key and do not add 2
             amuseKey = [int(x) for x in
                         re.findall(r'=\[\]\).push\(([0-9]{1,2})\)', res2.text)]
+
+        # But now that might not be the right key, and there's another one
+        # that we need to try!
+        # (current as of 10/26/2023)
+        key_2_order_regex = r'i=(\d+);i<t.length;i\+='
+        key_2_digit_regex = r't.length\?(\d+)'
+
+        key_digits = [int(x) for x in
+                      re.findall(key_2_digit_regex, res2.text)]
+        key_orders = [int(x) for x in
+                      re.findall(key_2_order_regex, res2.text)]
+
+        amuseKey2 = [x for x, _ in sorted(zip(key_digits, key_orders), key=lambda pair: pair[1])]
+
 
         # helper function to decode rawc
         # as occasionally it can be obfuscated
@@ -153,7 +168,10 @@ class AmuseLabsDownloader(BaseDownloader):
                                         amuse_b64(rawc, amuseKey)
                                         ).decode("utf-8"))
 
-        xword_data = load_rawc(rawc, amuseKey=amuseKey)
+        try:
+            xword_data = load_rawc(rawc, amuseKey=amuseKey)
+        except UnicodeDecodeError:
+            xword_data = load_rawc(rawc, amuseKey=amuseKey2)
 
         return xword_data
 
