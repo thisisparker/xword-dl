@@ -3,6 +3,7 @@ import json
 import sys
 import time
 import urllib
+import xml
 
 import puz
 import requests
@@ -160,7 +161,10 @@ class USATodayDownloader(BaseDownloader):
         return xw_data
 
     def parse_xword(self, xword_data):
-        xw = xmltodict.parse(xword_data).get('crossword')
+        try:
+            xw = xmltodict.parse(xword_data).get('crossword')
+        except xml.parsers.expat.ExpatError:
+            raise XWordDLException('Puzzle data malformed, cannot parse.')
 
         puzzle = puz.Puzzle()
 
