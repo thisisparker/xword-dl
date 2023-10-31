@@ -170,7 +170,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         try:
             xword_data = load_rawc(rawc, amuseKey=amuseKey)
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, base64.binascii.Error):
             xword_data = load_rawc(rawc, amuseKey=amuseKey2)
 
         return xword_data
