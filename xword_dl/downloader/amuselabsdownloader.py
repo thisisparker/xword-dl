@@ -11,6 +11,8 @@ import re
 from bs4 import BeautifulSoup
 from html2text import html2text
 
+import js2py
+
 from .basedownloader import BaseDownloader
 from ..util import *
 
@@ -86,92 +88,17 @@ class AmuseLabsDownloader(BaseDownloader):
         js_url_fragment = m1.groups()[0]
         js_url = urllib.parse.urljoin(solver_url, js_url_fragment)
 
-        # get the "key" from the URL
+        # get the decryption function from the JS URL
         res2 = requests.get(js_url)
+        js_text = res2.text
+        re_match = re.search(r'rawc\;try\{(var n=function.*?n.join\(""\)\})', js_text)
+        jsFunc = re_match.groups()[0]
+        context = js2py.EvalJs()
+        context.execute(jsFunc)
 
-        # matches a 7-digit hex string preceded by `="` and followed by `"`
-        m2 = re.search(r'="([0-9a-f]{7})"', res2.text)
-        if m2:
-            # in this format, add 2 to each digit
-            amuseKey = [int(c,16)+2 for c in m2.groups()[0]]
-        else:
-            # otherwise, grab the new format key and do not add 2
-            amuseKey = [int(x) for x in
-                        re.findall(r'=\[\]\).push\(([0-9]{1,2})\)', res2.text)]
-
-        # But now that might not be the right key, and there's another one
-        # that we need to try!
-        # (current as of 10/26/2023)
-        key_2_order_regex = r'i=(\d+);i<t.length;i\+='
-        key_2_digit_regex = r't.length\?(\d+)'
-
-        key_digits = [int(x) for x in
-                      re.findall(key_2_digit_regex, res2.text)]
-        key_orders = [int(x) for x in
-                      re.findall(key_2_order_regex, res2.text)]
-
-        amuseKey2 = [x for x, _ in sorted(zip(key_digits, key_orders), key=lambda pair: pair[1])]
-
-
-        # helper function to decode rawc
-        # as occasionally it can be obfuscated
-        def load_rawc(rawc, amuseKey=None):
-            try:
-                # the original case is just base64'd JSON
-                return json.loads(base64.b64decode(rawc).decode("utf-8"))
-            except:
-                try:
-                    # case 2 is the first obfuscation
-                    E = rawc.split('.')
-                    A = list(E[0])
-                    H = E[1][::-1]
-                    F = [int(A,16)+2 for A in H]
-                    B, G = 0, 0
-                    while B < len(A) - 1:
-                        C = min(F[G % len(F)], len(A) - B)
-                        for D in range(C//2):
-                            A[B+D], A[B+C-D-1] = A[B+C-D-1], A[B+D]
-                        B+=C
-                        G+=1
-                    newRawc=''.join(A)
-                    return json.loads(base64.b64decode(newRawc).decode("utf-8"))
-                except:
-                    # case 3 is the most recent obfuscation
-                    def amuse_b64(e, amuseKey=None):
-                        e = list(e)
-                        H=amuseKey
-                        E=[]
-                        F=0
-
-                        while F<len(H):
-                            J=H[F]
-                            E.append(J)
-                            F+=1
-
-                        A, G, I = 0, 0, len(e)-1
-                        while A < I:
-                            B = E[G]
-                            L = I - A + 1
-                            C = A
-                            B = min(B, L)
-                            D = A + B - 1
-                            while C < D:
-                                M = e[D]
-                                e[D] = e[C]
-                                e[C] = M
-                                D -= 1
-                                C += 1
-                            A += B
-                            G = (G + 1) % len(E)
-                        return ''.join(e)
-                    return json.loads(base64.b64decode(
-                                        amuse_b64(rawc, amuseKey)
-                                        ).decode("utf-8"))
-
-        try:
-            xword_data = load_rawc(rawc, amuseKey=amuseKey)
-        except (UnicodeDecodeError, base64.binascii.Error):
-            xword_data = load_rawc(rawc, amuseKey=amuseKey2)
+        # Execute the function on our rawc
+        s1 = context.n(rawc)
+        xword_data = json.loads(base64.b64decode(s1).decode("utf-8"))
 
         return xword_data
 
@@ -254,4 +181,3 @@ class AmuseLabsDownloader(BaseDownloader):
         if not self.date and self.id:
             self.guess_date_from_id(self.id)
         return super().pick_filename(puzzle, **kwargs)
-
