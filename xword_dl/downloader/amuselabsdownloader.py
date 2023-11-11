@@ -102,8 +102,8 @@ class AmuseLabsDownloader(BaseDownloader):
         # But now that might not be the right key, and there's another one
         # that we need to try!
         # (current as of 10/26/2023)
-        key_2_order_regex = r'i=(\d+);i<t.length;i\+='
-        key_2_digit_regex = r't.length\?(\d+)'
+        key_2_order_regex = r'[a-z]+=(\d+);[a-z]+<[a-z]+.length;[a-z]+\+='
+        key_2_digit_regex = r'<[a-z]+.length\?(\d+)'
 
         key_digits = [int(x) for x in
                       re.findall(key_2_digit_regex, res2.text)]
