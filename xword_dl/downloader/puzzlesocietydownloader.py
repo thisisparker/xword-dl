@@ -13,7 +13,7 @@ class TheModernDownloader(CrosswordCompilerDownloader):
     outlet = 'The Modern'
     outlet_prefix = 'The Modern'
 
-    def init(self, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     @staticmethod
