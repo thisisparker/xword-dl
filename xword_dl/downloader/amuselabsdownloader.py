@@ -42,11 +42,17 @@ class AmuseLabsDownloader(BaseDownloader):
             res = requests.get(self.picker_url)
             picker_source = res.text
 
-        rawsps = next((line.strip() for line in picker_source.splitlines()
-                     if 'pickerParams.rawsps' in line), None)
+        if 'pickerParams.rawsps' in picker_source:
+            rawsps = next((line.strip().split("'")[1] for line in
+                         picker_source.splitlines()
+                         if 'pickerParams.rawsps' in line), None)
+        else:
+            soup = BeautifulSoup(picker_source, 'html.parser')
+            param_tag = soup.find('script', id='params')
+            param_obj = json.loads(param_tag.string) if param_tag else {}
+            rawsps = param_obj.get('rawsps', None)
 
         if rawsps:
-            rawsps = rawsps.split("'")[1]
             picker_params = json.loads(base64.b64decode(rawsps).decode("utf-8"))
             token = picker_params.get('pickerToken', None)
             if token:
@@ -70,14 +76,20 @@ class AmuseLabsDownloader(BaseDownloader):
 
     def fetch_data(self, solver_url):
         res = requests.get(solver_url)
-        rawc = next((line.strip() for line in res.text.splitlines()
-                     if ('window.rawc' in line
-                        or 'window.puzzleEnv.rawc' in line)), None)
 
-        if not rawc:
-            raise XWordDLException("Crossword puzzle not found.")
-
-        rawc = rawc.split("'")[1]
+        if 'window.rawc' in res.text or 'window.puzzleEnv.rawc' in res.text:
+            rawc = next((line.strip().split("'")[1] for line in res.text.splitlines()
+                         if ('window.rawc' in line
+                            or 'window.puzzleEnv.rawc' in line)), None)
+        else:
+            # As of 2023-12-01, it looks like the rawc value is sometimes
+            # given as a parameter in an embedded json blob, which means
+            # parsing the page
+            try:
+                soup = BeautifulSoup(res.text, 'html.parser')
+                rawc = json.loads(soup.find('script', id='params').string)['rawc']
+            except AttributeError:
+                raise XWordDLException("Crossword puzzle not found.")
 
         ## In some cases we need to pull the underlying JavaScript ##
         # Find the JavaScript URL
