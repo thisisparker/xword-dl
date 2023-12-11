@@ -31,7 +31,7 @@ class McKinseyDownloader(AmuseLabsDownloader):
         crosswords are published every tuesday (as of november 2022)
         """
         month_names = ['january','february','march','april','may','june','july',
-                       'august','septermber','october','november','december']
+                       'august','september','october','november','december']
         url_format = f'{month_names[dt.month-1]}-{dt.day}-{dt.year}'
         guessed_url = urllib.parse.urljoin(
             'https://www.mckinsey.com/featured-insights/the-mckinsey-crossword/',
