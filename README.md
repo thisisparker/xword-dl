@@ -79,6 +79,10 @@ xword-dl https://rosswordpuzzles.com/2021/01/03/cover-up/
 
 In either case, the resulting .puz file can be opened with [`cursewords`](https://github.com/thisisparker/cursewords) or any other puz file reader.
 
+Due to the constraints of the .puz format, the `xword-dl`'s conversion may be a bit lossy. For example, the most common form of .puz files only support [Latin-1 text encoding](https://en.wikipedia.org/wiki/ISO/IEC_8859-1), which means that some special characters (and even “curly quotes”) need to be converted before saving.
+
+`xword-dl` will also, by default, convert provided HTML to plaintext markdown. If you want to skip that step, you can provide the `--preserve-html` flag at runtime or set the `preserve-html` key to `True` in your config file. 
+
 ### Specifying puzzle date
 
 Some outlets allow specification of a puzzle to download by date using the `--date` or `-d` flag. For example, to download the Universal puzzle from September 22, 2021, you could run:
