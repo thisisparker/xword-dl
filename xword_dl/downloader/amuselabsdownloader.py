@@ -9,7 +9,6 @@ import requests
 import re
 
 from bs4 import BeautifulSoup
-from html2text import html2text
 
 from .basedownloader import BaseDownloader
 from ..util import *
@@ -189,9 +188,9 @@ class AmuseLabsDownloader(BaseDownloader):
 
     def parse_xword(self, xword_data):
         puzzle = puz.Puzzle()
-        puzzle.title = unidecode(xword_data.get('title', '').strip())
-        puzzle.author = unidecode(xword_data.get('author', '').strip())
-        puzzle.copyright = unidecode(xword_data.get('copyright', '').strip())
+        puzzle.title = xword_data.get('title', '').strip()
+        puzzle.author = xword_data.get('author', '').strip()
+        puzzle.copyright = xword_data.get('copyright', '').strip()
         puzzle.width = xword_data.get('w')
         puzzle.height = xword_data.get('h')
 
@@ -242,9 +241,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         clues = [word['clue']['clue'] for word in weirdass_puz_clue_sorting]
 
-        normalized_clues = [html2text(unidecode(clue), bodywidth=0).strip()
-                            for clue in clues]
-        puzzle.clues.extend(normalized_clues)
+        puzzle.clues.extend(clues)
 
         has_markup = b'\x80' in markup
         has_rebus = any(rebus_board)

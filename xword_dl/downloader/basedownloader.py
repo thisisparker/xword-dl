@@ -97,4 +97,8 @@ class BaseDownloader:
         xword_data = self.fetch_data(solver_url)
         puzzle = self.parse_xword(xword_data)
 
+        puzzle = sanitize_for_puzfile(puzzle,
+                                      preserve_html=self.settings.get(
+                                                        'preserve_html'))
+
         return puzzle

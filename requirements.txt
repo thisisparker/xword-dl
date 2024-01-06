@@ -1,5 +1,6 @@
 beautifulsoup4==4.12.2
 dateparser==1.1.8
+emoji==2.9.0
 html2text==2020.1.16
 puzpy==0.2.5
 requests==2.31.0

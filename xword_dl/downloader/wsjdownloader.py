@@ -4,10 +4,9 @@ import puz
 import requests
 
 from bs4 import BeautifulSoup
-from html2text import html2text
 
 from .basedownloader import BaseDownloader
-from ..util import XWordDLException, unidecode
+from ..util import XWordDLException
 
 class WSJDownloader(BaseDownloader):
     command = 'wsj'
@@ -65,19 +64,14 @@ class WSJDownloader(BaseDownloader):
 
         self.date = datetime.datetime.strptime(date_string, '%Y/%m/%d')
 
-        fetched = {}
-        for field in ['title', 'byline', 'publisher', 'crosswordadditionalcopy']:
-            fetched[field] = unidecode(html2text(xword_metadata.get(field) or '',
-                                       bodywidth=0)).strip()
-
         puzzle = puz.Puzzle()
-        puzzle.title = fetched.get('title')
-        puzzle.author = fetched.get('byline')
-        puzzle.copyright = fetched.get('publisher')
+        puzzle.title = xword_metadata.get('title') or ''
+        puzzle.author = xword_metadata.get('byline') or ''
+        puzzle.copyright = xword_metadata.get('publisher') or ''
         puzzle.width = int(xword_metadata.get('gridsize').get('cols'))
         puzzle.height = int(xword_metadata.get('gridsize').get('rows'))
 
-        puzzle.notes = fetched.get('crosswordadditionalcopy')
+        puzzle.notes = xword_metadata.get('crosswordadditionalcopy') or ''
 
         solution = ''
         fill = ''
@@ -108,10 +102,8 @@ class WSJDownloader(BaseDownloader):
         sorted_clue_list = sorted(clue_list, key=lambda x: int(x['number']))
 
         clues = [clue['clue'] for clue in sorted_clue_list]
-        normalized_clues = [
-            html2text(unidecode(clue), bodywidth=0).strip() for clue in clues]
 
-        puzzle.clues = normalized_clues
+        puzzle.clues = clues
 
         has_markup = b'\x80' in markup
 
