@@ -2,8 +2,10 @@ import os
 import sys
 
 import dateparser
+import emoji
 import yaml
 
+from html2text import html2text
 # This imports the _module_ unidecode, which converts Unicode strings to
 # plain ASCII. The puz format, however, can accept Latin1, which is a larger
 # subset. So the second line tells the module to leave codepoints 128-256
@@ -45,6 +47,24 @@ def remove_invalid_chars_from_filename(filename):
 
     return filename
 
+def sanitize_for_puzfile(puzzle, preserve_html=False):
+    def cleanup(field):
+        if preserve_html:
+            field = emoji.demojize(unidecode(field)).strip()
+        else:
+            field = emoji.demojize(html2text(unidecode(field),
+                                             bodywidth=0).strip())
+        return field
+
+    puzzle.title = cleanup(puzzle.title)
+    puzzle.author = cleanup(puzzle.author)
+    puzzle.copyright = cleanup(puzzle.copyright)
+
+    puzzle.notes = cleanup(puzzle.notes)
+
+    puzzle.clues = [cleanup(clue) for clue in puzzle.clues]
+
+    return puzzle
 
 def parse_date(entered_date):
     return dateparser.parse(entered_date, settings={'PREFER_DATES_FROM':'past'})
@@ -77,4 +97,9 @@ def read_config_values(heading):
     with open(CONFIG_PATH, 'r') as f:
         config = yaml.safe_load(f) or {}
 
-    return config.get(heading, {})
+    # config file keys and command line flags use '-', python uses '_', so we
+    # replace '-' with '_' for the settings object
+    raw_subsettings = config.get(heading) or {}
+    subsettings = {k.replace('-','_'):raw_subsettings[k] for k in raw_subsettings}
+
+    return subsettings

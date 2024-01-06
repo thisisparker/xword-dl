@@ -12,7 +12,7 @@ import xmltodict
 from urllib.parse import unquote
 
 from .basedownloader import BaseDownloader
-from ..util import XWordDLException, unidecode
+from ..util import XWordDLException
 
 class AMUniversalDownloader(BaseDownloader):
     def __init__(self, **kwargs):
@@ -181,7 +181,7 @@ class USATodayDownloader(BaseDownloader):
         xw_clues = sorted(list(xw['across'].values()) + list(xw['down'].values()),
                           key=lambda c: int(c['@cn']))
 
-        puzzle.clues = [unidecode(unquote(c.get('@c') or '')) for c in xw_clues]
+        puzzle.clues = [unquote(c.get('@c') or '') for c in xw_clues]
 
         return puzzle
 
