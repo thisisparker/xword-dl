@@ -91,7 +91,7 @@ jobs:
         run: xword-dl mod
       - name: Test Modern by date
         if: '!cancelled()'
-        run: xword-dl -d "jan 28, 2023"
+        run: xword-dl mod -d "jan 28, 2023"
       - name: Test Modern by URL
         if: '!cancelled()'
         run: xword-dl "https://www.puzzlesociety.com/crossword-puzzles/modern-crossword/2023/8/5"
