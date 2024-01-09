@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
         with:
-          python-version: '3.x'
+          python-version: '3.11'
       - name: Install xword-dl
         run: |
           python -m pip install --upgrade pip
