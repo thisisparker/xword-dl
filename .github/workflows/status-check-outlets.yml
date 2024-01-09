@@ -40,3 +40,71 @@ jobs:
         run: xword-dl tgam
       - name: Test Globe and Mail by URL
         run: xword-dl "https://www.theglobeandmail.com/puzzles-and-crosswords/cryptic-crossword/?date=060124&T=0"
+      - name: Test Guardian Cryptic
+        run: xword-dl grdc
+      - name: Test Guardian Everyman
+        run: xword-dl grde
+      - name: Test Guardian Prize
+        run: xword-dl grdp
+      - name: Test Guardian Quick
+        run: xword-dl grdq
+      - name: Test Guardian Quiptic
+        run: xword-dl grdu
+      - name: Test Guardian Speedy
+        run: xword-dl grds
+      - name: Test Guardian Weekend
+        run: xword-dl grdw
+      - name: Test LA Times latest
+        run: xword-dl lat
+      - name: Test LA Times by date
+        run: xword-dl lat -d "2022/12/14"
+      - name: Test McKinsey latest
+        run: xword-dl mck
+      - name: Test McKinsey by date
+        run: xword-dl mck -d "september 26, 2023"
+      - name: Test McKinsey by URL
+        run: xword-dl "https://www.mckinsey.com/featured-insights/the-mckinsey-crossword/october-31-2023"
+      - name: Test Modern latest
+        run: xword-dl mod
+      - name: Test Modern by date
+        run: xword-dl -d "jan 28, 2023"
+      - name: Test Modern by URL
+        run: xword-dl "https://www.puzzlesociety.com/crossword-puzzles/modern-crossword/2023/8/5"
+      - name: Test New Yorker latest
+        run: xword-dl tny
+      - name: Test New Yorker by date
+        run: xword-dl tny -d "3/31/23"
+      - name: Test New Yorker by URL
+        run: xword-dl "https://www.newyorker.com/puzzles-and-games-dept/crossword/2024/01/01"
+      - name: Test New Yorker themed
+        run: xword-dl "https://www.newyorker.com/puzzles-and-games-dept/crossword/2024/01/05"
+      - name: Test Newsday latest
+        run: xword-dl nd
+      - name: Test Newsday by date
+        run: xword-dl nd -d "dec. 12, 2023"
+      - name: Test Simply Daily Puzzles
+        run: xword-dl sdp
+      - name: Test Simply Daily Puzzles Cryptic
+        run: xword-dl sdpc
+      - name: Test Simply Daily Puzzles Quick
+        run: xword-dl sdpq
+      - name: Test Universal latest
+        run: xword-dl uni
+      - name: Test Universal by date
+        run: xword-dl uni -d "october 6, 2023"
+      - name: Test USA Today latest
+        run: xword-dl usa
+      - name: Test USA Today by date
+        run: xword-dl usa -d "january 7, 2024"
+      - name: Test Vox
+        run: xword-dl vox
+      - name: Test WSJ latest
+        run: xword-dl wsj
+      - name: Test WSJ by URL
+        run: xword-dl "https://www.wsj.com/articles/carbon-neutral-saturday-crossword-january-15-11642193133"
+      - name: Test WSJ Friday contest
+        run: xword-dl "https://www.wsj.com/articles/hitting-the-high-notes-friday-crossword-january-5-0f18d7c1"
+      - name: Test Washington Post latest
+        run: xword-dl wp
+      - name: Test Washington Post by date
+        run: xword-dl wp -d "12/17/23"
