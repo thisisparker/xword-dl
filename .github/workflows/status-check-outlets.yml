@@ -5,9 +5,8 @@ on:
     branches: [ main ]
 
 jobs:
-  install-and-test-outlets:
-    name: Install xword-dl and check that existing outlets work
-
+  install-xword-dl-and-test-existing-outlets:
+    name: Install xword-dl and test existing outlets
     runs-on: ubuntu-latest
 
     steps:
@@ -17,94 +16,139 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install xword-dl
+        id: install
         run: |
           python -m pip install --upgrade pip
           python -m pip install .
       - name: Test Atlantic latest
+        if: '!cancelled()'
         run: xword-dl atl
       - name: Test Atlantic by date
+        if: '!cancelled()'
         run: xword-dl atl -d 12/15/23
       - name: Test Crossword Club latest
+        if: '!cancelled()'
         run: xword-dl club
       - name: Test Crossword Club by date
+        if: '!cancelled()'
         run: xword-dl club -d 1/3/23
       - name: Test Crossword Club by URL
+        if: '!cancelled()'
         run: xword-dl "https://crosswordclub.com/puzzles/sunday-january-07-2024/"
       - name: Test Daily Beast latest
+        if: '!cancelled()'
         run: xword-dl db
       - name: Test Der Standard latest
+        if: '!cancelled()'
         run: xword-dl std
       - name: Test Der Standard by URL
+        if: '!cancelled()'
         run: xword-dl "https://www.derstandard.at/story/3000000201583/kreuzwortraetsel-h-10580"
       - name: Test Globe and Mail
+        if: '!cancelled()'
         run: xword-dl tgam
       - name: Test Globe and Mail by URL
+        if: '!cancelled()'
         run: xword-dl "https://www.theglobeandmail.com/puzzles-and-crosswords/cryptic-crossword/?date=060124&T=0"
       - name: Test Guardian Cryptic
+        if: '!cancelled()'
         run: xword-dl grdc
       - name: Test Guardian Everyman
+        if: '!cancelled()'
         run: xword-dl grde
       - name: Test Guardian Prize
+        if: '!cancelled()'
         run: xword-dl grdp
       - name: Test Guardian Quick
+        if: '!cancelled()'
         run: xword-dl grdq
       - name: Test Guardian Quiptic
+        if: '!cancelled()'
         run: xword-dl grdu
       - name: Test Guardian Speedy
+        if: '!cancelled()'
         run: xword-dl grds
       - name: Test Guardian Weekend
+        if: '!cancelled()'
         run: xword-dl grdw
       - name: Test LA Times latest
+        if: '!cancelled()'
         run: xword-dl lat
       - name: Test LA Times by date
+        if: '!cancelled()'
         run: xword-dl lat -d "2022/12/14"
       - name: Test McKinsey latest
+        if: '!cancelled()'
         run: xword-dl mck
       - name: Test McKinsey by date
+        if: '!cancelled()'
         run: xword-dl mck -d "september 26, 2023"
       - name: Test McKinsey by URL
+        if: '!cancelled()'
         run: xword-dl "https://www.mckinsey.com/featured-insights/the-mckinsey-crossword/october-31-2023"
       - name: Test Modern latest
+        if: '!cancelled()'
         run: xword-dl mod
       - name: Test Modern by date
+        if: '!cancelled()'
         run: xword-dl -d "jan 28, 2023"
       - name: Test Modern by URL
+        if: '!cancelled()'
         run: xword-dl "https://www.puzzlesociety.com/crossword-puzzles/modern-crossword/2023/8/5"
       - name: Test New Yorker latest
+        if: '!cancelled()'
         run: xword-dl tny
-      - name: Test New Yorker by date
+      - name: Test New Yorker by 
+        if: '!cancelled()'
         run: xword-dl tny -d "3/31/23"
       - name: Test New Yorker by URL
+        if: '!cancelled()'
         run: xword-dl "https://www.newyorker.com/puzzles-and-games-dept/crossword/2024/01/01"
       - name: Test New Yorker themed
+        if: '!cancelled()'
         run: xword-dl "https://www.newyorker.com/puzzles-and-games-dept/crossword/2024/01/05"
       - name: Test Newsday latest
+        if: '!cancelled()'
         run: xword-dl nd
       - name: Test Newsday by date
+        if: '!cancelled()'
         run: xword-dl nd -d "dec. 12, 2023"
       - name: Test Simply Daily Puzzles
+        if: '!cancelled()'
         run: xword-dl sdp
       - name: Test Simply Daily Puzzles Cryptic
+        if: '!cancelled()'
         run: xword-dl sdpc
       - name: Test Simply Daily Puzzles Quick
+        if: '!cancelled()'
         run: xword-dl sdpq
       - name: Test Universal latest
+        if: '!cancelled()'
         run: xword-dl uni
       - name: Test Universal by date
+        if: '!cancelled()'
         run: xword-dl uni -d "october 6, 2023"
       - name: Test USA Today latest
+        if: '!cancelled()'
         run: xword-dl usa
       - name: Test USA Today by date
+        if: '!cancelled()'
         run: xword-dl usa -d "january 7, 2024"
       - name: Test Vox
+        if: '!cancelled()'
         run: xword-dl vox
       - name: Test WSJ latest
+        if: '!cancelled()'
         run: xword-dl wsj
       - name: Test WSJ by URL
+        if: '!cancelled()'
         run: xword-dl "https://www.wsj.com/articles/carbon-neutral-saturday-crossword-january-15-11642193133"
       - name: Test WSJ Friday contest
+        if: '!cancelled()'
         run: xword-dl "https://www.wsj.com/articles/hitting-the-high-notes-friday-crossword-january-5-0f18d7c1"
       - name: Test Washington Post latest
+        if: '!cancelled()'
         run: xword-dl wp
       - name: Test Washington Post by date
+        if: '!cancelled()'
         run: xword-dl wp -d "12/17/23"
