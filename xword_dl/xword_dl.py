@@ -191,6 +191,14 @@ def main():
                             (currently only the New York Times)"""),
                         default=None)
 
+    parser.add_argument('--preserve-html',
+                        help=textwrap.dedent("""\
+                            preserves any HTML present in scraped puzzle
+                            (by default, HTML is converted into plain
+                            markdown)"""),
+                        action='store_true',
+                        default=False)
+
     parser.add_argument('-o', '--output',
                         help=textwrap.dedent("""\
                             filename (or filename template) for the
@@ -221,6 +229,8 @@ def main():
         options['username'] = args.username
     if args.password:
         options['password'] = args.password
+    if args.preserve_html:
+        options['preserve_html'] = args.preserve_html
     if args.output:
         options['filename'] = args.output
     if args.date:

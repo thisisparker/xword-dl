@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from .basedownloader import BaseDownloader
-from ..util import unidecode, XWordDLException
+from ..util import XWordDLException
 
 class GuardianDownloader(BaseDownloader):
     outlet = 'Guardian'
@@ -41,11 +41,11 @@ class GuardianDownloader(BaseDownloader):
     def parse_xword(self, xword_data):
         puzzle = puz.Puzzle()
 
-        puzzle.author = unidecode(xword_data.get('creator',{}).get('name',''))
+        puzzle.author = xword_data.get('creator', {}).get('name') or ''
         puzzle.height = xword_data.get('dimensions').get('rows')
         puzzle.width  = xword_data.get('dimensions').get('cols')
 
-        puzzle.title = unidecode(xword_data.get('name', ''))
+        puzzle.title = xword_data.get('name') or ''
 
         if not all(e.get('solution') for e in xword_data['entries']):
             puzzle.title += ' - no solution provided'
@@ -74,8 +74,7 @@ class GuardianDownloader(BaseDownloader):
         puzzle.solution = solution
         puzzle.fill = fill
 
-        clues = [unidecode(e.get('clue')) for e in
-                    sorted(xword_data.get('entries'), 
+        clues = [e.get('clue') for e in sorted(xword_data.get('entries'),
                     key=lambda x: (x.get('number'), x.get('direction')))]
 
         puzzle.clues = clues

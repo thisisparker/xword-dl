@@ -4,10 +4,9 @@ import puz
 import requests
 
 from bs4 import BeautifulSoup
-from html2text import html2text
 
 from .basedownloader import BaseDownloader
-from ..util import XWordDLException, unidecode
+from ..util import XWordDLException
 
 class WSJDownloader(BaseDownloader):
     command = 'wsj'
@@ -29,10 +28,13 @@ class WSJDownloader(BaseDownloader):
         res = requests.get(url, headers=self.headers)
         soup = BeautifulSoup(res.text, 'html.parser')
 
+        exclude_urls = ['https://www.wsj.com/articles/contest-crosswords-101-how-to-solve-puzzles-11625757841']
+
         for article in soup.find_all('article'):
             if 'crossword' in article.find('span').get_text().lower():
                 latest_url = article.find('a').get('href')
-                break
+                if latest_url not in exclude_urls:
+                    break
         else:
             raise XWordDLException('Unable to find latest puzzle.')
 
@@ -62,19 +64,14 @@ class WSJDownloader(BaseDownloader):
 
         self.date = datetime.datetime.strptime(date_string, '%Y/%m/%d')
 
-        fetched = {}
-        for field in ['title', 'byline', 'publisher', 'description']:
-            fetched[field] = html2text(xword_metadata.get(field, ''),
-                                       bodywidth=0).strip()
-
         puzzle = puz.Puzzle()
-        puzzle.title = fetched.get('title')
-        puzzle.author = fetched.get('byline')
-        puzzle.copyright = fetched.get('publisher')
+        puzzle.title = xword_metadata.get('title') or ''
+        puzzle.author = xword_metadata.get('byline') or ''
+        puzzle.copyright = xword_metadata.get('publisher') or ''
         puzzle.width = int(xword_metadata.get('gridsize').get('cols'))
         puzzle.height = int(xword_metadata.get('gridsize').get('rows'))
 
-        puzzle.notes = fetched.get('description')
+        puzzle.notes = xword_metadata.get('crosswordadditionalcopy') or ''
 
         solution = ''
         fill = ''
@@ -82,13 +79,13 @@ class WSJDownloader(BaseDownloader):
 
         for row in xword_data:
             for cell in row:
-                if not cell['Letter']:
+                if cell.get('Blank'):
                     fill += '.'
                     solution += '.'
                     markup += b'\x00'
                 else:
                     fill += '-'
-                    solution += cell['Letter']
+                    solution += cell['Letter'] or 'X'
                     markup += (b'\x80' if (cell.get('style', '')
                                            and cell['style']['shapebg']
                                            == 'circle')
@@ -97,15 +94,16 @@ class WSJDownloader(BaseDownloader):
         puzzle.fill = fill
         puzzle.solution = solution
 
+        if all(c in ['.', 'X'] for c in puzzle.solution):
+            puzzle.solution_state = 0x0002
+
         clue_list = xword_metadata['clues'][0]['clues'] + \
             xword_metadata['clues'][1]['clues']
         sorted_clue_list = sorted(clue_list, key=lambda x: int(x['number']))
 
         clues = [clue['clue'] for clue in sorted_clue_list]
-        normalized_clues = [
-            html2text(unidecode(clue), bodywidth=0).strip() for clue in clues]
 
-        puzzle.clues = normalized_clues
+        puzzle.clues = clues
 
         has_markup = b'\x80' in markup
 

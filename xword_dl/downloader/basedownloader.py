@@ -9,7 +9,6 @@ class BaseDownloader:
     def __init__(self, **kwargs):
         self.date = kwargs.get('date', None)
         self.netloc = urllib.parse.urlparse(kwargs.get('url','')).netloc
-        self.filename = kwargs.get('filename', None)
 
         self.settings = {}
 
@@ -26,6 +25,9 @@ class BaseDownloader:
 
         self.settings.update(kwargs)
 
+        if kwargs.get('filename'):
+            self.settings['filename'] = kwargs.get('filename')
+
     def pick_filename(self, puzzle, **kwargs):
         tokens = {'outlet':  self.outlet or '',
                   'prefix':  self.outlet_prefix or '',
@@ -40,7 +42,7 @@ class BaseDownloader:
 
         date = kwargs.get('date', self.date)
 
-        template = self.filename or self.settings.get('filename') or ''
+        template = self.settings.get('filename') or ''
 
         if not template:
             template += '%prefix' if tokens.get('prefix') else '%author'
@@ -94,5 +96,9 @@ class BaseDownloader:
         solver_url = self.find_solver(url)
         xword_data = self.fetch_data(solver_url)
         puzzle = self.parse_xword(xword_data)
+
+        puzzle = sanitize_for_puzfile(puzzle,
+                                      preserve_html=self.settings.get(
+                                                        'preserve_html'))
 
         return puzzle
