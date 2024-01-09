@@ -31,7 +31,7 @@ class NewYorkTimesDownloader(BaseDownloader):
             nyts_token = self.authenticate(username, password)
             update_config_file('nyt', {'NYT-S': nyts_token})
         else:
-            nyts_token = self.settings.get('NYT-S')
+            nyts_token = self.settings.get('NYT_S')
 
         if not nyts_token:
             raise XWordDLException('No credentials provided or stored. Try running xword-dl nyt --authenticate')
@@ -169,7 +169,7 @@ class NewYorkTimesDownloader(BaseDownloader):
         clue_list = xword_data['body'][0]['clues']
         clue_list.sort(key=lambda c: (int(c['label']), c['direction']))
 
-        puzzle.clues = [unidecode(c['text'][0]['plain']) for c in clue_list]
+        puzzle.clues = [c['text'][0]['plain'] for c in clue_list]
 
         return puzzle
 
