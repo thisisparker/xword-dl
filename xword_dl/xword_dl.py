@@ -222,7 +222,7 @@ def main():
         sys.exit('Authentication flag must use a puzzle outlet keyword.')
 
     if not args.source:
-        sys.exit(parser.print_help())
+        sys.exit(parser.format_help())
 
     options = {}
     if args.username:
