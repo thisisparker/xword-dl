@@ -43,8 +43,7 @@ class McKinseyDownloader(AmuseLabsDownloader):
         index_res = requests.get(index_url)
         index_soup = BeautifulSoup(index_res.text, "html.parser")
 
-        latest_fragment = next(a for a in index_soup.select('a.mdc-c-link-heading[href^="/featured-insights/the-mckinsey-crossword/"]')
-                               if a.find('div'))['href']
+        latest_fragment = next(a for a in index_soup.select('a[href^="/featured-insights/the-mckinsey-crossword/"]') if a.find('div'))['href']
         latest_absolute = urllib.parse.urljoin('https://www.mckinsey.com',
                                                latest_fragment)
 
