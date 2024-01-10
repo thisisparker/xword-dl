@@ -95,10 +95,28 @@ jobs:
       - name: Test Modern by URL
         if: '!cancelled()'
         run: xword-dl "https://www.puzzlesociety.com/crossword-puzzles/modern-crossword/2023/8/5"
+      - name: Test New York Times latest
+        if: '!cancelled()'
+        env:
+          NYT_S_VALUE: ${{ secrets.NYT_S_VALUE }}
+        run: |
+          xword-dl nyt --settings '{"NYT-S": "'$NYT_S_VALUE'"}'
+      - name: Test New York Times by date
+        if: '!cancelled()'
+        env:
+          NYT_S_VALUE: ${{ secrets.NYT_S_VALUE }}
+        run: |
+          xword-dl nyt --settings '{"NYT-S": "'$NYT_S_VALUE'"}' -d "5/17/23"
+      - name: Test New York Times rebus
+        if: '!cancelled()'
+        env:
+          NYT_S_VALUE: ${{ secrets.NYT_S_VALUE }}
+        run: |
+          xword-dl nyt --settings '{"NYT-S": "'$NYT_S_VALUE'"}' -d "aug 10, 2023"
       - name: Test New Yorker latest
         if: '!cancelled()'
         run: xword-dl tny
-      - name: Test New Yorker by 
+      - name: Test New Yorker by date
         if: '!cancelled()'
         run: xword-dl tny -d "3/31/23"
       - name: Test New Yorker by URL
