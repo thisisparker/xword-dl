@@ -3,6 +3,8 @@ name: Status check on supported outlets
 on:
   pull_request:
     branches: [ main ]
+  schedule:
+    - cron: '15 12 * * *'
 
 jobs:
   install-xword-dl-and-test-existing-outlets:
