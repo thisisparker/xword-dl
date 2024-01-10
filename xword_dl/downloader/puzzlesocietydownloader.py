@@ -54,7 +54,7 @@ class TheModernDownloader(CrosswordCompilerDownloader):
     def parse_xword(self, xword_data):
         puzzle = super().parse_xword(xword_data, enumeration=False)
 
-        if not puzzle.author:
+        if not puzzle.author or puzzle.author.casefold().startswith('edited'):
             puzzle.author = puzzle.title[3:]
             puzzle.title = self.date.strftime('%A, %B %d, %Y')
 
