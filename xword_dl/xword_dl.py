@@ -2,6 +2,7 @@
 
 import argparse
 import inspect
+import json
 import sys
 import textwrap
 import time
@@ -199,6 +200,12 @@ def main():
                         action='store_true',
                         default=False)
 
+    parser.add_argument('--settings',
+                        help=textwrap.dedent("""\
+                            JSON-encoded object specifying settings
+                            values for given keys"""),
+                        default=None)
+
     parser.add_argument('-o', '--output',
                         help=textwrap.dedent("""\
                             filename (or filename template) for the
@@ -235,6 +242,13 @@ def main():
         options['filename'] = args.output
     if args.date:
         options['date'] = args.date
+    if args.settings:
+        try:
+            raw_settings = json.loads(args.settings)
+            settings = {k.replace('-','_'):raw_settings[k] for k in raw_settings}
+        except json.JSONDecodeError:
+            sys.exit('Settings object not valid JSON.')
+        options.update(settings)
 
     try:
         if args.source.startswith('http'):
