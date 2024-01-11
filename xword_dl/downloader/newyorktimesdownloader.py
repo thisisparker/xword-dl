@@ -139,15 +139,21 @@ class NewYorkTimesDownloader(BaseDownloader):
                 solution += '.'
                 fill += '.'
                 rebus_board.append(0)
-            elif square and len(square['answer']) == 1:
+            elif square and len(square.get('answer','')) == 1:
                 solution += square['answer']
                 fill += '-'
                 rebus_board.append(0)
             else:
-                solution += square['answer'][0]
+                try:
+                    suitable_answer = unidecode(square.get('answer') or 
+                                        square['moreAnswers']['valid'][0])
+                except IndexError:
+                    raise XWordDLException('Unable to parse puzzle JSON. Possibly something .puz incompatible')
+
+                solution += suitable_answer[0]
                 fill += '-'
                 rebus_board.append(rebus_index + 1)
-                rebus_table += '{:2d}:{};'.format(rebus_index, unidecode(square['answer']))
+                rebus_table += '{:2d}:{};'.format(rebus_index, suitable_answer)
                 rebus_index += 1
 
             markup += (b'\x00' if square.get('type', 1) == 1 else b'\x80')
