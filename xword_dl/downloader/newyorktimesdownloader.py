@@ -147,7 +147,7 @@ class NewYorkTimesDownloader(BaseDownloader):
                 try:
                     suitable_answer = unidecode(square.get('answer') or 
                                         square['moreAnswers']['valid'][0])
-                except IndexError:
+                except (IndexError, KeyError):
                     raise XWordDLException('Unable to parse puzzle JSON. Possibly something .puz incompatible')
 
                 solution += suitable_answer[0]
