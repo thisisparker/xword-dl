@@ -5,7 +5,7 @@ import puz
 import requests
 
 from .basedownloader import BaseDownloader
-from ..util import XWordDLException, join_bylines, update_config_file
+from ..util import XWordDLException, join_bylines, update_config_file, unidecode
 
 class NewYorkTimesDownloader(BaseDownloader):
     command = 'nyt'
@@ -147,7 +147,7 @@ class NewYorkTimesDownloader(BaseDownloader):
                 solution += square['answer'][0]
                 fill += '-'
                 rebus_board.append(rebus_index + 1)
-                rebus_table += '{:2d}:{};'.format(rebus_index, square['answer'])
+                rebus_table += '{:2d}:{};'.format(rebus_index, unidecode(square['answer']))
                 rebus_index += 1
 
             markup += (b'\x00' if square.get('type', 1) == 1 else b'\x80')

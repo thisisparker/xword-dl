@@ -225,7 +225,7 @@ class AmuseLabsDownloader(BaseDownloader):
                     solution += cell[0]
                     fill += '-'
                     rebus_board.append(rebus_index + 1)
-                    rebus_table += '{:2d}:{};'.format(rebus_index, cell)
+                    rebus_table += '{:2d}:{};'.format(rebus_index, unidecode(cell))
                     rebus_index += 1
 
         puzzle.solution = solution
