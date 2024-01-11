@@ -47,24 +47,27 @@ def remove_invalid_chars_from_filename(filename):
 
     return filename
 
+
+def cleanup(field, preserve_html=False):
+    if preserve_html:
+        field = unidecode(emoji.demojize(field)).strip()
+    else:
+        field = unidecode(emoji.demojize(html2text(field,
+                                         bodywidth=0))).strip()
+    return field
+
+
 def sanitize_for_puzfile(puzzle, preserve_html=False):
-    def cleanup(field):
-        if preserve_html:
-            field = emoji.demojize(unidecode(field)).strip()
-        else:
-            field = emoji.demojize(html2text(unidecode(field),
-                                             bodywidth=0).strip())
-        return field
+    puzzle.title = cleanup(puzzle.title, preserve_html)
+    puzzle.author = cleanup(puzzle.author, preserve_html)
+    puzzle.copyright = cleanup(puzzle.copyright, preserve_html)
 
-    puzzle.title = cleanup(puzzle.title)
-    puzzle.author = cleanup(puzzle.author)
-    puzzle.copyright = cleanup(puzzle.copyright)
+    puzzle.notes = cleanup(puzzle.notes, preserve_html)
 
-    puzzle.notes = cleanup(puzzle.notes)
-
-    puzzle.clues = [cleanup(clue) for clue in puzzle.clues]
+    puzzle.clues = [cleanup(clue, preserve_html) for clue in puzzle.clues]
 
     return puzzle
+
 
 def parse_date(entered_date):
     return dateparser.parse(entered_date, settings={'PREFER_DATES_FROM':'past'})
