@@ -92,17 +92,18 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         if '<' in puzzle.title:
             puzzle.title = puzzle.title.split('<')[0]
 
+        if self.theme_title:
+            puzzle.title += f' - {self.theme_title}'
+
         return puzzle
 
     def pick_filename(self, puzzle, **kwargs):
         try:
             supra, main = puzzle.title.split(':', 1)
+            if self.theme_title:
+                main = main.rsplit(' - ')[0]
             if supra == 'The Crossword' and dateparser.parse(main):
-                if self.theme_title:
-                    title = self.theme_title
-                    puzzle.title += f' - {self.theme_title}'
-                else:
-                    title = ''
+                title = self.theme_title
             else:
                 title = main.strip()
         except XWordDLException:

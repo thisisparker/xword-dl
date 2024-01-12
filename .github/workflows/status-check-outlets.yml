@@ -145,6 +145,9 @@ jobs:
       - name: Test New Yorker themed
         if: '!cancelled()'
         run: xword-dl "https://www.newyorker.com/puzzles-and-games-dept/crossword/2024/01/05"
+      - name: Test New Yorker themed, special chars title
+        if: '!cancelled()'
+        run: xword-dl tny -d 1/12/24
       - name: Test Newsday latest
         if: '!cancelled()'
         run: xword-dl nd
