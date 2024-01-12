@@ -127,6 +127,12 @@ jobs:
           NYT_S_VALUE: ${{ secrets.NYT_S_VALUE }}
         run: |
           xword-dl nyt --settings '{"NYT-S": "'$NYT_S_VALUE'"}' -d "12/17/23"
+      - name: Test New York Times blank clues
+        if: '!cancelled()'
+        env:
+          NYT_S_VALUE: ${{ secrets.NYT_S_VALUE }}
+        run: |
+          xword-dl nyt --settings '{"NYT-S": "'$NYT_S_VALUE'"}' -d "9/27/18"
       - name: Test New Yorker latest
         if: '!cancelled()'
         run: xword-dl tny
