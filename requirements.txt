@@ -8,3 +8,4 @@ Unidecode==1.3.6
 pyyaml==6.0.1
 xmltodict==0.13.0
 lxml==4.9.2
+tzlocal==2.1
