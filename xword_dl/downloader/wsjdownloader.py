@@ -25,8 +25,6 @@ class WSJDownloader(BaseDownloader):
         res = self.session.get(url)
         soup = BeautifulSoup(res.text, 'html.parser')
 
-        print(res.request.headers, res.request._cookies)
-
         exclude_urls = ['https://www.wsj.com/articles/contest-crosswords-101-how-to-solve-puzzles-11625757841']
 
         for article in soup.find_all('article'):
