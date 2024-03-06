@@ -171,13 +171,22 @@ jobs:
         run: xword-dl vox
       - name: Test WSJ latest
         if: '!cancelled()'
-        run: xword-dl wsj
+        env:
+          DATADOME_COOKIE: ${{ secrets.DATADOME_COOKIE }}
+        run: |
+          xword-dl wsj --settings '{"cookies": {"datadome":"'$DATADOME_COOKIE'"}}'
       - name: Test WSJ by URL
         if: '!cancelled()'
-        run: xword-dl "https://www.wsj.com/articles/carbon-neutral-saturday-crossword-january-15-11642193133"
+        env:
+          DATADOME_COOKIE: ${{ secrets.DATADOME_COOKIE }}
+        run: |
+          xword-dl --settings '{"cookies": {"datadome":"'$DATADOME_COOKIE'"}}' "https://www.wsj.com/articles/carbon-neutral-saturday-crossword-january-15-11642193133"
       - name: Test WSJ Friday contest
         if: '!cancelled()'
-        run: xword-dl "https://www.wsj.com/articles/hitting-the-high-notes-friday-crossword-january-5-0f18d7c1"
+        env:
+          DATADOME_COOKIE: ${{ secrets.DATADOME_COOKIE }}
+        run: |
+          xword-dl --settings '{"cookies": {"datadome":"'$DATADOME_COOKIE'"}}' "https://www.wsj.com/articles/hitting-the-high-notes-friday-crossword-january-5-0f18d7c1"
       - name: Test Washington Post latest
         if: '!cancelled()'
         run: xword-dl wp

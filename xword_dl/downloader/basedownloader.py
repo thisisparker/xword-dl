@@ -1,5 +1,7 @@
 import urllib
 
+import requests
+
 from ..util import *
 
 class BaseDownloader:
@@ -27,6 +29,10 @@ class BaseDownloader:
 
         if kwargs.get('filename'):
             self.settings['filename'] = kwargs.get('filename')
+
+        self.session = requests.Session()
+        self.session.headers.update(self.settings.get('headers', {}))
+        self.session.cookies.update(self.settings.get('cookies', {}))
 
     def pick_filename(self, puzzle, **kwargs):
         tokens = {'outlet':  self.outlet or '',
