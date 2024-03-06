@@ -88,15 +88,6 @@ jobs:
       - name: Test McKinsey by URL
         if: '!cancelled()'
         run: xword-dl "https://www.mckinsey.com/featured-insights/the-mckinsey-crossword/october-31-2023"
-      - name: Test Modern latest
-        if: '!cancelled()'
-        run: xword-dl mod
-      - name: Test Modern by date
-        if: '!cancelled()'
-        run: xword-dl mod -d "jan 28, 2023"
-      - name: Test Modern by URL
-        if: '!cancelled()'
-        run: xword-dl "https://www.puzzlesociety.com/crossword-puzzles/modern-crossword/2023/8/5"
       - name: Test New York Times latest
         if: '!cancelled()'
         env:

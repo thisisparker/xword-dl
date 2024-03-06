@@ -9,7 +9,9 @@ from bs4 import BeautifulSoup
 from .compilerdownloader import CrosswordCompilerDownloader
 
 class TheModernDownloader(CrosswordCompilerDownloader):
-    command = 'mod'
+    # command = 'mod' # Removing as of March 2024, as its gone behind a paywall
+                      # We may find a way to feed credentials but it seems
+                      # non-trivial.
     outlet = 'The Modern'
     outlet_prefix = 'The Modern'
 
