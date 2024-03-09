@@ -1,7 +1,6 @@
 import datetime
 
 import puz
-import requests
 
 from bs4 import BeautifulSoup
 
@@ -14,9 +13,7 @@ class WSJDownloader(BaseDownloader):
     outlet_prefix = 'WSJ'
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        self.headers = {'User-Agent': 'xword-dl'}
+        super().__init__(headers={'User-Agent': 'xword-dl'}, **kwargs)
 
     @staticmethod
     def matches_url(url_components):
@@ -25,7 +22,7 @@ class WSJDownloader(BaseDownloader):
     def find_latest(self):
         url = "https://www.wsj.com/news/puzzle"
 
-        res = requests.get(url, headers=self.headers)
+        res = self.session.get(url)
         soup = BeautifulSoup(res.text, 'html.parser')
 
         exclude_urls = ['https://www.wsj.com/articles/contest-crosswords-101-how-to-solve-puzzles-11625757841']
@@ -44,7 +41,7 @@ class WSJDownloader(BaseDownloader):
         if '/puzzles/crossword/' in url:
             return url
         else:
-            res = requests.get(url, headers=self.headers)
+            res = self.session.get(url)
             soup = BeautifulSoup(res.text, 'html.parser')
             try:
                 puzzle_link = soup.find('iframe').get('src')
@@ -54,7 +51,7 @@ class WSJDownloader(BaseDownloader):
 
     def fetch_data(self, solver_url):
         data_url = solver_url.rsplit('/', maxsplit=1)[0] + '/data.json'
-        return requests.get(data_url, headers=self.headers).json()['data']
+        return self.session.get(data_url).json()['data']
 
     def parse_xword(self, xword_data):
         xword_metadata = xword_data.get('copy', '')
