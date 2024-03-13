@@ -44,15 +44,31 @@ The easiest way to install `xword-dl` is through `pip`. Install the latest versi
 pip install xword-dl
 ```
 
-You can also install `xword-dl` by downloading or cloning this repository from Github. From a terminal, simply running
+You can also install `xword-dl` by downloading or cloning this repository from GitHub. You probably want to install `xword-dl` and its dependencies in a dedicated virtual environment, rather than install them systemwide. Using virtual environments can [minimize dependency conflicts and reproducibility issues](https://csguide.cs.princeton.edu/software/virtualenv). You can create a virtual environment in your `xword-dl` directory by using either the [`venv`](https://docs.python.org/3/library/venv.html) module (included with Python's standard library and preferred over `virtualenv`) or [uv](https://github.com/astral-sh/uv).
 
+### [`venv`](https://docs.python.org/3/library/venv.html) and `pip`
+
+```sh
+> python -m venv .venv # use `venv` to create a virtual environment at `.venv`
+> source .venv/bin/activate # activate the virtual environment to easily use its Python interpreter
+# note: use the appropriate activation script for your shell, e.g., .venv/bin/activate.fish if using `fish` as your shell
+# source .venv/bin/activate.fish
+(xword-dl) > pip install . # use the environment's `pip` to install `xword-dl` using your clone of the repository
+(xword-dl) > deactivate # deactivate the environment when no longer using `xword-dl`
 ```
-python setup.py install
+
+### [uv](https://github.com/astral-sh/uv)
+
+```sh
+> uv venv # use uv to create a virtual environment at `.venv`
+> source .venv/bin/activate # activate the virtual environment to easily use its Python interpreter
+# note: use the appropriate activation script for your shell, e.g., .venv/bin/activate.fish if using `fish` as your shell
+# source .venv/bin/activate.fish
+(xword-dl) > uv pip install "xword-dl @ ." # use uv to install `xword-dl` using your clone of the repository
+(xword-dl) > deactivate # deactivate the environment when no longer using `xword-dl`
 ```
 
-in the downloaded directory may be enough.
-
-But in either case, you probably want to install `xword-dl` and its dependencies in a dedicated virtual environment. I use `virtualenv` and `virtualenvwrapper` personally, but that's a matter of preference. If you're already feeling overwhelmed by the thought of managing Python packages, know you're not alone. The [official documentation is pretty good](https://packaging.python.org/tutorials/installing-packages/), but it's a hard problem, and it's not just you. If it's any consolation, learning how to use virtual environments today on something sort of frivolous like a crossword puzzle downloader will probably save you from serious headaches in the future when the stakes are higher.
+If you're already feeling overwhelmed by the thought of managing Python packages, know you're not alone. The [official documentation is pretty good](https://packaging.python.org/tutorials/installing-packages/), but it's a hard problem, and it's not just you. If it's any consolation, learning how to use virtual environments today on something sort of frivolous like a crossword puzzle downloader will probably save you from serious headaches in the future when the stakes are higher.
 
 ## Usage
 
