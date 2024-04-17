@@ -36,19 +36,22 @@ class NewYorkerDownloader(AmuseLabsDownloader):
             url_format)
         return guessed_url
 
-    def find_latest(self):
-        index_url = "https://www.newyorker.com/puzzles-and-games-dept/crossword"
-        index_res = requests.get(index_url)
-        index_soup = BeautifulSoup(index_res.text, "html.parser")
+    def find_latest(self, search_string='/crossword/'):
+        url = "https://www.newyorker.com/puzzles-and-games-dept/crossword"
+        res = self.session.get(url)
+        soup = BeautifulSoup(res.text, "html.parser")
 
-        latest_fragment = next(a for a in index_soup.findAll('a')
-                               if a.find('h4'))['href']
-        latest_absolute = urllib.parse.urljoin('https://www.newyorker.com',
-                                               latest_fragment)
+        puzzle_list = json.loads(soup.find('script',
+                                           attrs={'type':'application/ld+json'})
+                                           .get_text()).get('itemListElement',{})
+        latest_url = next((item for item in puzzle_list
+                            if search_string in item.get('url', '')),
+                          {}).get('url')
 
-        landing_page_url = latest_absolute
+        if not latest_url:
+            raise XWordDLException('Could not identify the latest puzzle at {}'.format(url))
 
-        return landing_page_url
+        return latest_url
 
     def find_solver(self, url):
         res = requests.get(url)
