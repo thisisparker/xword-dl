@@ -44,8 +44,9 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         puzzle_list = json.loads(soup.find('script',
                                            attrs={'type':'application/ld+json'})
                                            .get_text()).get('itemListElement',{})
-        latest_url = next(item for item in puzzle_list
-                            if search_string in item.get('url', ''),{}).get('url')
+        latest_url = next((item for item in puzzle_list
+                            if search_string in item.get('url', '')),
+                          {}).get('url')
 
         if not latest_url:
             raise XWordDLException('Could not identify the latest puzzle at {}'.format(url))
