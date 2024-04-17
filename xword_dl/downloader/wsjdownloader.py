@@ -23,6 +23,10 @@ class WSJDownloader(BaseDownloader):
         url = "https://www.wsj.com/news/puzzle"
 
         res = self.session.get(url)
+
+        if res.status_code == 401:
+            raise XWordDLException('Connection prohibited. This may be due to software restricting automated access.')
+
         soup = BeautifulSoup(res.text, 'html.parser')
 
         exclude_urls = ['https://www.wsj.com/articles/contest-crosswords-101-how-to-solve-puzzles-11625757841']
