@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 
 import puz
 import requests
@@ -22,7 +23,9 @@ class GuardianDownloader(BaseDownloader):
         res = requests.get(self.landing_page)
         soup = BeautifulSoup(res.text, 'html.parser')
 
-        url = soup.find('a', attrs={'data-link-name': 'article'}).get('href')
+        url = 'https://www.theguardian.com'
+        xword_link_re = re.compile(r'/crosswords/\w+/\d+')
+        url += soup.find('a', href=xword_link_re).get('href')
 
         return url
 
@@ -33,7 +36,7 @@ class GuardianDownloader(BaseDownloader):
         res = requests.get(solver_url)
         soup = BeautifulSoup(res.text, 'html.parser')
 
-        xw_data = json.loads(soup.find('div', 
+        xw_data = json.loads(soup.find('div',
                     attrs={'class':'js-crossword'}).get('data-crossword-data'))
 
         return xw_data
