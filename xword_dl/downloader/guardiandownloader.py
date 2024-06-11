@@ -1,6 +1,8 @@
 import datetime
 import json
 
+from urllib.parse import urljoin
+
 import puz
 import requests
 
@@ -22,7 +24,21 @@ class GuardianDownloader(BaseDownloader):
         res = requests.get(self.landing_page)
         soup = BeautifulSoup(res.text, 'html.parser')
 
-        url = soup.find('a', attrs={'data-link-name': 'article'}).get('href')
+        # Ugly and brittle, but it works for now
+        try:
+            recent_section = soup.find_all('section')[4]
+        except IndexError:
+            raise XWordDLException('Issue parsing Guardian page. Maybe its layout has changed?')
+
+        fragments = [l.get('href') for l in
+                        recent_section.find_all('a')
+                        if l.get('href','').startswith(
+                            '/crosswords/')]
+
+        if not fragments:
+            raise XWordDLException('Cannot parse Guardian landing page.')
+
+        url = urljoin('https://www.theguardian.com', fragments[0])
 
         return url
 
@@ -34,7 +50,8 @@ class GuardianDownloader(BaseDownloader):
         soup = BeautifulSoup(res.text, 'html.parser')
 
         xw_data = json.loads(soup.find('div', 
-                    attrs={'class':'js-crossword'}).get('data-crossword-data'))
+                    attrs={'class':'js-crossword'}).get(
+                            'data-crossword-data'))
 
         return xw_data
 
