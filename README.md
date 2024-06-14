@@ -54,6 +54,15 @@ in the downloaded directory may be enough.
 
 But in either case, you probably want to install `xword-dl` and its dependencies in a dedicated virtual environment. I use `virtualenv` and `virtualenvwrapper` personally, but that's a matter of preference. If you're already feeling overwhelmed by the thought of managing Python packages, know you're not alone. The [official documentation is pretty good](https://packaging.python.org/tutorials/installing-packages/), but it's a hard problem, and it's not just you. If it's any consolation, learning how to use virtual environments today on something sort of frivolous like a crossword puzzle downloader will probably save you from serious headaches in the future when the stakes are higher.
 
+Alternatively, if you have the [podman](https://podman.io/) container engine installed, you can build and run `xword-dl` in a container image:
+
+```
+podman build -t xword-dl .      [slow; only needs to be run once per release]
+podman tag xword-dl:latest xword-dl:$(git describe --tags)  [optional]
+...
+podman run --rm --tz local -v $HOME/my-xwords:/xw:Z xword-dl [...]
+```
+
 ## Usage
 
 Once installed, you can invoke `xword-dl`, providing the short code of the site from which to download. If you run `xword-dl` without providing a site keyword, it will print some usage instructions and then exit.
