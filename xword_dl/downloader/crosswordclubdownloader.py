@@ -53,7 +53,7 @@ class CrosswordClubDownloader(AmuseLabsDownloader):
 
         soup = BeautifulSoup(res.text, "html.parser")
 
-        iframe_tag = soup.select('iframe[src*="amuselabs.com/pmm/"]')
+        iframe_tag = soup.select('iframe[src*="amuselabs.com/pardon/"]')
 
         iframe_url = str(iframe_tag[0].get('src'))
 
