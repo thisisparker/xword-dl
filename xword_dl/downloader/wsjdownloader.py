@@ -8,7 +8,11 @@ from .basedownloader import BaseDownloader
 from ..util import XWordDLException
 
 class WSJDownloader(BaseDownloader):
-    command = 'wsj'
+#   Disabling this downloader for now (2024-07-07) because anti-scraping tech
+#   is preventing it from working. Hopefully we'll find a workaround or a
+#   a satisfactory mechanism for getting browser cookies in at runtime.
+#   Tracking issue: https://github.com/thisisparker/xword-dl/issues/178
+#   command = 'wsj'
     outlet = 'Wall Street Journal'
     outlet_prefix = 'WSJ'
 
@@ -17,7 +21,7 @@ class WSJDownloader(BaseDownloader):
 
     @staticmethod
     def matches_url(url_components):
-        return 'wsj.com' in url_components.netloc
+        return False # disabling, see above # 'wsj.com' in url_components.netloc
 
     def find_latest(self):
         url = "https://www.wsj.com/news/puzzle"
