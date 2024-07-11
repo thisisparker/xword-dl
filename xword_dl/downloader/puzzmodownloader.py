@@ -5,7 +5,7 @@ import dateparser
 import puz
 
 from .basedownloader import BaseDownloader
-from ..util import XWordDLException
+from ..util import join_bylines, XWordDLException
 
 class PuzzmoDownloader(BaseDownloader):
     command = 'pzm'
@@ -99,17 +99,20 @@ class PuzzmoDownloader(BaseDownloader):
     def parse_xword(self, xw_data):
         puzzle = puz.Puzzle()
 
+        puzzle.title = xw_data.get('name','')
+        puzzle.author = join_bylines([a['name'] for a in xw_data['authors']])
         puzzle_lines = [l.strip() for l in xw_data['puzzle'].splitlines()]
-        puzzle_dict = {}
 
         section = None
         blank_count = 2
         named_sections = False
         default_sections = ['metadata', 'grid', 'clues', 'notes']
+        observed_height = 0
+        observed_width = 0
         fill = ''
         solution = ''
         clue_list = []
-        
+
         for line in puzzle_lines:
             if not line:
                 blank_count += 1
@@ -130,18 +133,23 @@ class PuzzmoDownloader(BaseDownloader):
                     k, v = line.split(':', 1)
                     k, v = k.strip().lower(), v.strip()
 
-                    if k == 'title':
+                # In practice, these fields (and the height and width) are
+                # less reliable than the other API-provided fields, so we will
+                # only fall back to them.
+
+                    if k == 'title' and not puzzle.title:
                         puzzle.title = v
-                    elif k == 'author':
+                    elif k == 'author' and not puzzle.author:
                         puzzle.author = v
                     elif k == 'copyright':
-                        puzzle.copyright = v
-                    elif k == 'width':
-                        puzzle.width = int(v)
-                    elif k == 'height':
-                        puzzle.height = int(v)
+                        puzzle.copyright = v.strip(' ©')
 
             elif section == 'grid':
+                if not observed_width:
+                    observed_width = len(line)
+
+                observed_height += 1
+
                 for c in line:
                     if c.isalpha():
                         fill += '-'
@@ -158,6 +166,8 @@ class PuzzmoDownloader(BaseDownloader):
                 else:
                     continue
         
+        puzzle.height = observed_height
+        puzzle.width = observed_width
         puzzle.solution = solution
         puzzle.fill = fill
 
