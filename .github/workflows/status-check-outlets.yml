@@ -145,6 +145,9 @@ jobs:
       - name: Test Newsday by date
         if: '!cancelled()'
         run: xword-dl nd -d "dec. 12, 2023"
+      - name: Test Puzzmo latest
+        if: '!cancelled()'
+        run: xword-dl pzm
       - name: Test Simply Daily Puzzles
         if: '!cancelled()'
         run: xword-dl sdp
