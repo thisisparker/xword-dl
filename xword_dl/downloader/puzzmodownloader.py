@@ -111,6 +111,7 @@ class PuzzmoDownloader(BaseDownloader):
         observed_width = 0
         fill = ''
         solution = ''
+        markup = b''
         clue_list = []
 
         for line in puzzle_lines:
@@ -118,7 +119,7 @@ class PuzzmoDownloader(BaseDownloader):
                 blank_count += 1
                 continue
             else:
-                if line.startswith('##'):
+                if line.startswith('## '):
                     named_sections = True
                     section = line[3:].lower()
                     blank_count = 0
@@ -165,11 +166,24 @@ class PuzzmoDownloader(BaseDownloader):
                                      clue_parts[3]))
                 else:
                     continue
-        
+
+            elif section == 'design':
+                if 'style' in line or '{' in line:
+                    continue
+                else:
+                    for c in line:
+                        markup += b'\x00' if c in '#.' else b'\x80'
+
+
         puzzle.height = observed_height
         puzzle.width = observed_width
         puzzle.solution = solution
         puzzle.fill = fill
+
+        if b'\x80' in markup:
+            puzzle.extensions[b'GEXT'] = markup
+            puzzle._extensions_order.append(b'GEXT')
+            puzzle.markup()
 
         clue_list.sort(key=lambda c: (c[1], c[0]))
 
