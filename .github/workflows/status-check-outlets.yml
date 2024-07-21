@@ -40,6 +40,9 @@ jobs:
       - name: Test Daily Beast latest
         if: '!cancelled()'
         run: xword-dl db
+      - name: Test Defector latest
+        if: '!cancelled()'
+        run: xword-dl def
       - name: Test Daily Pop latest
         if: '!cancelled()'
         run: xword-dl pop
