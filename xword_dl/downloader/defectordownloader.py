@@ -1,6 +1,7 @@
 import datetime
 import json
 import jq
+import re
 import urllib
 
 import dateparser
@@ -25,6 +26,39 @@ class DefectorDownloader(AmuseLabsDownloader):
     @staticmethod
     def matches_url(url_components):
         return ('defector.com' in url_components.netloc and '/the-crossword-' in url_components.path)
+
+    def find_by_date(self, dt):
+        res = requests.get(self.picker_url)
+        picker_dateformat = dt.strftime('%d %B %Y').lstrip('0') # remove zero-padding from day
+        base_url = 'https://cdn3.amuselabs.com/pmm/crossword'
+
+        try:
+            res.raise_for_status()
+        except requests.exceptions.HTTPError:
+            raise XWordDLException('Unable to load {}'.format(self.picker_url))
+
+        soup = BeautifulSoup(res.text, "html.parser")
+
+        print('self.picker_url')
+        print(self.picker_url)
+        print('picker_dateformat')
+        print(picker_dateformat)
+
+        date_tag = soup.find(class_="tile-date", string=picker_dateformat)
+        print('date_tag')
+        print(date_tag)
+        link_tag = date_tag.find_parent(href=re.compile(r"^crossword\?id="))
+        print('link_tag')
+        print(link_tag)
+
+        solver_href = link_tag['href']
+
+        guessed_url = urllib.parse.urljoin(
+            base_url,
+            solver_href)
+        print('guessed_url')
+        print(guessed_url)
+        return guessed_url
 
     def find_solver(self, url):
         res = requests.get(url)
