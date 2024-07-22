@@ -28,9 +28,9 @@ class DefectorDownloader(AmuseLabsDownloader):
         return ('defector.com' in url_components.netloc and '/the-crossword-' in url_components.path)
 
     def find_by_date(self, dt):
-        res = requests.get(self.picker_url)
-        picker_dateformat = dt.strftime('%d %B %Y').lstrip('0') # remove zero-padding from day
-        base_url = 'https://cdn3.amuselabs.com/pmm/crossword'
+        list_url = 'https://defector.com/category/crosswords'
+        res = requests.get(list_url)
+        picker_dateformat = dt.strftime('%B %-d, %Y')
 
         try:
             res.raise_for_status()
@@ -44,18 +44,21 @@ class DefectorDownloader(AmuseLabsDownloader):
         print('picker_dateformat')
         print(picker_dateformat)
 
-        date_tag = soup.find(class_="tile-date", string=picker_dateformat)
+        date_tag = soup.find('span', string=picker_dateformat) # find full date
         print('date_tag')
         print(date_tag)
-        link_tag = date_tag.find_parent(href=re.compile(r"^crossword\?id="))
+        post_tag = date_tag.find_parent(class_=re.compile(r'^PostCard_left')) # traverse up to parent `PostCard`
+        print('post_tag')
+        print(post_tag)
+        link_tag = post_tag.find('a', href=re.compile(r'/the-crossword-')) # then back down to specific puzzle anchor
         print('link_tag')
         print(link_tag)
 
-        solver_href = link_tag['href']
+        puzzle_href = link_tag['href']
 
         guessed_url = urllib.parse.urljoin(
-            base_url,
-            solver_href)
+            list_url,
+            puzzle_href)
         print('guessed_url')
         print(guessed_url)
         return guessed_url
