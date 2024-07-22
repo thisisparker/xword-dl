@@ -35,14 +35,17 @@ class DefectorDownloader(AmuseLabsDownloader):
         try:
             res.raise_for_status()
         except requests.exceptions.HTTPError:
-            raise XWordDLException('Unable to load {}'.format(self.picker_url))
+            raise XWordDLException('Unable to load {}'.format(list_url))
 
         soup = BeautifulSoup(res.text, "html.parser")
 
-        date_tag = soup.find('span', string=picker_dateformat) # find full date
-        post_tag = date_tag.find_parent(class_=re.compile(r'^PostCard_left')) # traverse up to parent `PostCard`
-        link_tag = post_tag.find('a', href=re.compile(r'/the-crossword-')) # then back down to specific puzzle anchor
-        puzzle_href = link_tag['href']
+        try:
+            date_tag = soup.find('span', string=picker_dateformat) # find full date
+            post_tag = date_tag.find_parent(class_=re.compile(r'^PostCard_left')) # traverse up to parent `PostCard`
+            link_tag = post_tag.find('a', href=re.compile(r'/the-crossword-')) # then back down to specific puzzle anchor
+            puzzle_href = link_tag['href']
+        except AttributeError:
+            raise XWordDLException('Cannot find puzzle for {} on {}'.format(picker_dateformat,list_url))
 
         guessed_url = urllib.parse.urljoin(
             list_url,
@@ -59,26 +62,22 @@ class DefectorDownloader(AmuseLabsDownloader):
 
         soup_html = BeautifulSoup(res.text, "html.parser")
 
-        nextdata_json = json.loads(soup_html.find('script',
+        try:
+            nextdata_json = json.loads(soup_html.find('script',
                                                   id='__NEXT_DATA__')
                                                   .get_text())
 
-        jq_query = '.props.pageProps.blocks[].attributes[] | select(.name == "HTMLContent").value'
-        iframe_html = jq.compile(jq_query).input_value(nextdata_json).first()
+            jq_query = '.props.pageProps.blocks[].attributes[] | select(.name == "HTMLContent").value'
+            iframe_html = jq.compile(jq_query).input_value(nextdata_json).first()
 
-        soup_iframe = BeautifulSoup(iframe_html, "html.parser")
+            soup_iframe = BeautifulSoup(iframe_html, "html.parser")
 
-        iframe_tag = soup_iframe.select_one('iframe[src^="https://cdn2.amuselabs.com/pmm/crossword"]')
-
-        try:
+            iframe_tag = soup_iframe.select_one('iframe[src^="https://cdn2.amuselabs.com/pmm/crossword"]')
             iframe_url = iframe_tag['src']
             query = urllib.parse.urlparse(iframe_url).query
             query_id = urllib.parse.parse_qs(query)['id']
             self.id = query_id[0]
-
-        # Will hit this KeyError if there's no matching iframe
-        # or if there's no 'src' attribute
-        except KeyError:
+        except (AttributeError,KeyError):
             raise XWordDLException('Cannot find puzzle at {}.'.format(url))
 
         pubdate = jq.compile('.props.pageProps.post.date').input_value(nextdata_json).first()
