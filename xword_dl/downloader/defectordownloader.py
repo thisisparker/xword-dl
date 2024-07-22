@@ -39,28 +39,14 @@ class DefectorDownloader(AmuseLabsDownloader):
 
         soup = BeautifulSoup(res.text, "html.parser")
 
-        print('self.picker_url')
-        print(self.picker_url)
-        print('picker_dateformat')
-        print(picker_dateformat)
-
         date_tag = soup.find('span', string=picker_dateformat) # find full date
-        print('date_tag')
-        print(date_tag)
         post_tag = date_tag.find_parent(class_=re.compile(r'^PostCard_left')) # traverse up to parent `PostCard`
-        print('post_tag')
-        print(post_tag)
         link_tag = post_tag.find('a', href=re.compile(r'/the-crossword-')) # then back down to specific puzzle anchor
-        print('link_tag')
-        print(link_tag)
-
         puzzle_href = link_tag['href']
 
         guessed_url = urllib.parse.urljoin(
             list_url,
             puzzle_href)
-        print('guessed_url')
-        print(guessed_url)
         return guessed_url
 
     def find_solver(self, url):
@@ -78,27 +64,11 @@ class DefectorDownloader(AmuseLabsDownloader):
                                                   .get_text())
 
         jq_query = '.props.pageProps.blocks[].attributes[] | select(.name == "HTMLContent").value'
-
-        print("jq_query")
-        print(jq_query)
-
         iframe_html = jq.compile(jq_query).input_value(nextdata_json).first()
-
-        print("iframe_html")
-        print(iframe_html)
 
         soup_iframe = BeautifulSoup(iframe_html, "html.parser")
 
-        print("soup_iframe")
-        print(soup_iframe)
-
-        print("soup_iframe.find_all('iframe')")
-        print(soup_iframe.find_all('iframe'))
-
         iframe_tag = soup_iframe.select_one('iframe[src^="https://cdn2.amuselabs.com/pmm/crossword"]')
-
-        print("iframe_tag")
-        print(iframe_tag)
 
         try:
             iframe_url = iframe_tag['src']
