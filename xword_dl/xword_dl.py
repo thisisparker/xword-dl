@@ -82,9 +82,13 @@ def parse_for_embedded_puzzle(url, **kwargs):
     res = requests.get(url, headers={'User-Agent':'xword-dl'})
     soup = BeautifulSoup(res.text, 'lxml')
 
-    sources = [urllib.parse.urljoin(url, iframe.get('src', '') or
-                iframe.get('data-crossword-url', '')) for iframe in
-                soup.find_all('iframe')]
+    sources = [urllib.parse.urljoin(url,
+                    iframe.get('data-crossword-url', '') or
+                    iframe.get('data-src', '') or
+                    iframe.get('src', ''))
+                for iframe in soup.find_all('iframe')]
+
+    sources = [src for src in sources if src != 'about:blank']
 
     sources.insert(0, url)
 
