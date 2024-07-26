@@ -1,6 +1,5 @@
 import datetime
 import json
-import jq
 import re
 import urllib
 
@@ -66,9 +65,12 @@ class DefectorDownloader(AmuseLabsDownloader):
             nextdata_json = json.loads(soup_html.find('script',
                                                   id='__NEXT_DATA__')
                                                   .get_text())
-
-            jq_query = '.props.pageProps.blocks[].attributes[] | select(.name == "HTMLContent").value'
-            iframe_html = jq.compile(jq_query).input_value(nextdata_json).first()
+            iframe_html = next(
+                attr["value"]
+                for block in nextdata_json["props"]["pageProps"]["blocks"]
+                for attr in block["attributes"]
+                if attr.get("name") == "HTMLContent"
+            )
 
             soup_iframe = BeautifulSoup(iframe_html, "html.parser")
 
@@ -77,10 +79,10 @@ class DefectorDownloader(AmuseLabsDownloader):
             query = urllib.parse.urlparse(iframe_url).query
             query_id = urllib.parse.parse_qs(query)['id']
             self.id = query_id[0]
-        except (AttributeError,KeyError):
+        except (AttributeError,KeyError,StopIteration):
             raise XWordDLException('Cannot find puzzle at {}.'.format(url))
 
-        pubdate = jq.compile('.props.pageProps.post.date').input_value(nextdata_json).first()
+        pubdate = nextdata_json["props"]["pageProps"]["post"]["date"]
         pubdate_dt = dateparser.parse(pubdate)
 
         self.date = pubdate_dt
