@@ -19,15 +19,6 @@ class AVCXBaseDownloader(BaseDownloader):
     def __init__(self, **kwargs):
         super().__init__(inherit_settings="avcx", **kwargs)
 
-        puzzle_types = {
-            "avcw": "Weekly Puzzles",
-            "avcs": "AVCX+s",
-            "avcl": "Lil AVCXs",
-            "avcc": "Cryptic Puzzles",
-            "avct": "Trivias",
-        }
-
-        self.puzzle_type = puzzle_types.get(self.command)
         self.descriptions = []
 
         self.session = requests.Session()
@@ -210,18 +201,22 @@ class AVCXBaseDownloader(BaseDownloader):
 class AVCXWeeklyDownloader(AVCXBaseDownloader):
     command = "avcw"
     outlet = "American Values Crossword Club Classic"
+    puzzle_type = "Weekly Puzzles"
 
 
 class AVCXSDownloader(AVCXBaseDownloader):
     command = "avcs"
     outlet = "American Values Crossword Club AVCX+"
+    puzzle_type = "AVCX+s"
 
 
 class AVCXLDownloader(AVCXBaseDownloader):
     command = "avcl"
     outlet = "American Values Crossword Club Lil AVCX"
+    puzzle_type = "Lil AVCXs"
 
 
 class AVCXCDownloader(AVCXBaseDownloader):
     command = "avcc"
     outlet = "American Values Crossword Club Cryptic"
+    puzzle_type = "Cryptic Puzzles"
