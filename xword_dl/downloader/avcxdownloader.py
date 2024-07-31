@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup as bs
 
 from .basedownloader import BaseDownloader
-from ..util import XWordDLException, update_config_file
+from ..util import XWordDLException, update_config_file, parse_date
 
 
 class AVCXBaseDownloader(BaseDownloader):
@@ -99,7 +99,7 @@ class AVCXBaseDownloader(BaseDownloader):
 
         for row in puzzle_list.find_all("li", class_="row"):
             date = row.find("span", class_="puzzle-date").text.strip()
-            row_dt = datetime.strptime(date, "%b %d, %Y")
+            row_dt = parse_date(date)
             if row_dt.date() == dt.date():
                 url = row.find("a").get("href")
                 return urljoin(self.base_url, url)
