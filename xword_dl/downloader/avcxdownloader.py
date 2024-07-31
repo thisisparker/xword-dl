@@ -97,12 +97,23 @@ class AVCXBaseDownloader(BaseDownloader):
             latest_url = puzzle_list.find("li", class_="row").find("a").get("href")
             return urljoin(self.base_url, latest_url)
 
+        nearest_date = None
         for row in puzzle_list.find_all("li", class_="row"):
             date = row.find("span", class_="puzzle-date").text.strip()
             row_dt = parse_date(date)
             if row_dt.date() == dt.date():
                 url = row.find("a").get("href")
                 return urljoin(self.base_url, url)
+            else:
+                delta = abs(dt - row_dt)
+                if not nearest_date or delta < nearest_date[1]:
+                    nearest_date = (date, delta)
+
+        if nearest_date:
+            raise XWordDLException(
+                "Could not find puzzle for specified date.\n"
+                f"The closest date for this puzzle type is {nearest_date[0]}."
+            )
 
         raise XWordDLException("Could not find puzzle for date.")
 
