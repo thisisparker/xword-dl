@@ -42,7 +42,7 @@ class AVCXBaseDownloader(BaseDownloader):
 
         if not user_t or not token_t:
             raise XWordDLException(
-                f"No credentials provided or stored. Try running xword-dl avcx --authenticate."
+                "No credentials provided or stored. Try running xword-dl avcx --authenticate."
             )
         else:
             self.session.cookies.set("PA_AUS", user_t)
@@ -200,8 +200,11 @@ class AVCXBaseDownloader(BaseDownloader):
 
         return puzzle
 
-    def _parse_jpz(data):
-        raise NotImplementedError
+    def _parse_jpz(self, data):
+        raise XWordDLException(
+            "This puzzle is only available in JPZ format, which is currently unsuported.\n"
+            "If you can fix this, please send a pull request!"
+        )
 
 
 class AVCXWeeklyDownloader(AVCXBaseDownloader):
