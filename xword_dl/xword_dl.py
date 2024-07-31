@@ -229,6 +229,15 @@ def main():
             sys.exit('Authentication successful.')
         except Exception as e:
             sys.exit(' '.join(['Authentication failed:', str(e)]))
+    elif args.authenticate and args.source.startswith("avc"):
+        email = args.username or input("AVCX email address: ")
+        password = args.password or getpass("Password: ")
+        try:
+            dl = downloader.AVCXBaseDownloader(
+                    username=email, password=password)
+            sys.exit("Authentication successful.")
+        except Exception as e:
+            sys.exit(" ".join(["Authentication failed:", str(e)]))
     elif args.authenticate:
         sys.exit('Authentication flag must use a puzzle outlet keyword.')
 
