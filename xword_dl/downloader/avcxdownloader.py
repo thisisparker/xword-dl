@@ -17,10 +17,11 @@ class AVCXBaseDownloader(BaseDownloader):
     base_url = "https://avxwords.com"
     puzzle_type = None
 
-    def __init__(self, **kwargs):
-        super().__init__(inherit_settings="avcx", **kwargs)
+    def __init__(self, preserve_html=False, **kwargs):
+        super().__init__(inherit_settings="avcx", preserve_html=preserve_html, **kwargs)
 
-        self.descriptions = []
+        self._preserve_html = preserve_html
+        self._descriptions = []
 
         self.session = requests.Session()
 
@@ -142,11 +143,14 @@ class AVCXBaseDownloader(BaseDownloader):
         ).get("aria-label")
         if difficulty_l:
             difficulty = difficulty_l.split()[0]
-            self.descriptions.append(f"Difficulty: {difficulty}.")
+            self._descriptions.append(f"Difficulty: {difficulty}.")
 
-        desc = soup.find(id="puzzle-newsletter").get_text()
+        desc = soup.find(id="puzzle-newsletter")
         if desc:
-            self.descriptions.append(desc.strip())
+            if not self._preserve_html:
+                for a_tag in desc.find_all("a"):
+                    a_tag.replace_with(a_tag.get_text())
+            self._descriptions.append(desc)
 
         al_string = re.compile(".*AcrossLite.*")
         al_badge = soup.find("span", class_="badge", string=al_string)
@@ -190,10 +194,10 @@ class AVCXBaseDownloader(BaseDownloader):
         if puzzle.title and ", edited by " in puzzle.title:
             parts = puzzle.title.partition(", edited by ")
             puzzle.title = parts[0]
-            self.descriptions.append(f"Edited by {parts[2]}.")
+            self._descriptions.append(f"Edited by {parts[2]}.")
 
-        if self.descriptions:
-            puzzle.notes = "\n\n".join(self.descriptions)
+        if self._descriptions:
+            puzzle.notes = "".join(f"<p>{d}</p>" for d in self._descriptions)
 
         if puzzle.title and puzzle.author:
             if puzzle.author in puzzle.title:
