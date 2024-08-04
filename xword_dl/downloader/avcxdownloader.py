@@ -15,6 +15,7 @@ class AVCXBaseDownloader(BaseDownloader):
     outlet_prefix = "AVCX"
     outlet = "American Values Crossword Club"
     base_url = "https://avxwords.com"
+    puzzle_type = None
 
     def __init__(self, **kwargs):
         super().__init__(inherit_settings="avcx", **kwargs)
