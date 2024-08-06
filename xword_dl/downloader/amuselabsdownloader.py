@@ -1,7 +1,7 @@
 import base64
 import datetime
 import json
-import urllib
+import urllib.parse
 
 import puz
 import requests
@@ -263,4 +263,3 @@ class AmuseLabsDownloader(BaseDownloader):
         if not self.date and self.id:
             self.guess_date_from_id(self.id)
         return super().pick_filename(puzzle, **kwargs)
-

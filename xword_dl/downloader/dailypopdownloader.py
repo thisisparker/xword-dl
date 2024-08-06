@@ -1,6 +1,6 @@
 import datetime
 import requests
-import urllib
+import urllib.parse
 
 from .compilerdownloader import CrosswordCompilerDownloader
 from ..util import XWordDLException

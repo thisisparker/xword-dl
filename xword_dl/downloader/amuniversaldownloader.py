@@ -2,7 +2,6 @@ import datetime
 import json
 import sys
 import time
-import urllib
 import xml
 
 import puz
@@ -56,8 +55,7 @@ class AMUniversalDownloader(BaseDownloader):
     def parse_xword(self, xword_data):
         fetched = {}
         for field in ['Title', 'Author', 'Editor', 'Copryight']:
-            fetched[field] = urllib.parse.unquote(
-                xword_data.get(field, '')).strip()
+            fetched[field] = unquote(xword_data.get(field, '')).strip()
 
         puzzle = puz.Puzzle()
         puzzle.title = fetched.get('Title', '')

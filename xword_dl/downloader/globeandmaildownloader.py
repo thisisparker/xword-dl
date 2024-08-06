@@ -1,5 +1,5 @@
 import datetime
-import urllib
+import urllib.parse
 
 from .compilerdownloader import CrosswordCompilerDownloader
 from ..util import XWordDLException
@@ -14,7 +14,7 @@ class GlobeAndMailDownloader(CrosswordCompilerDownloader):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
+
         self.fetch_data = self.fetch_jsencoded_data
         self.date = None
 
