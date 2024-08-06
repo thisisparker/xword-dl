@@ -1,5 +1,5 @@
 import datetime
-import urllib
+import urllib.parse
 
 import puz
 import requests
@@ -145,7 +145,7 @@ class NewYorkTimesDownloader(BaseDownloader):
                 rebus_board.append(0)
             else:
                 try:
-                    suitable_answer = unidecode(square.get('answer') or 
+                    suitable_answer = unidecode(square.get('answer') or
                                         square['moreAnswers']['valid'][0])
                 except (IndexError, KeyError):
                     raise XWordDLException('Unable to parse puzzle JSON. Possibly something .puz incompatible')

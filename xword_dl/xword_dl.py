@@ -6,7 +6,7 @@ import json
 import sys
 import textwrap
 import time
-import urllib
+import urllib.parse
 
 import requests
 
@@ -121,7 +121,7 @@ def parse_for_embedded_puzzle(url, **kwargs):
 def get_supported_outlets(command_only=True):
     all_classes = inspect.getmembers(sys.modules['xword_dl.downloader'],
                                      inspect.isclass)
-    dls = [d for d in all_classes if issubclass(d[1], 
+    dls = [d for d in all_classes if issubclass(d[1],
                    downloader.BaseDownloader)]
 
     if command_only:

@@ -1,6 +1,6 @@
 import datetime
 import json
-import urllib
+import urllib.parse
 
 import requests
 
@@ -21,7 +21,7 @@ class TheModernDownloader(CrosswordCompilerDownloader):
     @staticmethod
     def matches_url(url_components):
         return 'puzzlesociety.com' in url_components.netloc and 'modern-crossword' in url_components.path
-        
+
     def find_by_date(self, dt):
         url_format = dt.strftime('%Y/%m/%d')
         guessed_url = urllib.parse.urljoin(
