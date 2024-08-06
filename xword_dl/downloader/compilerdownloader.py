@@ -13,7 +13,8 @@ class CrosswordCompilerDownloader(BaseDownloader):
     def find_solver(self, url):
         return url
 
-    def fetch_jsencoded_data(self, url):
+    @staticmethod
+    def fetch_jsencoded_data(url):
         res = requests.get(url, headers={'User-Agent': 'xword-dl'})
         xw_data = res.text[len('var CrosswordPuzzleData = "'):-len('";')]
         xw_data = xw_data.replace('\\','')
@@ -22,7 +23,7 @@ class CrosswordCompilerDownloader(BaseDownloader):
 
     def fetch_data(self, url, js_encoded=False):
         if js_encoded:
-            return fetch_jsencoded_data(url)
+            return self.fetch_jsencoded_data(url)
 
         res = requests.get(url, headers={'User-Agent': 'xword-dl'})
         xw_data = res.text
