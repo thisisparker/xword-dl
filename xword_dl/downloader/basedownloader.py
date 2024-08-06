@@ -56,8 +56,7 @@ class BaseDownloader:
             template += ' - %title' if tokens.get('title') else ''
 
         for token in tokens.keys():
-            replacement = (kwargs.get(token) if token in kwargs
-                           else tokens[token])
+            replacement = kwargs.get(token, tokens[token])
             replacement = remove_invalid_chars_from_filename(replacement)
             template = template.replace('%' + token, replacement)
 

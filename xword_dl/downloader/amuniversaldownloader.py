@@ -160,8 +160,8 @@ class USATodayDownloader(BaseDownloader):
 
     def parse_xword(self, xword_data):
         try:
-            xw = xmltodict.parse(xword_data).get('crossword')
-        except xml.parsers.expat.ExpatError:
+            xw = xmltodict.parse(xword_data)['crossword']
+        except (xml.parsers.expat.ExpatError, KeyError):
             raise XWordDLException('Puzzle data malformed, cannot parse.')
 
         puzzle = puz.Puzzle()
