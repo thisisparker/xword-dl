@@ -186,15 +186,15 @@ class AmuseLabsDownloader(BaseDownloader):
 
         return xword_data
 
-    def parse_xword(self, xword_data):
+    def parse_xword(self, xw_data):
         puzzle = puz.Puzzle()
-        puzzle.title = xword_data.get('title', '').strip()
-        puzzle.author = xword_data.get('author', '').strip()
-        puzzle.copyright = xword_data.get('copyright', '').strip()
-        puzzle.width = xword_data.get('w')
-        puzzle.height = xword_data.get('h')
+        puzzle.title = xw_data.get('title', '').strip()
+        puzzle.author = xw_data.get('author', '').strip()
+        puzzle.copyright = xw_data.get('copyright', '').strip()
+        puzzle.width = xw_data.get('w')
+        puzzle.height = xw_data.get('h')
 
-        markup_data = xword_data.get('cellInfos', '')
+        markup_data = xw_data.get('cellInfos', '')
 
         circled = [(square['x'], square['y']) for square in markup_data
                    if square['isCircled']]
@@ -206,8 +206,8 @@ class AmuseLabsDownloader(BaseDownloader):
         rebus_index = 0
         rebus_table = ''
 
-        box = xword_data['box']
-        for row_num in range(xword_data.get('h')):
+        box = xw_data['box']
+        for row_num in range(xw_data.get('h')):
             for col_num, column in enumerate(box):
                 cell = column[row_num]
                 if cell == '\x00':
@@ -231,7 +231,7 @@ class AmuseLabsDownloader(BaseDownloader):
         puzzle.solution = solution
         puzzle.fill = fill
 
-        placed_words = xword_data['placedWords']
+        placed_words = xw_data['placedWords']
         across_words = [word for word in placed_words if word['acrossNotDown']]
         down_words = [
             word for word in placed_words if not word['acrossNotDown']]

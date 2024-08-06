@@ -57,9 +57,9 @@ class WSJDownloader(BaseDownloader):
         data_url = solver_url.rsplit('/', maxsplit=1)[0] + '/data.json'
         return self.session.get(data_url).json()['data']
 
-    def parse_xword(self, xword_data):
-        xword_metadata = xword_data.get('copy', '')
-        xword_data = xword_data.get('grid', '')
+    def parse_xword(self, xw_data):
+        xword_metadata = xw_data.get('copy', '')
+        xw_data = xw_data.get('grid', '')
 
         date_string = xword_metadata.get('date-publish-analytics').split()[0]
 
@@ -78,7 +78,7 @@ class WSJDownloader(BaseDownloader):
         fill = ''
         markup = b''
 
-        for row in xword_data:
+        for row in xw_data:
             for cell in row:
                 if cell.get('Blank'):
                     fill += '.'

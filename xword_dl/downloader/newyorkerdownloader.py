@@ -1,6 +1,6 @@
 import datetime
 import json
-import urllib
+import urllib.parse
 
 import dateparser
 import requests
@@ -88,9 +88,9 @@ class NewYorkerDownloader(AmuseLabsDownloader):
             self.theme_title = desc[len(theme_supra):].rstrip('.')
 
         return self.find_puzzle_url_from_id(self.id)
-        
-    def parse_xword(self, xword_data):
-        puzzle = super().parse_xword(xword_data)
+
+    def parse_xword(self, xw_data):
+        puzzle = super().parse_xword(xw_data)
 
         if '<' in puzzle.title:
             puzzle.title = puzzle.title.split('<')[0]

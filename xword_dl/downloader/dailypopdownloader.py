@@ -1,6 +1,7 @@
 import datetime
 import requests
 import urllib.parse
+from functools import partial
 
 from .compilerdownloader import CrosswordCompilerDownloader
 from ..util import XWordDLException
@@ -18,6 +19,11 @@ class DailyPopDownloader(CrosswordCompilerDownloader):
         self.settings['headers'] = self.settings.get('headers', {})
         if 'x-api-key' not in self.settings['headers']:
             self.settings['headers']['x-api-key'] = self.get_api_key()
+
+        self.fetch_data = partial(
+            self._fetch_data,
+            headers=self.settings['headers']
+        )
 
     def get_api_key(self):
         res = requests.get('http://dailypopcrosswordsweb.puzzlenation.com/crosswordSetup.js')
@@ -41,8 +47,3 @@ class DailyPopDownloader(CrosswordCompilerDownloader):
     def find_latest(self):
         dt = datetime.datetime.today()
         return self.find_by_date(dt)
-
-    def fetch_data(self, url):
-        res = requests.get(url, headers=self.settings['headers'])
-
-        return res.text
