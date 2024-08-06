@@ -47,14 +47,14 @@ class TheModernDownloader(CrosswordCompilerDownloader):
 
         return url
 
-    def fetch_data(self, url):
-        res = requests.get(url)
+    def fetch_data(self, solver_url):
+        res = requests.get(solver_url)
         xw_data = res.content.decode('utf-8-sig')
 
         return xw_data
 
-    def parse_xword(self, xword_data):
-        puzzle = super().parse_xword(xword_data, enumeration=False)
+    def parse_xword(self, xw_data, enumeration=False):
+        puzzle = super().parse_xword(xw_data, enumeration=enumeration)
 
         if not puzzle.author or puzzle.author.casefold().startswith('edited'):
             puzzle.author = puzzle.title[3:]

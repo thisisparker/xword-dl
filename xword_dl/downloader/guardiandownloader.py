@@ -41,24 +41,24 @@ class GuardianDownloader(BaseDownloader):
 
         return xw_data
 
-    def parse_xword(self, xword_data):
+    def parse_xword(self, xw_data):
         puzzle = puz.Puzzle()
 
-        puzzle.author = xword_data.get('creator', {}).get('name') or ''
-        puzzle.height = xword_data.get('dimensions').get('rows')
-        puzzle.width  = xword_data.get('dimensions').get('cols')
+        puzzle.author = xw_data.get('creator', {}).get('name', '')
+        puzzle.height = xw_data.get('dimensions').get('rows')
+        puzzle.width  = xw_data.get('dimensions').get('cols')
 
-        puzzle.title = xword_data.get('name') or ''
+        puzzle.title = xw_data.get('name') or ''
 
-        if not all(e.get('solution') for e in xword_data['entries']):
+        if not all(e.get('solution') for e in xw_data['entries']):
             puzzle.title += ' - no solution provided'
 
         self.date = datetime.datetime.fromtimestamp(
-                                        xword_data.get('date') // 1000)
+                                        xw_data['date'] // 1000)
 
         grid_dict = {}
 
-        for e in xword_data.get('entries'):
+        for e in xw_data.get('entries'):
             pos = (e.get('position').get('x'), e.get('position').get('y'))
             for index in range(e.get('length')):
                 grid_dict[pos] = e.get('solution', 'X' * e.get('length'))[index]
@@ -77,7 +77,7 @@ class GuardianDownloader(BaseDownloader):
         puzzle.solution = solution
         puzzle.fill = fill
 
-        clues = [e.get('clue') for e in sorted(xword_data.get('entries'),
+        clues = [e.get('clue') for e in sorted(xw_data.get('entries'),
                     key=lambda x: (x.get('number'), x.get('direction')))]
 
         puzzle.clues = clues

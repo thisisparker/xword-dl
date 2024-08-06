@@ -1,5 +1,6 @@
 import datetime
 import urllib.parse
+from functools import partial
 
 from .compilerdownloader import CrosswordCompilerDownloader
 from ..util import XWordDLException
@@ -15,7 +16,7 @@ class GlobeAndMailDownloader(CrosswordCompilerDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.fetch_data = self.fetch_jsencoded_data
+        self.fetch_data = partial(self._fetch_data, js_encoded=True)
         self.date = None
 
         if 'url' in kwargs and not self.date:

@@ -87,7 +87,7 @@ class BaseDownloader:
         """
         raise NotImplementedError
 
-    def parse_xword(self, xword_data):
+    def parse_xword(self, xw_data):
         """Given a blob of crossword data, parse and stuff into puz format.
 
         This method is implemented in subclasses based on the differences in

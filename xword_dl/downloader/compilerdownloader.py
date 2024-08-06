@@ -14,21 +14,19 @@ class CrosswordCompilerDownloader(BaseDownloader):
         return url
 
     @staticmethod
-    def fetch_jsencoded_data(url):
-        res = requests.get(url, headers={'User-Agent': 'xword-dl'})
-        xw_data = res.text[len('var CrosswordPuzzleData = "'):-len('";')]
-        xw_data = xw_data.replace('\\','')
+    def _fetch_data(solver_url, js_encoded=False, headers=None):
+        headers = headers or {'User-Agent': 'xword-dl'}
+        res = requests.get(solver_url, headers=headers)
 
-        return xw_data
-
-    def fetch_data(self, url, js_encoded=False):
         if js_encoded:
-            return self.fetch_jsencoded_data(url)
+            xw_data = res.text[len('var CrosswordPuzzleData = "'):-len('";')]
+            return xw_data.replace('\\','')
 
-        res = requests.get(url, headers={'User-Agent': 'xword-dl'})
-        xw_data = res.text
+        return res.text
 
-        return xw_data
+    # subclasses of CCD may want to override this method with different defaults
+    def fetch_data(self, solver_url):
+        return self._fetch_data(solver_url)
 
     def parse_xword(self, xw_data, enumeration=True):
         xw = xmltodict.parse(xw_data)
