@@ -105,6 +105,7 @@ class BaseDownloader:
 
         puzzle = sanitize_for_puzfile(puzzle,
                                       preserve_html=self.settings.get(
-                                                        'preserve_html'))
+                                                        'preserve_html',
+                                                        False))
 
         return puzzle
