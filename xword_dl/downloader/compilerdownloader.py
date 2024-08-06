@@ -30,9 +30,9 @@ class CrosswordCompilerDownloader(BaseDownloader):
 
         return xw_data
 
-    def parse_xword(self, xword_data, enumeration=True):
-        xw = xmltodict.parse(xword_data)
-        xw_root = xw.get('crossword-compiler') or xw.get('crossword-compiler-applet')
+    def parse_xword(self, xw_data, enumeration=True):
+        xw = xmltodict.parse(xw_data)
+        xw_root = xw.get('crossword-compiler') or xw['crossword-compiler-applet']
         xw_puzzle = xw_root['rectangular-puzzle']
         xw_metadata = xw_puzzle['metadata']
         xw_grid = xw_puzzle['crossword']['grid']
@@ -43,18 +43,18 @@ class CrosswordCompilerDownloader(BaseDownloader):
         puzzle.author = xw_metadata.get('creator') or ''
         puzzle.copyright = xw_metadata.get('copyright') or ''
 
-        puzzle.width = int(xw_grid.get('@width'))
-        puzzle.height = int(xw_grid.get('@height'))
+        puzzle.width = int(xw_grid['@width'])
+        puzzle.height = int(xw_grid['@height'])
 
         solution = ''
         fill = ''
         markup = b''
 
-        cells = {(int(cell.get('@x')), int(cell.get('@y'))): cell for cell in xw_grid.get('cell')}
+        cells = {(int(cell['@x']), int(cell['@y'])): cell for cell in xw_grid['cell']}
 
         for y in range(1, puzzle.height + 1):
             for x in range(1, puzzle.width + 1):
-                cell = cells.get((x, y))
+                cell = cells[(x, y)]
                 solution += cell.get('@solution', '.')
                 fill += '.' if cell.get('@type') == 'block' else '-'
                 markup += (b'\x80' if (cell.get('@background-shape') == 'circle') else b'\x00')
@@ -66,9 +66,9 @@ class CrosswordCompilerDownloader(BaseDownloader):
 
         all_clues = xw_clues[0]['clue'] + xw_clues[1]['clue']
 
-        clues = [c.get('#text') + (f' ({c.get("@format", "")})'
+        clues = [c.get('#text', '') + (f' ({c.get("@format", "")})'
                     if c.get("@format") and enumeration else '') for c in
-                    sorted(all_clues, key=lambda x: int(x.get('@number')))]
+                    sorted(all_clues, key=lambda x: int(x['@number']))]
 
         puzzle.clues = clues
 
