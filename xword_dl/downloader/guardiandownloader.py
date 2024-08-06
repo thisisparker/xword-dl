@@ -2,7 +2,6 @@ import datetime
 import json
 import re
 
-import puz
 import requests
 
 from bs4 import BeautifulSoup
@@ -42,16 +41,14 @@ class GuardianDownloader(BaseDownloader):
         return xw_data
 
     def parse_xword(self, xword_data):
-        puzzle = puz.Puzzle()
+        self.puzzle.author = xword_data.get('creator', {}).get('name') or ''
+        self.puzzle.height = xword_data.get('dimensions').get('rows')
+        self.puzzle.width  = xword_data.get('dimensions').get('cols')
 
-        puzzle.author = xword_data.get('creator', {}).get('name') or ''
-        puzzle.height = xword_data.get('dimensions').get('rows')
-        puzzle.width  = xword_data.get('dimensions').get('cols')
-
-        puzzle.title = xword_data.get('name') or ''
+        self.puzzle.title = xword_data.get('name') or ''
 
         if not all(e.get('solution') for e in xword_data['entries']):
-            puzzle.title += ' - no solution provided'
+            self.puzzle.title += ' - no solution provided'
 
         self.date = datetime.datetime.fromtimestamp(
                                         xword_data.get('date') // 1000)
@@ -68,21 +65,21 @@ class GuardianDownloader(BaseDownloader):
         solution = ''
         fill = ''
 
-        for y in range(puzzle.height):
-            for x in range(puzzle.width):
+        for y in range(self.puzzle.height):
+            for x in range(self.puzzle.width):
                 sol_at_space = grid_dict.get((x,y), '.')
                 solution += sol_at_space
                 fill += '.' if sol_at_space == '.' else '-'
 
-        puzzle.solution = solution
-        puzzle.fill = fill
+        self.puzzle.solution = solution
+        self.puzzle.fill = fill
 
         clues = [e.get('clue') for e in sorted(xword_data.get('entries'),
                     key=lambda x: (x.get('number'), x.get('direction')))]
 
-        puzzle.clues = clues
+        self.puzzle.clues = clues
 
-        return puzzle
+        return self.puzzle
 
 
 class GuardianCrypticDownloader(GuardianDownloader):
