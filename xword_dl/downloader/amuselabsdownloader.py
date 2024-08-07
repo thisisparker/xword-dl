@@ -1,4 +1,5 @@
 import base64
+import binascii
 import datetime
 import json
 import urllib.parse
@@ -8,7 +9,7 @@ import requests
 
 import re
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from .basedownloader import BaseDownloader
 from ..util import *
@@ -19,24 +20,45 @@ class AmuseLabsDownloader(BaseDownloader):
 
         self.id = None
 
+        # these values must be overridden by subclasses, if used
+        self.picker_url = None
+        self.url_from_id = None
+
     @staticmethod
     def matches_url(url_components):
         return 'amuselabs.com' in url_components.netloc
 
-    def find_latest(self):
+    def find_latest(self) -> str:
+        if self.picker_url is None or self.url_from_id is None:
+            raise XWordDLException("This outlet does not support finding the latest crossword.")
         res = requests.get(self.picker_url)
         soup = BeautifulSoup(res.text, 'html.parser')
+
         puzzles = soup.find('div', attrs={'class': 'puzzles'})
-        puzzle_ids = puzzles.findAll('div', attrs={'class': 'tile'})
-        if not puzzle_ids:
-            puzzle_ids = puzzles.findAll('li', attrs={'class': 'tile'})
-        self.id = puzzle_ids[0].get('data-id', '')
+        if not isinstance(puzzles, Tag):
+            raise XWordDLException("Unable to find class 'puzzles' in picker HTML soruce.")
+
+        puzzle_id = puzzles.find(
+            'div',
+            attrs={'class': 'tile'}
+        ) or puzzles.find(
+            'li',
+            attrs={'class': 'tile'}
+        )
+
+        if not isinstance(puzzle_id, Tag):
+            raise XWordDLException("Unable to find puzzle ID in picker HTML source.")
+        self.id = puzzle_id.get('data-id', '')
 
         self.get_and_add_picker_token(res.text)
 
         return self.find_puzzle_url_from_id(self.id)
 
     def get_and_add_picker_token(self, picker_source=None):
+        if self.picker_url is None:
+            raise XWordDLException(
+                "No picker URL was available. Please report this as a bug."
+            )
         if not picker_source:
             res = requests.get(self.picker_url)
             picker_source = res.text
@@ -48,9 +70,10 @@ class AmuseLabsDownloader(BaseDownloader):
         else:
             soup = BeautifulSoup(picker_source, 'html.parser')
             param_tag = soup.find('script', id='params')
-            param_obj = json.loads(param_tag.string) if param_tag else {}
+            param_obj = json.loads(param_tag.string or "") if isinstance(param_tag, Tag) else {}
             rawsps = param_obj.get('rawsps', None)
 
+        # FIXME: should this raise an exception when not defined?
         if rawsps:
             picker_params = json.loads(base64.b64decode(rawsps).decode("utf-8"))
             token = picker_params.get('loadToken', None)
@@ -58,6 +81,10 @@ class AmuseLabsDownloader(BaseDownloader):
                 self.url_from_id += '&loadToken=' + token
 
     def find_puzzle_url_from_id(self, puzzle_id):
+        if self.url_from_id is None:
+            raise XWordDLException(
+                "No URL for puzzle IDs was available. Please report this as a bug."
+            )
         return self.url_from_id.format(puzzle_id=puzzle_id)
 
     def guess_date_from_id(self, puzzle_id):
@@ -76,6 +103,9 @@ class AmuseLabsDownloader(BaseDownloader):
     def fetch_data(self, solver_url):
         res = requests.get(solver_url)
 
+        if not res.ok:
+            raise XWordDLException("Could not fetch solver.")
+
         if 'window.rawc' in res.text or 'window.puzzleEnv.rawc' in res.text:
             rawc = next((line.strip().split("'")[1] for line in res.text.splitlines()
                          if ('window.rawc' in line
@@ -84,16 +114,22 @@ class AmuseLabsDownloader(BaseDownloader):
             # As of 2023-12-01, it looks like the rawc value is sometimes
             # given as a parameter in an embedded json blob, which means
             # parsing the page
-            try:
-                soup = BeautifulSoup(res.text, 'html.parser')
-                rawc = json.loads(soup.find('script', id='params').string)['rawc']
-            except AttributeError:
-                raise XWordDLException("Crossword puzzle not found.")
+            soup = BeautifulSoup(res.text, 'html.parser')
+            if not isinstance(soup, Tag):
+                raise XWordDLException("Crossword puzzle not found. Could not parse HTML.")
+
+            script_tag = soup.find('script', id='params')
+            if not isinstance(script_tag, Tag):
+                raise XWordDLException("Crossword puzzle not found. Could not find script tag.")
+
+            rawc = json.loads(script_tag.string or "").get('rawc')
 
         ## In some cases we need to pull the underlying JavaScript ##
         # Find the JavaScript URL
         amuseKey = None
         m1 = re.search(r'"([^"]+c-min.js[^"]+)"', res.text)
+        if m1 is None:
+            raise XWordDLException("Failed to find JS url for amuseKey.")
         js_url_fragment = m1.groups()[0]
         js_url = urllib.parse.urljoin(solver_url, js_url_fragment)
 
@@ -148,7 +184,7 @@ class AmuseLabsDownloader(BaseDownloader):
                     return json.loads(base64.b64decode(newRawc).decode("utf-8"))
                 except:
                     # case 3 is the most recent obfuscation
-                    def amuse_b64(e, amuseKey=None):
+                    def amuse_b64(e, amuseKey):
                         e = list(e)
                         H=amuseKey
                         E=[]
@@ -181,7 +217,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         try:
             xword_data = load_rawc(rawc, amuseKey=amuseKey)
-        except (UnicodeDecodeError, base64.binascii.Error):
+        except (UnicodeDecodeError, binascii.Error):
             xword_data = load_rawc(rawc, amuseKey=amuseKey2)
 
         return xword_data

@@ -54,6 +54,9 @@ class GlobeAndMailDownloader(CrosswordCompilerDownloader):
     def find_solver(self, url):
         start_date = datetime.datetime(2011, 1, 2)
 
+        if not isinstance(self.date, datetime.datetime):
+            raise XWordDLException("No solver date provided. This is a bug.")
+
         date_diff = self.date - start_date
         weeks_diff, extra_days = divmod(date_diff.days, 7)
 

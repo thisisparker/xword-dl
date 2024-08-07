@@ -35,6 +35,10 @@ class DerStandardDownloader(AmuseLabsDownloader):
         index_soup = BeautifulSoup(index_res.text, "html.parser")
 
         latest_fragment = next(a for a in index_soup.select('.teaser-inner > a'))['href']
+
+        if not isinstance(latest_fragment, str):
+            raise XWordDLException("Could not load latest crossword. Fragment not found.")
+
         latest_absolute = urllib.parse.urljoin('https://www.derstandard.at',
                                                latest_fragment)
 
