@@ -1,4 +1,4 @@
-import urllib
+import urllib.parse
 
 import requests
 
@@ -56,8 +56,7 @@ class BaseDownloader:
             template += ' - %title' if tokens.get('title') else ''
 
         for token in tokens.keys():
-            replacement = (kwargs.get(token) if token in kwargs
-                           else tokens[token])
+            replacement = kwargs.get(token, tokens[token])
             replacement = remove_invalid_chars_from_filename(replacement)
             template = template.replace('%' + token, replacement)
 
@@ -88,7 +87,7 @@ class BaseDownloader:
         """
         raise NotImplementedError
 
-    def parse_xword(self, xword_data):
+    def parse_xword(self, xw_data):
         """Given a blob of crossword data, parse and stuff into puz format.
 
         This method is implemented in subclasses based on the differences in
@@ -105,6 +104,7 @@ class BaseDownloader:
 
         puzzle = sanitize_for_puzfile(puzzle,
                                       preserve_html=self.settings.get(
-                                                        'preserve_html'))
+                                                        'preserve_html',
+                                                        False))
 
         return puzzle

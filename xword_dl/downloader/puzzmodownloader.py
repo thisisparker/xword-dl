@@ -16,7 +16,7 @@ class PuzzmoDownloader(BaseDownloader):
         super().__init__(**kwargs)
 
         self.temporary_user_id = secrets.token_urlsafe(21)
-        self.session.headers.update({'Puzzmo-Gameplay-Id': 
+        self.session.headers.update({'Puzzmo-Gameplay-Id':
                                         self.temporary_user_id})
 
     def find_latest(self):
@@ -53,7 +53,7 @@ class PuzzmoDownloader(BaseDownloader):
         return url
 
     def fetch_data(self, solver_url):
-        slug = solver_url.rsplit('/')[-1] 
+        slug = solver_url.rsplit('/')[-1]
         query = """query PlayGameScreenQuery(
                       $slug: ID!
                     ) {
@@ -126,7 +126,7 @@ class PuzzmoDownloader(BaseDownloader):
                     continue
 
                 elif not named_sections and blank_count >= 2:
-                    section == default_sections.pop(0)
+                    section = default_sections.pop(0)
                     blank_count = 0
 
             if section == 'metadata':
@@ -161,7 +161,7 @@ class PuzzmoDownloader(BaseDownloader):
 
             elif section == 'clues':
                 if clue_parts := re.match(r'([AD])(\d{1,2})\.(.*)', line):
-                    clue_list.append((clue_parts[1], 
+                    clue_list.append((clue_parts[1],
                                      int(clue_parts[2]),
                                      clue_parts[3]))
                 else:

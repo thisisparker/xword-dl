@@ -1,5 +1,6 @@
 from datetime import datetime
-import urllib
+from functools import partial
+import urllib.parse
 
 from .compilerdownloader import CrosswordCompilerDownloader
 
@@ -10,15 +11,16 @@ class SimplyDailyDownloader(CrosswordCompilerDownloader):
     outlet_prefix = 'Simply Daily'
     url_subdir = 'daily-crossword'
     qs_prefix = 'dc1'
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
-        self.fetch_data = self.fetch_jsencoded_data
+
         self.date = None
 
         if 'url' in kwargs and not self.date:
             self.date = self.parse_date_from_url(kwargs.get('url'))
+
+        self.fetch_data = partial(self._fetch_data, js_encoded=True)
 
     @classmethod
     def matches_url(cls, url_components):
@@ -28,26 +30,26 @@ class SimplyDailyDownloader(CrosswordCompilerDownloader):
     def parse_date_from_url(self, url):
         query_str = urllib.parse.urlparse(url).query
         query_dict = urllib.parse.parse_qs(query_str)
-        
+
         try:
             puzz = query_dict['puzz'][0]
         except KeyError:
             date = datetime.today()
         else:
             date = datetime.strptime(puzz, f'{self.qs_prefix}-%Y-%m-%d')
-            
+
         return date
 
     def find_solver(self, url):
         date = self.parse_date_from_url(url)
-            
+
         pd = f'{date.strftime("%Y-%m")}'
         js = f'{self.qs_prefix}-{date.strftime("%Y-%m-%d")}.js'
         return f'https://{self.website}/{self.url_subdir}/puzzles/{pd}/{js}'
 
     def find_by_date(self, dt):
         self.date = dt # self.date used by BaseDownloader.pick_filename()
-        
+
         qs = f'puzz={self.qs_prefix}-{dt.strftime("%Y-%m-%d")}'
         return f'https://{self.website}/{self.url_subdir}/index.html?{qs}'
 

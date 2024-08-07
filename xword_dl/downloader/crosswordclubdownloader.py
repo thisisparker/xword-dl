@@ -1,4 +1,4 @@
-import urllib
+import urllib.parse
 
 import dateparser
 import requests
@@ -40,7 +40,10 @@ class CrosswordClubDownloader(AmuseLabsDownloader):
         index_soup = BeautifulSoup(index_res.text, "html.parser")
 
         latest_url = next(a for a in index_soup.select('.all-puzzle-list a[href^="https://crosswordclub.com/puzzles/"]'))['href']
-        
+
+        if isinstance(latest_url, list):
+            latest_url = latest_url[0]
+
         return latest_url
 
     def find_solver(self, url):
