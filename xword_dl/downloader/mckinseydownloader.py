@@ -43,7 +43,14 @@ class McKinseyDownloader(AmuseLabsDownloader):
         index_res = requests.get(index_url)
         index_soup = BeautifulSoup(index_res.text, "html.parser")
 
-        latest_fragment = next(a for a in index_soup.select('a[href^="/featured-insights/the-mckinsey-crossword/"]') if a.find('div')).get('href')
+        xword_selector = 'a[href^="/featured-insights/the-mckinsey-crossword/"]'
+        latest_fragment = next((
+                a
+                for a in index_soup.select(xword_selector)
+                if a.find('div')
+            ),
+            {}
+        ).get('href')
 
         if not isinstance(latest_fragment, str):
             raise XWordDLException("Could not get latest crossword. No crossword fragment.")
