@@ -26,9 +26,6 @@ class NewYorkerDownloader(AmuseLabsDownloader):
     def matches_url(url_components):
         return ('newyorker.com' in url_components.netloc and '/puzzles-and-games-dept/crossword' in url_components.path)
 
-    def guess_date_from_id(self, puzzle_id):
-        self.date = datetime.datetime.strftime(puzzle_id.split('_')[-1])
-
     def find_by_date(self, dt):
         url_format = dt.strftime('%Y/%m/%d')
         guessed_url = urllib.parse.urljoin(
