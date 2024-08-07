@@ -2,7 +2,7 @@ import datetime
 
 import puz
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from .basedownloader import BaseDownloader
 from ..util import XWordDLException
@@ -47,10 +47,13 @@ class WSJDownloader(BaseDownloader):
         else:
             res = self.session.get(url)
             soup = BeautifulSoup(res.text, 'html.parser')
-            try:
-                puzzle_link = soup.find('iframe').get('src')
-            except AttributeError:
-                raise XWordDLException('Cannot find puzzle at {}.'.format(url))
+
+            iframe = soup.find('iframe')
+            if not isinstance(iframe, Tag):
+                raise XWordDLException('Cannot find puzzle at {}. No iframe tag.'.format(url))
+
+            puzzle_link = iframe['src']
+
             return self.find_solver(puzzle_link)
 
     def fetch_data(self, solver_url):

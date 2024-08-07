@@ -5,7 +5,7 @@ import urllib.parse
 import dateparser
 import requests
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from .amuselabsdownloader import AmuseLabsDownloader
 from ..util import XWordDLException
@@ -39,11 +39,17 @@ class NewYorkerDownloader(AmuseLabsDownloader):
     def find_latest(self, search_string='/crossword/'):
         url = "https://www.newyorker.com/puzzles-and-games-dept/crossword"
         res = self.session.get(url)
+        if not res.ok:
+            raise XWordDLException("Could not fetch latest crossword URL.")
+
         soup = BeautifulSoup(res.text, "html.parser")
 
-        puzzle_list = json.loads(soup.find('script',
-                                           attrs={'type':'application/ld+json'})
-                                           .get_text()).get('itemListElement',{})
+        json_tag = soup.find('script', attrs={'type':'application/ld+json'})
+        if not isinstance(json_tag, Tag):
+            raise XWordDLException("Could not find metadata tag for latest crossword.")
+
+        json_str = json_tag.get_text()
+        puzzle_list = json.loads(json_str).get('itemListElement',{})
         latest_url = next((item for item in puzzle_list
                             if search_string in item.get('url', '')),
                           {}).get('url')
@@ -64,28 +70,29 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         soup = BeautifulSoup(res.text, "html.parser")
 
         iframe_tag = soup.find('iframe', id='crossword')
+        if not isinstance(iframe_tag, Tag):
+            raise XWordDLException("Could not find crossword iframe.")
 
-        try:
-            iframe_url = iframe_tag['data-src']
-            query = urllib.parse.urlparse(iframe_url).query
-            query_id = urllib.parse.parse_qs(query)['id']
-            self.id = query_id[0]
+        iframe_url = iframe_tag.get('data-src')
+        if not isinstance(iframe_url, str):
+            raise XWordDLException("Could not get URL src for iframe.")
 
-        # Will hit this KeyError if there's no matching iframe
-        # or if there's no 'id' query string
-        except KeyError:
-            raise XWordDLException('Cannot find puzzle at {}.'.format(url))
+        query = urllib.parse.urlparse(iframe_url).query
+        self.id = urllib.parse.parse_qs(query)['id'][0]
 
-        pubdate = soup.find('time').get_text()
-        pubdate_dt = dateparser.parse(pubdate)
-
-        self.date = pubdate_dt
+        pubdate = soup.find('time')
+        if pubdate:
+            pubdate = pubdate.get_text()
+            pubdate_dt = dateparser.parse(pubdate)
+            self.date = pubdate_dt
 
         theme_supra = "Today’s theme: "
-        desc = soup.find('meta',attrs={'property':
-                                       'og:description'}).get('content', '')
-        if desc.startswith(theme_supra):
-            self.theme_title = desc[len(theme_supra):].rstrip('.')
+        desc = soup.find('meta',attrs={'property': 'og:description'})
+        if isinstance(desc, Tag):
+            desc = desc.get('content', '')
+            if isinstance(desc, str):
+                if desc.startswith(theme_supra):
+                    self.theme_title = desc[len(theme_supra):].rstrip('.')
 
         return self.find_puzzle_url_from_id(self.id)
 

@@ -5,7 +5,7 @@ import re
 import puz
 import requests
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from .basedownloader import BaseDownloader
 from ..util import XWordDLException
@@ -23,11 +23,16 @@ class GuardianDownloader(BaseDownloader):
         res = requests.get(self.landing_page)
         soup = BeautifulSoup(res.text, 'html.parser')
 
-        url = 'https://www.theguardian.com'
         xword_link_re = re.compile(r'/crosswords/\w+/\d+')
-        url += soup.find('a', href=xword_link_re).get('href')
+        link_tag = soup.find('a', href=xword_link_re)
+        if not isinstance(link_tag, Tag):
+            raise XWordDLException("Could not find latest crossword.")
 
-        return url
+        link = link_tag['href']
+        if isinstance(link, list):
+            link = link[0]
+
+        return 'https://www.theguardian.com' + link
 
     def find_solver(self, url):
         return url
@@ -36,8 +41,15 @@ class GuardianDownloader(BaseDownloader):
         res = requests.get(solver_url)
         soup = BeautifulSoup(res.text, 'html.parser')
 
-        xw_data = json.loads(soup.find('gu-island',
-                    attrs={'name':'CrosswordComponent'}).get('props')).get('data')
+        xw_json = soup.find('gu-island', attrs={'name': 'CrosswordComponent'})
+        if not isinstance(xw_json, Tag):
+            raise XWordDLException("Could not find crossword in solver data.")
+
+        xw_json_str = xw_json.get('props')
+        if not isinstance(xw_json_str, str):
+            raise XWordDLException("Could not get JSON from solver data.")
+
+        xw_data = json.loads(xw_json_str).get('data')
 
         return xw_data
 

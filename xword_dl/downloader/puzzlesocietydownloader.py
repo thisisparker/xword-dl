@@ -4,7 +4,9 @@ import urllib.parse
 
 import requests
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
+
+from xword_dl.util.utils import XWordDLException
 
 from .compilerdownloader import CrosswordCompilerDownloader
 
@@ -36,8 +38,13 @@ class TheModernDownloader(CrosswordCompilerDownloader):
         res = requests.get(url)
 
         soup = BeautifulSoup(res.text, 'lxml')
-        page_props = json.loads(soup.find('script',
-                                {'type':'application/json'}).get_text())
+
+        json_tag = soup.find('script', {'type':'application/json'})
+        if not isinstance(json_tag, Tag):
+            raise XWordDLException("Could not find JSON metadata for solver.")
+
+        json_str = json_tag.get_text()
+        page_props = json.loads(json_str)
 
         sets = page_props['props']['pageProps']\
                             ['gameContent']['gameLevelDataSets']
