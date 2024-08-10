@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 
 from . import downloader
 
-from .util import *
+from .util import XWordDLException, parse_date_or_exit, save_puzzle
 
 with open(os.path.join(os.path.dirname(__file__), 'version')) as f:
     __version__ = f.read().strip()

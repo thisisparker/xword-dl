@@ -11,7 +11,7 @@ import re
 from bs4 import BeautifulSoup, Tag
 
 from .basedownloader import BaseDownloader
-from ..util import *
+from ..util import XWordDLException, unidecode
 
 class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, **kwargs):

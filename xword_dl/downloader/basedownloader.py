@@ -2,7 +2,11 @@ import urllib.parse
 
 import requests
 
-from ..util import *
+from ..util import (
+    read_config_values,
+    remove_invalid_chars_from_filename,
+    sanitize_for_puzfile,
+)
 
 class BaseDownloader:
     outlet = None

@@ -3,16 +3,18 @@ import sys
 
 import dateparser
 import emoji
+import unidecode as _unidecode
 import yaml
+from unidecode import unidecode
 
 from html2text import html2text
-# This imports the _module_ unidecode, which converts Unicode strings to
-# plain ASCII. The puz format, however, can accept Latin1, which is a larger
-# subset. So the second line tells the module to leave codepoints 128-256
-# untouched, then we import the _function_ unidecode.
-import unidecode
-unidecode.Cache[0] = [chr(c) if c > 127 else '' for c in range(256)]
-from unidecode import unidecode
+
+
+# The unidecode module converts Unicode strings to plain ASCII. The puz format,
+# however, can accept latin-1, which is a larger subset. By adding cached
+# replacement values for these characters to unidecode, we prevent it from
+# changing them.
+_unidecode.Cache[0] = [chr(c) if c > 127 else '' for c in range(256)]
 
 CONFIG_PATH = os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
 CONFIG_PATH = os.path.join(CONFIG_PATH, 'xword-dl/xword-dl.yaml')
