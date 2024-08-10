@@ -158,66 +158,11 @@ class AmuseLabsDownloader(BaseDownloader):
 
         amuseKey2 = [x for x, _ in sorted(zip(key_digits, key_orders), key=lambda pair: pair[1])]
 
+        # try to decode potentially obsfucated rawc with the two detected keys
+        xword_data = load_rawc(rawc, amuseKey=amuseKey) or load_rawc(rawc, amuseKey=amuseKey2)
 
-        # helper function to decode rawc
-        # as occasionally it can be obfuscated
-        def load_rawc(rawc, amuseKey=None):
-            try:
-                # the original case is just base64'd JSON
-                return json.loads(base64.b64decode(rawc).decode("utf-8"))
-            except:
-                try:
-                    # case 2 is the first obfuscation
-                    E = rawc.split('.')
-                    A = list(E[0])
-                    H = E[1][::-1]
-                    F = [int(A,16)+2 for A in H]
-                    B, G = 0, 0
-                    while B < len(A) - 1:
-                        C = min(F[G % len(F)], len(A) - B)
-                        for D in range(C//2):
-                            A[B+D], A[B+C-D-1] = A[B+C-D-1], A[B+D]
-                        B+=C
-                        G+=1
-                    newRawc=''.join(A)
-                    return json.loads(base64.b64decode(newRawc).decode("utf-8"))
-                except:
-                    # case 3 is the most recent obfuscation
-                    def amuse_b64(e, amuseKey):
-                        e = list(e)
-                        H=amuseKey
-                        E=[]
-                        F=0
-
-                        while F<len(H):
-                            J=H[F]
-                            E.append(J)
-                            F+=1
-
-                        A, G, I = 0, 0, len(e)-1
-                        while A < I:
-                            B = E[G]
-                            L = I - A + 1
-                            C = A
-                            B = min(B, L)
-                            D = A + B - 1
-                            while C < D:
-                                M = e[D]
-                                e[D] = e[C]
-                                e[C] = M
-                                D -= 1
-                                C += 1
-                            A += B
-                            G = (G + 1) % len(E)
-                        return ''.join(e)
-                    return json.loads(base64.b64decode(
-                                        amuse_b64(rawc, amuseKey)
-                                        ).decode("utf-8"))
-
-        try:
-            xword_data = load_rawc(rawc, amuseKey=amuseKey)
-        except (UnicodeDecodeError, binascii.Error):
-            xword_data = load_rawc(rawc, amuseKey=amuseKey2)
+        if xword_data is None:
+            raise XWordDLException("Could not decode rawc for AmuseLabs puzzle.")
 
         return xword_data
 
@@ -295,3 +240,62 @@ class AmuseLabsDownloader(BaseDownloader):
         if not self.date and self.id:
             self.guess_date_from_id(self.id)
         return super().pick_filename(puzzle, **kwargs)
+
+
+# helper function to decode rawc as occasionally it can be obfuscated
+def load_rawc(rawc, amuseKey=None):
+    try:
+        # the original case is just base64'd JSON
+        return json.loads(base64.b64decode(rawc).decode("utf-8"))
+    except (binascii.Error, json.JSONDecodeError, UnicodeError):
+        pass
+    try:
+        # case 2 is the first obfuscation
+        E = rawc.split('.')
+        A = list(E[0])
+        H = E[1][::-1]
+        F = [int(A,16)+2 for A in H]
+        B, G = 0, 0
+        while B < len(A) - 1:
+            C = min(F[G % len(F)], len(A) - B)
+            for D in range(C//2):
+                A[B+D], A[B+C-D-1] = A[B+C-D-1], A[B+D]
+            B+=C
+            G+=1
+        newRawc=''.join(A)
+        return json.loads(base64.b64decode(newRawc).decode("utf-8"))
+    except (binascii.Error, IndexError, json.JSONDecodeError, UnicodeError):
+        if amuseKey is None:
+            return None
+
+    try:
+        # case 3 is the most recent obfuscation
+        e = list(rawc)
+        H=amuseKey
+        E=[]
+        F=0
+
+        while F<len(H):
+            J=H[F]
+            E.append(J)
+            F+=1
+
+        A, G, I = 0, 0, len(e)-1
+        while A < I:
+            B = E[G]
+            L = I - A + 1
+            C = A
+            B = min(B, L)
+            D = A + B - 1
+            while C < D:
+                M = e[D]
+                e[D] = e[C]
+                e[C] = M
+                D -= 1
+                C += 1
+            A += B
+            G = (G + 1) % len(E)
+        deobfuscated = ''.join(e)
+        return json.loads(base64.b64decode(deobfuscated).decode("utf-8"))
+    except (binascii.Error, IndexError, json.JSONDecodeError, UnicodeError):
+        return None

@@ -128,7 +128,7 @@ class USATodayDownloader(BaseDownloader):
         try:
             res = requests.head(url)
             res.raise_for_status()
-        except:
+        except requests.HTTPError:
             raise XWordDLException('Unable to find puzzle for date provided.')
 
         return url
