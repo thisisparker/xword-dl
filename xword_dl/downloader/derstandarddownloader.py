@@ -1,9 +1,6 @@
-import datetime
-import json
 import re
 import urllib.parse
 
-import dateparser
 import requests
 
 from bs4 import BeautifulSoup
