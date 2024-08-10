@@ -267,9 +267,6 @@ class AmuseLabsDownloader(BaseDownloader):
         puzzle.fill = fill
 
         placed_words = xw_data['placedWords']
-        across_words = [word for word in placed_words if word['acrossNotDown']]
-        down_words = [
-            word for word in placed_words if not word['acrossNotDown']]
 
         weirdass_puz_clue_sorting = sorted(placed_words, key=lambda word: (word['y'], word['x'],
                                                                            not word['acrossNotDown']))
