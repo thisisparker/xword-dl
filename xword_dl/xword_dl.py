@@ -10,11 +10,10 @@ import urllib.parse
 
 import requests
 
-from getpass import getpass
-
 from bs4 import BeautifulSoup
 
-from . import downloader
+# FIXME: abstract download handling in separate file
+from .downloader.basedownloader import BaseDownloader
 
 from .util import XWordDLException, parse_date_or_exit, save_puzzle
 
@@ -77,6 +76,12 @@ def by_url(url, **kwargs):
 
 
 def parse_for_embedded_puzzle(url, **kwargs):
+    supported_downloaders = [
+        d[1]
+        for d in get_supported_outlets(command_only=False)
+        if hasattr(d[1], 'matches_embed_url')
+    ]
+
     res = requests.get(url, headers={'User-Agent':'xword-dl'})
     soup = BeautifulSoup(res.text, 'lxml')
 
@@ -91,27 +96,10 @@ def parse_for_embedded_puzzle(url, **kwargs):
     sources.insert(0, url)
 
     for src in sources:
-        if 'amuselabs.com' in src:
-            dl = downloader.AmuseLabsDownloader(url=url, **kwargs)
-            puzzle_url = src
-
-            return dl, puzzle_url
-
-        if not soup:
-            res = requests.get(src)
-            soup = BeautifulSoup(res.text, 'lxml')
-
-        for script in [s for s in soup.find_all('script') if s.get('src')]:
-            js_url = urllib.parse.urljoin(url, script.get('src'))
-            res = requests.get(js_url, headers={'User-Agent':'xword-dl'})
-            if res.text.startswith('var CrosswordPuzzleData'):
-                dl = downloader.CrosswordCompilerDownloader(url=url, **kwargs)
-                puzzle_url = js_url
-                dl.fetch_data = dl.fetch_jsencoded_data
-
-                return dl, puzzle_url
-
-        soup = None
+        for dlr in supported_downloaders:
+            puzzle_url = dlr.matches_embed_url(src)
+            if puzzle_url is not None:
+                return (dlr(), puzzle_url)
 
     return None, None
 
@@ -119,8 +107,7 @@ def parse_for_embedded_puzzle(url, **kwargs):
 def get_supported_outlets(command_only=True):
     all_classes = inspect.getmembers(sys.modules['xword_dl.downloader'],
                                      inspect.isclass)
-    dls = [d for d in all_classes if issubclass(d[1],
-                   downloader.BaseDownloader)]
+    dls = [d for d in all_classes if issubclass(d[1], BaseDownloader)]
 
     if command_only:
         dls = [d for d in dls if hasattr(d[1], 'command')]
@@ -173,25 +160,22 @@ def main():
 
     parser.add_argument('-a', '--authenticate',
                         help=textwrap.dedent("""\
-                            when used with the nyt puzzle keyword,
-                            stores an authenticated New York Times cookie
-                            without downloading a puzzle. If username
-                            or password are not provided as flags,
-                            xword-dl will prompt for those values
-                            at runtime"""),
+                            when used with a subscription-only puzzle source,
+                            stores an authentication token without downloading
+                            a puzzle. If username or password are not provided
+                            as flags xword-dl will prompt for those values at
+                            runtime"""),
                         action='store_true',
                         default=False)
 
     parser.add_argument('-u', '--username',
                         help=textwrap.dedent("""\
-                            username for a site that requires credentials
-                            (currently only the New York Times)"""),
+                            username for a site that requires credentials"""),
                         default=None)
 
     parser.add_argument('-p', '--password',
                         help=textwrap.dedent("""\
-                            password for a site that requires credentials
-                            (currently only the New York Times)"""),
+                            password for a site that requires credentials"""),
                         default=None)
 
     parser.add_argument('--preserve-html',
@@ -217,15 +201,17 @@ def main():
 
 
     args = parser.parse_args()
-    if args.authenticate and args.source == 'nyt':
-        username = args.username or input("New York Times username: ")
-        password = args.password or getpass("Password: ")
+    if args.authenticate and args.source:
+        keyword_dict = {d[1].command: d[1] for d in get_supported_outlets()}
+        selected_downloader = keyword_dict.get(args.source, None)
+        if selected_downloader is None:
+            raise XWordDLException('Keyword {} not recognized.'.format(args.source))
 
-        try:
-            downloader.NewYorkTimesDownloader(username=username, password=password)
-            sys.exit('Authentication successful.')
-        except Exception as e:
-            sys.exit(' '.join(['Authentication failed:', str(e)]))
+        if not hasattr(selected_downloader, "authenticate"):
+            sys.exit('This outlet does not support authentication.')
+
+        selected_downloader.authenticate(args.username, args.password)
+
     elif args.authenticate:
         sys.exit('Authentication flag must use a puzzle outlet keyword.')
 
@@ -257,7 +243,7 @@ def main():
         else:
             puzzle, filename = by_keyword(args.source, **options)
     except XWordDLException as e:
-        sys.exit(e)
+        sys.exit(str(e))
 
     # specialcase the output file '-'
     if args.output == '-':

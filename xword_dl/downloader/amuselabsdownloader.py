@@ -27,6 +27,13 @@ class AmuseLabsDownloader(BaseDownloader):
     def matches_url(url_components):
         return 'amuselabs.com' in url_components.netloc
 
+    @staticmethod
+    def matches_embed_url(src):
+        url = urllib.parse.urlparse(src)
+        if 'amuselabs.com' in url.netloc:
+            return src
+        return None
+
     def find_latest(self) -> str:
         if self.picker_url is None or self.url_from_id is None:
             raise XWordDLException("This outlet does not support finding the latest crossword.")
