@@ -3,6 +3,7 @@ import urllib.parse
 
 import puz
 import requests
+from getpass import getpass
 
 from .basedownloader import BaseDownloader
 from ..util import XWordDLException, join_bylines, update_config_file, unidecode
@@ -45,6 +46,9 @@ class NewYorkTimesDownloader(BaseDownloader):
 
     def authenticate(self, username, password):
         """Given a NYT username and password, returns the NYT-S cookie value"""
+
+        username = username or input("New York Times username: ")
+        password = password or getpass("Password: ")
 
         try:
             res = requests.post('https://myaccount.nytimes.com/svc/ios/v2/login',

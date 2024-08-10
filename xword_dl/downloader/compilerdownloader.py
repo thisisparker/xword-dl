@@ -1,6 +1,8 @@
 import puz
 import requests
+import urllib.parse
 import xmltodict
+from bs4 import BeautifulSoup
 
 from .basedownloader import BaseDownloader
 
@@ -23,6 +25,19 @@ class CrosswordCompilerDownloader(BaseDownloader):
             return xw_data.replace('\\','')
 
         return res.text
+
+    @staticmethod
+    def matches_embed_url(src):
+        res = requests.get(src)
+        if not res.ok:
+            return None
+        soup = BeautifulSoup(res.text, 'lxml')
+
+        for script in [s for s in soup.find_all('script') if s.get('src')]:
+            js_url = urllib.parse.urljoin(src, script.get('src'))
+            res = requests.get(js_url, headers={'User-Agent':'xword-dl'})
+            if res.text.startswith('var CrosswordPuzzleData'):
+                return js_url
 
     # subclasses of CCD may want to override this method with different defaults
     def fetch_data(self, solver_url):
