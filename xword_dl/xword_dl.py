@@ -77,8 +77,6 @@ def by_url(url, **kwargs):
 
 
 def parse_for_embedded_puzzle(url, **kwargs):
-    netloc = urllib.parse.urlparse(url).netloc
-
     res = requests.get(url, headers={'User-Agent':'xword-dl'})
     soup = BeautifulSoup(res.text, 'lxml')
 
@@ -224,8 +222,7 @@ def main():
         password = args.password or getpass("Password: ")
 
         try:
-            dl = downloader.NewYorkTimesDownloader(
-                    username=username, password=password)
+            downloader.NewYorkTimesDownloader(username=username, password=password)
             sys.exit('Authentication successful.')
         except Exception as e:
             sys.exit(' '.join(['Authentication failed:', str(e)]))
