@@ -19,8 +19,8 @@ class WSJDownloader(BaseDownloader):
     def __init__(self, **kwargs):
         super().__init__(headers={'User-Agent': 'xword-dl'}, **kwargs)
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return False # disabling, see above # 'wsj.com' in url_components.netloc
 
     def find_latest(self):
@@ -53,6 +53,9 @@ class WSJDownloader(BaseDownloader):
                 raise XWordDLException('Cannot find puzzle at {}. No iframe tag.'.format(url))
 
             puzzle_link = iframe['src']
+
+            if isinstance(puzzle_link, list):
+                puzzle_link = puzzle_link[0]
 
             return self.find_solver(puzzle_link)
 

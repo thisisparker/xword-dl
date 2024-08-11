@@ -20,8 +20,8 @@ class TheModernDownloader(CrosswordCompilerDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return 'puzzlesociety.com' in url_components.netloc and 'modern-crossword' in url_components.path
 
     def find_by_date(self, dt):

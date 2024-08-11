@@ -21,8 +21,8 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         self.theme_title = ''
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('newyorker.com' in url_components.netloc and '/puzzles-and-games-dept/crossword' in url_components.path)
 
     def find_by_date(self, dt):

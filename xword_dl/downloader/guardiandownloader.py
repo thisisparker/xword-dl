@@ -107,8 +107,8 @@ class GuardianCrypticDownloader(GuardianDownloader):
 
         self.landing_page += '/series/cryptic'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/cryptic' in url_components.path)
 
@@ -123,8 +123,8 @@ class GuardianEverymanDownloader(GuardianDownloader):
 
         self.landing_page += '/series/everyman'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/everyman' in url_components.path)
 
@@ -139,8 +139,8 @@ class GuardianSpeedyDownloader(GuardianDownloader):
 
         self.landing_page += '/series/speedy'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/speedy' in url_components.path)
 
@@ -154,8 +154,8 @@ class GuardianQuickDownloader(GuardianDownloader):
 
         self.landing_page += '/series/quick'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/quick' in url_components.path)
 
@@ -169,8 +169,8 @@ class GuardianPrizeDownloader(GuardianDownloader):
 
         self.landing_page += '/series/prize'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/prize' in url_components.path)
 
@@ -184,8 +184,8 @@ class GuardianWeekendDownloader(GuardianDownloader):
 
         self.landing_page += '/series/weekend-crossword'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/weekend' in url_components.path)
 
@@ -199,7 +199,7 @@ class GuardianQuipticDownloader(GuardianDownloader):
 
         self.landing_page += '/series/quiptic'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/quiptic' in url_components.path)

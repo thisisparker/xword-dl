@@ -26,8 +26,8 @@ class CrosswordCompilerDownloader(BaseDownloader):
 
         return res.text
 
-    @staticmethod
-    def matches_embed_url(src):
+    @classmethod
+    def matches_embed_url(cls, src):
         res = requests.get(src)
         if not res.ok:
             return None

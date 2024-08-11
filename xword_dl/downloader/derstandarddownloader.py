@@ -22,8 +22,8 @@ class DerStandardDownloader(AmuseLabsDownloader):
             'DNT':'1'
         }
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('derstandard.at' in url_components.netloc and '/kreuzwortraetsel' in url_components.path)
 
     def find_latest(self):

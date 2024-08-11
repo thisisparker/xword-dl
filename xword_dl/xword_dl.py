@@ -10,6 +10,7 @@ import urllib.parse
 import requests
 
 from bs4 import BeautifulSoup
+from puz import Puzzle
 
 from .downloader import get_plugins
 from .util import XWordDLException, parse_date_or_exit, save_puzzle
@@ -20,7 +21,7 @@ with open(os.path.join(os.path.dirname(__file__), 'version')) as f:
 plugins = get_plugins()
 
 
-def by_keyword(keyword, **kwargs):
+def by_keyword(keyword: str, **kwargs) -> tuple[Puzzle, str]:
     selected_downloader = next(
         (d for d in get_supported_outlets() if d.command == keyword), None
     )
@@ -48,7 +49,7 @@ def by_keyword(keyword, **kwargs):
     return puzzle, filename
 
 
-def by_url(url, **kwargs):
+def by_url(url: str, **kwargs) -> tuple[Puzzle, str]:
     supported_downloaders = [d for d in
             get_supported_outlets(command_only=False)
             if hasattr(d, 'matches_url')]
@@ -65,7 +66,7 @@ def by_url(url, **kwargs):
     else:
         dl, puzzle_url = parse_for_embedded_puzzle(url, **kwargs)
 
-    if dl:
+    if dl and puzzle_url:
         puzzle = dl.download(puzzle_url)
     else:
         raise XWordDLException('Unable to find a puzzle at {}.'.format(url))
@@ -75,7 +76,7 @@ def by_url(url, **kwargs):
     return puzzle, filename
 
 
-def parse_for_embedded_puzzle(url, **kwargs):
+def parse_for_embedded_puzzle(url: str, **kwargs):
     supported_downloaders = [
         d
         for d in get_supported_outlets(command_only=False)
@@ -98,6 +99,8 @@ def parse_for_embedded_puzzle(url, **kwargs):
     for src in sources:
         for dlr in supported_downloaders:
             puzzle_url = dlr.matches_embed_url(src)
+            # TODO: would it be better to just return a URL and have controller
+            # request this from the plugin via normal methods?
             if puzzle_url is not None:
                 return (dlr(), puzzle_url)
 

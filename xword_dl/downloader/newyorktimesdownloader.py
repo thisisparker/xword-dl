@@ -37,12 +37,13 @@ class NewYorkTimesDownloader(BaseDownloader):
         else:
             self.cookies.update({'NYT-S': nyts_token})
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('nytimes.com' in url_components.netloc
                     and 'crosswords/game/daily' in url_components.path)
 
-    def authenticate(self, username, password):
+    @classmethod
+    def authenticate(cls, username, password):
         """Given a NYT username and password, returns the NYT-S cookie value"""
 
         username = username or input("New York Times username: ")
@@ -217,8 +218,8 @@ class NewYorkTimesMiniDownloader(NewYorkTimesDownloader):
 
         self.url_from_date = 'https://www.nytimes.com/svc/crosswords/v6/puzzle/mini/{}.json'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('nytimes.com' in url_components.netloc
                     and 'mini' in url_components.path)
 

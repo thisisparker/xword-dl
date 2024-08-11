@@ -18,8 +18,8 @@ class McKinseyDownloader(AmuseLabsDownloader):
 
         self.url_from_id = 'https://cdn2.amuselabs.com/pmm/crossword?id={puzzle_id}&set=mckinsey'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('mckinsey.com' in url_components.netloc and '/featured-insights/the-mckinsey-crossword' in url_components.path)
 
     def find_by_date(self, dt):

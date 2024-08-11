@@ -18,8 +18,8 @@ class CrosswordClubDownloader(AmuseLabsDownloader):
 
         self.url_from_id = 'https://cdn2.amuselabs.com/pmm/crossword?id={puzzle_id}&set=pardon-crossword'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('crosswordclub.com' in url_components.netloc
                 and '/puzzles' in url_components.path)
 
