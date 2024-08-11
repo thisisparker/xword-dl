@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import inspect
 import json
 import os
 import sys
@@ -12,18 +11,19 @@ import requests
 
 from bs4 import BeautifulSoup
 
-# FIXME: abstract download handling in separate file
-from .downloader.basedownloader import BaseDownloader
-
+from .downloader import get_plugins
 from .util import XWordDLException, parse_date_or_exit, save_puzzle
 
 with open(os.path.join(os.path.dirname(__file__), 'version')) as f:
     __version__ = f.read().strip()
 
+plugins = get_plugins()
+
 
 def by_keyword(keyword, **kwargs):
-    keyword_dict = {d[1].command: d[1] for d in get_supported_outlets()}
-    selected_downloader = keyword_dict.get(keyword, None)
+    selected_downloader = next(
+        (d for d in get_supported_outlets() if d.command == keyword), None
+    )
 
     if selected_downloader:
         dl = selected_downloader(**kwargs)
@@ -49,9 +49,9 @@ def by_keyword(keyword, **kwargs):
 
 
 def by_url(url, **kwargs):
-    supported_downloaders = [d[1] for d in
+    supported_downloaders = [d for d in
             get_supported_outlets(command_only=False)
-            if hasattr(d[1], 'matches_url')]
+            if hasattr(d, 'matches_url')]
 
     dl = None
 
@@ -77,9 +77,9 @@ def by_url(url, **kwargs):
 
 def parse_for_embedded_puzzle(url, **kwargs):
     supported_downloaders = [
-        d[1]
+        d
         for d in get_supported_outlets(command_only=False)
-        if hasattr(d[1], 'matches_embed_url')
+        if hasattr(d, 'matches_embed_url')
     ]
 
     res = requests.get(url, headers={'User-Agent':'xword-dl'})
@@ -105,20 +105,15 @@ def parse_for_embedded_puzzle(url, **kwargs):
 
 
 def get_supported_outlets(command_only=True):
-    all_classes = inspect.getmembers(sys.modules['xword_dl.downloader'],
-                                     inspect.isclass)
-    dls = [d for d in all_classes if issubclass(d[1], BaseDownloader)]
-
     if command_only:
-        dls = [d for d in dls if hasattr(d[1], 'command')]
-
-    return dls
+        return [d for d in plugins if hasattr(d, 'command')]
+    return plugins
 
 
 def get_help_text_formatted_list():
     text = ''
-    for d in sorted(get_supported_outlets(), key=lambda x: x[1].outlet.lower()):
-        text += '{:<5} {}\n'.format(d[1].command, d[1].outlet)
+    for d in sorted(get_supported_outlets(), key=lambda x: x.outlet.lower()):
+        text += '{:<5} {}\n'.format(d.command, d.outlet)
 
     return text
 
@@ -202,8 +197,9 @@ def main():
 
     args = parser.parse_args()
     if args.authenticate and args.source:
-        keyword_dict = {d[1].command: d[1] for d in get_supported_outlets()}
-        selected_downloader = keyword_dict.get(args.source, None)
+        selected_downloader = next(
+            (d for d in get_supported_outlets() if d.command == args.source), None
+        )
         if selected_downloader is None:
             raise XWordDLException('Keyword {} not recognized.'.format(args.source))
 
