@@ -24,8 +24,8 @@ class GlobeAndMailDownloader(CrosswordCompilerDownloader):
 
         self.url_format = 'https://www.theglobeandmail.com/puzzles-and-crosswords/cryptic-crossword/?date={url_encoded_date}'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return 'theglobeandmail.com' in url_components.netloc
 
     def parse_date_from_url(self, url):

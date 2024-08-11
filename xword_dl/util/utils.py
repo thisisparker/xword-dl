@@ -5,6 +5,7 @@ import dateparser
 import emoji
 import unidecode as _unidecode
 import yaml
+from puz import Puzzle
 from unidecode import unidecode
 
 from html2text import html2text
@@ -27,7 +28,7 @@ class XWordDLException(Exception):
     pass
 
 
-def save_puzzle(puzzle, filename):
+def save_puzzle(puzzle: Puzzle, filename: str):
     if not os.path.exists(filename):
         puzzle.save(filename)
         msg = ("Puzzle downloaded and saved as {}.".format(filename)
@@ -38,10 +39,10 @@ def save_puzzle(puzzle, filename):
         print("Not saving: a file named {} already exists.".format(filename),
               file=sys.stderr)
 
-def join_bylines(l, and_word="&"):
+def join_bylines(l: list[str], and_word="&"):
     return ', '.join(l[:-1]) + f', {and_word} ' + l[-1] if len(l) > 2 else f' {and_word} '.join(l)
 
-def remove_invalid_chars_from_filename(filename):
+def remove_invalid_chars_from_filename(filename: str):
     invalid_chars = r'<>:"/\|?*'
 
     for char in invalid_chars:
@@ -50,7 +51,7 @@ def remove_invalid_chars_from_filename(filename):
     return filename
 
 
-def cleanup(field, preserve_html=False):
+def cleanup(field: str, preserve_html=False):
     if preserve_html:
         field = unidecode(emoji.demojize(field)).strip()
     else:
@@ -59,7 +60,7 @@ def cleanup(field, preserve_html=False):
     return field
 
 
-def sanitize_for_puzfile(puzzle, preserve_html=False):
+def sanitize_for_puzfile(puzzle: Puzzle, preserve_html=False) -> Puzzle:
     puzzle.title = cleanup(puzzle.title, preserve_html)
     puzzle.author = cleanup(puzzle.author, preserve_html)
     puzzle.copyright = cleanup(puzzle.copyright, preserve_html)
@@ -71,11 +72,11 @@ def sanitize_for_puzfile(puzzle, preserve_html=False):
     return puzzle
 
 
-def parse_date(entered_date):
+def parse_date(entered_date: str):
     return dateparser.parse(entered_date, settings={'PREFER_DATES_FROM':'past'})
 
 
-def parse_date_or_exit(entered_date):
+def parse_date_or_exit(entered_date: str):
     guessed_dt = parse_date(entered_date)
 
     if not guessed_dt:
@@ -85,7 +86,7 @@ def parse_date_or_exit(entered_date):
     return guessed_dt
 
 
-def update_config_file(heading, new_values_dict):
+def update_config_file(heading: str, new_values_dict: dict):
     with open(CONFIG_PATH, 'r') as f:
         config = yaml.safe_load(f) or {}
 
@@ -98,7 +99,7 @@ def update_config_file(heading, new_values_dict):
         yaml.dump(config, f)
 
 
-def read_config_values(heading):
+def read_config_values(heading: str):
     with open(CONFIG_PATH, 'r') as f:
         config = yaml.safe_load(f) or {}
 

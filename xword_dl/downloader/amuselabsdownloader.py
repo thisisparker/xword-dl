@@ -23,12 +23,12 @@ class AmuseLabsDownloader(BaseDownloader):
         self.picker_url = None
         self.url_from_id = None
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return 'amuselabs.com' in url_components.netloc
 
-    @staticmethod
-    def matches_embed_url(src):
+    @classmethod
+    def matches_embed_url(cls, src):
         url = urllib.parse.urlparse(src)
         if 'amuselabs.com' in url.netloc:
             return src

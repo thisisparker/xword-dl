@@ -19,6 +19,9 @@ class AMUniversalDownloader(BaseDownloader):
         self.url_blob = None
 
     def find_by_date(self, dt):
+        if self.url_blob is None:
+            raise XWordDLException("Blob URL was not set by AMUniversal subclass.")
+
         self.date = dt
 
         url_format = dt.strftime('%Y-%m-%d')
