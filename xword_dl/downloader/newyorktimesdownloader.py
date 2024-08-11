@@ -29,10 +29,8 @@ class NewYorkTimesDownloader(BaseDownloader):
         password = self.settings.get('password')
 
         if username and password:
-            nyts_token = self.authenticate(username, password)
-            update_config_file('nyt', {'NYT-S': nyts_token})
-        else:
-            nyts_token = self.settings.get('NYT_S')
+            self.authenticate(username, password)
+        nyts_token = self.settings.get('NYT_S')
 
         if not nyts_token:
             raise XWordDLException('No credentials provided or stored. Try running xword-dl nyt --authenticate')
@@ -68,7 +66,7 @@ class NewYorkTimesDownloader(BaseDownloader):
                 nyts_token = cookie['cipheredValue']
 
         if nyts_token:
-            return nyts_token
+            update_config_file('nyt', {'NYT-S': nyts_token})
         else:
             raise XWordDLException('NYT-S cookie not found.')
 
