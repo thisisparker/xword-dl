@@ -43,8 +43,7 @@ class BaseDownloader:
                   'prefix':  self.outlet_prefix or '',
                   'title':   puzzle.title or '',
                   'author':  puzzle.author or '',
-                  'cmd':     (self.command if hasattr(self, 'command')
-                              else self.netloc or ''),
+                  'cmd':     getattr(self, "command", self.netloc or ""),
                   'netloc':  self.netloc or '',
                  }
 
