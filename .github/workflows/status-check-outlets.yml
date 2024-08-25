@@ -40,6 +40,9 @@ jobs:
       - name: Test Daily Beast latest
         if: '!cancelled()'
         run: xword-dl db
+      - name: Test Daily Pop latest
+        if: '!cancelled()'
+        run: xword-dl pop
       - name: Test Der Standard latest
         if: '!cancelled()'
         run: xword-dl std
@@ -145,6 +148,9 @@ jobs:
       - name: Test Newsday by date
         if: '!cancelled()'
         run: xword-dl nd -d "dec. 12, 2023"
+      - name: Test Puzzmo latest
+        if: '!cancelled()'
+        run: xword-dl pzm
       - name: Test Simply Daily Puzzles
         if: '!cancelled()'
         run: xword-dl sdp
@@ -169,24 +175,6 @@ jobs:
       - name: Test Vox
         if: '!cancelled()'
         run: xword-dl vox
-      - name: Test WSJ latest
-        if: '!cancelled()'
-        env:
-          DATADOME_COOKIE: ${{ secrets.DATADOME_COOKIE }}
-        run: |
-          xword-dl wsj --settings '{"cookies": {"datadome":"'$DATADOME_COOKIE'"}}'
-      - name: Test WSJ by URL
-        if: '!cancelled()'
-        env:
-          DATADOME_COOKIE: ${{ secrets.DATADOME_COOKIE }}
-        run: |
-          xword-dl --settings '{"cookies": {"datadome":"'$DATADOME_COOKIE'"}}' "https://www.wsj.com/articles/carbon-neutral-saturday-crossword-january-15-11642193133"
-      - name: Test WSJ Friday contest
-        if: '!cancelled()'
-        env:
-          DATADOME_COOKIE: ${{ secrets.DATADOME_COOKIE }}
-        run: |
-          xword-dl --settings '{"cookies": {"datadome":"'$DATADOME_COOKIE'"}}' "https://www.wsj.com/articles/hitting-the-high-notes-friday-crossword-january-5-0f18d7c1"
       - name: Test Washington Post latest
         if: '!cancelled()'
         run: xword-dl wp

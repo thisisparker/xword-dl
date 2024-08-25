@@ -10,6 +10,7 @@ Supported outlets:
 |*Atlas Obscura*|`ao`|✔️|||
 |*Crossword Club*|`club`|✔️|✔️|✔️|
 |*The Daily Beast*|`db`|✔️|||
+|*Daily Pop*|`pop`|✔️|✔️||
 |*Der Standard*|`std`|✔️||✔️|
 |*The Globe And Mail cryptic*|`tgam`|✔️|✔️|✔️|
 |*Guardian Cryptic*|`grdc`|✔️||✔️|
@@ -26,13 +27,13 @@ Supported outlets:
 |*New York Times Variety*|`nytv`||✔️||
 |*The New Yorker*|`tny`|✔️|✔️|✔️|
 |*Newsday*|`nd`|✔️|✔️||
+|*Puzzmo*|`pzm`|✔️|||
 |*Simply Daily Puzzles*|`sdp`|✔️|✔️|✔️|
 |*Simply Daily Puzzles Cryptic*|`sdpc`|✔️|✔️|✔️|
 |*Simply Daily Puzzles Quick*|`sdpq`|✔️|✔️|✔️|
 |*Universal*|`uni`|✔️|✔️||
 |*USA Today*|`usa`|✔️|✔️||
 |*Vox*|`vox`|✔️|||
-|*Wall Street Journal*|`wsj`|✔️||✔️|
 |*Washington Post*|`wp`|✔️|✔️||
 
 To download a puzzle, install `xword-dl` and run it on the command line.
