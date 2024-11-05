@@ -43,10 +43,26 @@ def by_keyword(keyword, **kwargs):
         raise XWordDLException(
             'Selection by date not available for {}.'.format(dl.outlet))
 
-    puzzle = dl.download(puzzle_url)
+    if isinstance(puzzle_url, list):
+        puzzle = get_puzzle_from_candidate_urls(dl, puzzle_url)
+    else:
+        puzzle = dl.download(puzzle_url)
     filename = dl.pick_filename(puzzle)
 
     return puzzle, filename
+
+
+def get_puzzle_from_candidate_urls(dl, candidate_urls):
+    puzzle = None
+    for url in candidate_urls:
+        try:
+            puzzle = dl.download(url)
+            if puzzle:
+                return puzzle
+        except Exception:
+            continue
+    if not puzzle:
+        raise XWordDLException('Crossword puzzle not found.')
 
 
 def by_url(url, **kwargs):
@@ -121,7 +137,7 @@ def parse_for_embedded_puzzle(url, **kwargs):
 def get_supported_outlets(command_only=True):
     all_classes = inspect.getmembers(sys.modules['xword_dl.downloader'],
                                      inspect.isclass)
-    dls = [d for d in all_classes if issubclass(d[1], 
+    dls = [d for d in all_classes if issubclass(d[1],
                    downloader.BaseDownloader)]
 
     if command_only:
