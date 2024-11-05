@@ -20,7 +20,7 @@ class VoxDownloader(AmuseLabsDownloader):
     def find_by_date(self, dt):
         url_formatted_date = dt.strftime('%Y%m%d')
         authors = ['', 'PB', 'AP', 'WN', 'AOK', 'JG', 'AJR']  # The author varies by day, and their initials may or may not be present as a prefix
-        suffixes = ['_1000', '_1100', '', '_1000%20(1)']  # The suffix is always one of these. I can't determine the pattern.
+        suffixes = ['_1000', '_1100', '', '_1000%20(1)', '_1101']  # The suffix is always one of these. I can't determine the pattern.
         self.get_and_add_picker_token()
         candidate_urls = []
         for suffix in suffixes:  # On average, it will be faster to search by the most frequent suffixes first
