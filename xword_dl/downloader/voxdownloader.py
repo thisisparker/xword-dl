@@ -19,12 +19,12 @@ class VoxDownloader(AmuseLabsDownloader):
 
     def find_by_date(self, dt):
         url_formatted_date = dt.strftime('%Y%m%d')
-        authors = ['', 'PB', 'AP', 'WN', 'AOK', 'JG', 'AJR']  # The author varies by day, and their initials may or may not be present as a prefix
+        prefixes = ['vox_', 'PBvox_', 'APvox_', 'WNvox_', 'AOKvox_', 'JGvox_', 'AJRvox_', 'JGVox_']  # The author varies by day, and their initials may or may not be present as a prefix
         suffixes = ['_1000', '_1100', '', '_1000%20(1)', '_1101']  # The suffix is always one of these. I can't determine the pattern.
         self.get_and_add_picker_token()
         candidate_urls = []
         for suffix in suffixes:  # On average, it will be faster to search by the most frequent suffixes first
-            for author in authors:
-                self.id = author + 'vox_' + url_formatted_date + suffix
+            for prefix in prefixes:
+                self.id = prefix + url_formatted_date + suffix
                 candidate_urls.append(self.find_puzzle_url_from_id(self.id))
         return candidate_urls
