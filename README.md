@@ -11,7 +11,6 @@ Supported outlets:
 |*The Daily Beast*|`db`|✔️|||
 |*Daily Pop*|`pop`|✔️|✔️||
 |*Der Standard*|`std`|✔️||✔️|
-|*The Globe And Mail cryptic*|`tgam`|✔️|✔️|✔️|
 |*Guardian Cryptic*|`grdc`|✔️||✔️|
 |*Guardian Everyman*|`grde`|✔️||✔️|
 |*Guardian Prize*|`grdp`|✔️||✔️|

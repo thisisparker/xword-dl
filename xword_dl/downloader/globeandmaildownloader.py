@@ -5,7 +5,10 @@ from .compilerdownloader import CrosswordCompilerDownloader
 from ..util import XWordDLException
 
 class GlobeAndMailDownloader(CrosswordCompilerDownloader):
-    command = 'tgam'
+    #command = 'tgam'       # Removing because as of Jan 2025, TGAM has stopped publishing its own puzzle
+                            # and instead syndicates The Times on a 6 week delay.
+                            # Leaving this file because it's small and might be a useful reference for
+                            # other Compiler children.
     outlet = 'The Globe And Mail (Cryptic)'
     outlet_prefix = 'Globe And Mail'
 
