@@ -36,8 +36,8 @@ class GuardianDownloader(BaseDownloader):
         res = requests.get(solver_url)
         soup = BeautifulSoup(res.text, 'html.parser')
 
-        xw_data = json.loads(soup.find('div',
-                    attrs={'class':'js-crossword'}).get('data-crossword-data'))
+        xw_data = json.loads(soup.find('gu-island',
+                    attrs={'name':'CrosswordComponent'}).get('props')).get('data')
 
         return xw_data
 
