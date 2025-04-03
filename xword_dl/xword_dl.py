@@ -121,7 +121,7 @@ def parse_for_embedded_puzzle(url, **kwargs):
 def get_supported_outlets(command_only=True):
     all_classes = inspect.getmembers(sys.modules['xword_dl.downloader'],
                                      inspect.isclass)
-    dls = [d for d in all_classes if issubclass(d[1], 
+    dls = [d for d in all_classes if issubclass(d[1],
                    downloader.BaseDownloader)]
 
     if command_only:
@@ -217,6 +217,12 @@ def main():
                             will be used)"""),
                         default=None)
 
+    parser.add_argument('-2', '--v2',
+        help=textwrap.dedent("""\
+                                saves the output file as an AcrossLite v2
+                                file (by default, version 1.4 is used)"""),
+                        action='store_true',
+                        default=False)
 
     args = parser.parse_args()
     if args.authenticate and args.source == 'nyt':
@@ -244,6 +250,8 @@ def main():
         options['preserve_html'] = args.preserve_html
     if args.output:
         options['filename'] = args.output
+    if args.v2:
+        options['puzzle_v2'] = True
     if args.date:
         options['date'] = args.date
     if args.settings:

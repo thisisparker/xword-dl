@@ -1,6 +1,7 @@
 import urllib
 
 import requests
+import puz
 
 from ..util import *
 
@@ -33,6 +34,15 @@ class BaseDownloader:
         self.session = requests.Session()
         self.session.headers.update(self.settings.get('headers', {}))
         self.session.cookies.update(self.settings.get('cookies', {}))
+
+        self.puzzle = puz.Puzzle()
+
+        if 'puzzle_v2' in kwargs:
+            # this is hack-ily patching constants that puzpy does not
+            # currently provide a method for setting
+            self.puzzle.version = b'2.0'
+            self.puzzle.fileversion = b'2.0\0'
+            self.puzzle.encoding = 'UTF-8'
 
     def pick_filename(self, puzzle, **kwargs):
         tokens = {'outlet':  self.outlet or '',
@@ -105,6 +115,7 @@ class BaseDownloader:
 
         puzzle = sanitize_for_puzfile(puzzle,
                                       preserve_html=self.settings.get(
-                                                        'preserve_html'))
+                                                        'preserve_html'),
+                                      demojize=(self.puzzle.encoding != 'UTF-8'))
 
         return puzzle
