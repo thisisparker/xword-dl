@@ -1,4 +1,4 @@
-import urllib
+import urllib.parse
 
 import dateparser
 import requests
@@ -18,8 +18,8 @@ class CrosswordClubDownloader(AmuseLabsDownloader):
 
         self.url_from_id = 'https://cdn2.amuselabs.com/pmm/crossword?id={puzzle_id}&set=pardon-crossword'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('crosswordclub.com' in url_components.netloc
                 and '/puzzles' in url_components.path)
 
@@ -40,7 +40,10 @@ class CrosswordClubDownloader(AmuseLabsDownloader):
         index_soup = BeautifulSoup(index_res.text, "html.parser")
 
         latest_url = next(a for a in index_soup.select('.all-puzzle-list a[href^="https://crosswordclub.com/puzzles/"]'))['href']
-        
+
+        if isinstance(latest_url, list):
+            latest_url = latest_url[0]
+
         return latest_url
 
     def find_solver(self, url):

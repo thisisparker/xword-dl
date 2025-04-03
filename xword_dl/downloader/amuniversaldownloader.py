@@ -2,7 +2,6 @@ import datetime
 import json
 import sys
 import time
-import urllib
 import xml
 
 import puz
@@ -20,6 +19,9 @@ class AMUniversalDownloader(BaseDownloader):
         self.url_blob = None
 
     def find_by_date(self, dt):
+        if self.url_blob is None:
+            raise XWordDLException("Blob URL was not set by AMUniversal subclass.")
+
         self.date = dt
 
         url_format = dt.strftime('%Y-%m-%d')
@@ -53,11 +55,10 @@ class AMUniversalDownloader(BaseDownloader):
 
         return clue_list
 
-    def parse_xword(self, xword_data):
+    def parse_xword(self, xw_data):
         fetched = {}
         for field in ['Title', 'Author', 'Editor', 'Copryight']:
-            fetched[field] = urllib.parse.unquote(
-                xword_data.get(field, '')).strip()
+            fetched[field] = unquote(xw_data.get(field, '')).strip()
 
         puzzle = puz.Puzzle()
         puzzle.title = fetched.get('Title', '')
@@ -65,10 +66,10 @@ class AMUniversalDownloader(BaseDownloader):
                                  ' / Ed. ',
                                  fetched.get('Editor', '')])
         puzzle.copyright = fetched.get('Copyright', '')
-        puzzle.width = int(xword_data.get('Width'))
-        puzzle.height = int(xword_data.get('Height'))
+        puzzle.width = int(xw_data.get('Width'))
+        puzzle.height = int(xw_data.get('Height'))
 
-        solution = xword_data.get('AllAnswer').replace('-', '.')
+        solution = xw_data.get('AllAnswer').replace('-', '.')
 
         puzzle.solution = solution
 
@@ -80,8 +81,8 @@ class AMUniversalDownloader(BaseDownloader):
                 fill += '-'
         puzzle.fill = fill
 
-        across_clues = xword_data['AcrossClue'].splitlines()
-        down_clues = self.process_clues(xword_data['DownClue'].splitlines())
+        across_clues = xw_data['AcrossClue'].splitlines()
+        down_clues = self.process_clues(xw_data['DownClue'].splitlines())
 
         clues_list = across_clues + down_clues
 
@@ -130,7 +131,7 @@ class USATodayDownloader(BaseDownloader):
         try:
             res = requests.head(url)
             res.raise_for_status()
-        except:
+        except requests.HTTPError:
             raise XWordDLException('Unable to find puzzle for date provided.')
 
         return url
@@ -160,10 +161,10 @@ class USATodayDownloader(BaseDownloader):
 
         return xw_data
 
-    def parse_xword(self, xword_data):
+    def parse_xword(self, xw_data):
         try:
-            xw = xmltodict.parse(xword_data).get('crossword')
-        except xml.parsers.expat.ExpatError:
+            xw = xmltodict.parse(xw_data)['crossword']
+        except (xml.parsers.expat.ExpatError, KeyError):
             raise XWordDLException('Puzzle data malformed, cannot parse.')
 
         puzzle = puz.Puzzle()

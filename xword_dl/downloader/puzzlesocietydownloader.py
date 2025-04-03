@@ -1,10 +1,12 @@
 import datetime
 import json
-import urllib
+import urllib.parse
 
 import requests
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
+
+from xword_dl.util.utils import XWordDLException
 
 from .compilerdownloader import CrosswordCompilerDownloader
 
@@ -18,10 +20,10 @@ class TheModernDownloader(CrosswordCompilerDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return 'puzzlesociety.com' in url_components.netloc and 'modern-crossword' in url_components.path
-        
+
     def find_by_date(self, dt):
         url_format = dt.strftime('%Y/%m/%d')
         guessed_url = urllib.parse.urljoin(
@@ -36,8 +38,13 @@ class TheModernDownloader(CrosswordCompilerDownloader):
         res = requests.get(url)
 
         soup = BeautifulSoup(res.text, 'lxml')
-        page_props = json.loads(soup.find('script',
-                                {'type':'application/json'}).get_text())
+
+        json_tag = soup.find('script', {'type':'application/json'})
+        if not isinstance(json_tag, Tag):
+            raise XWordDLException("Could not find JSON metadata for solver.")
+
+        json_str = json_tag.get_text()
+        page_props = json.loads(json_str)
 
         sets = page_props['props']['pageProps']\
                             ['gameContent']['gameLevelDataSets']
@@ -47,14 +54,14 @@ class TheModernDownloader(CrosswordCompilerDownloader):
 
         return url
 
-    def fetch_data(self, url):
-        res = requests.get(url)
+    def fetch_data(self, solver_url):
+        res = requests.get(solver_url)
         xw_data = res.content.decode('utf-8-sig')
 
         return xw_data
 
-    def parse_xword(self, xword_data):
-        puzzle = super().parse_xword(xword_data, enumeration=False)
+    def parse_xword(self, xw_data, enumeration=False):
+        puzzle = super().parse_xword(xw_data, enumeration=enumeration)
 
         if not puzzle.author or puzzle.author.casefold().startswith('edited'):
             puzzle.author = puzzle.title[3:]
