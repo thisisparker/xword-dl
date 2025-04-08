@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 
 import puz
 import requests
@@ -7,7 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from .basedownloader import BaseDownloader
-from ..util import unidecode, XWordDLException
+from ..util import XWordDLException
 
 class GuardianDownloader(BaseDownloader):
     outlet = 'Guardian'
@@ -22,7 +23,9 @@ class GuardianDownloader(BaseDownloader):
         res = requests.get(self.landing_page)
         soup = BeautifulSoup(res.text, 'html.parser')
 
-        url = soup.find('a', attrs={'data-link-name': 'article'}).get('href')
+        url = 'https://www.theguardian.com'
+        xword_link_re = re.compile(r'/crosswords/\w+/\d+')
+        url += soup.find('a', href=xword_link_re).get('href')
 
         return url
 
@@ -33,19 +36,19 @@ class GuardianDownloader(BaseDownloader):
         res = requests.get(solver_url)
         soup = BeautifulSoup(res.text, 'html.parser')
 
-        xw_data = json.loads(soup.find('div', 
-                    attrs={'class':'js-crossword'}).get('data-crossword-data'))
+        xw_data = json.loads(soup.find('gu-island',
+                    attrs={'name':'CrosswordComponent'}).get('props')).get('data')
 
         return xw_data
 
     def parse_xword(self, xword_data):
         puzzle = puz.Puzzle()
 
-        puzzle.author = unidecode(xword_data.get('creator',{}).get('name',''))
+        puzzle.author = xword_data.get('creator', {}).get('name') or ''
         puzzle.height = xword_data.get('dimensions').get('rows')
         puzzle.width  = xword_data.get('dimensions').get('cols')
 
-        puzzle.title = unidecode(xword_data.get('name', ''))
+        puzzle.title = xword_data.get('name') or ''
 
         if not all(e.get('solution') for e in xword_data['entries']):
             puzzle.title += ' - no solution provided'
@@ -74,8 +77,7 @@ class GuardianDownloader(BaseDownloader):
         puzzle.solution = solution
         puzzle.fill = fill
 
-        clues = [unidecode(e.get('clue')) for e in
-                    sorted(xword_data.get('entries'), 
+        clues = [e.get('clue') for e in sorted(xword_data.get('entries'),
                     key=lambda x: (x.get('number'), x.get('direction')))]
 
         puzzle.clues = clues

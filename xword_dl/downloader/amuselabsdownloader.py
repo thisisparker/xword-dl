@@ -41,15 +41,21 @@ class AmuseLabsDownloader(BaseDownloader):
             res = requests.get(self.picker_url)
             picker_source = res.text
 
-        rawsps = next((line.strip() for line in picker_source.splitlines()
-                     if 'pickerParams.rawsps' in line), None)
+        if 'pickerParams.rawsps' in picker_source:
+            rawsps = next((line.strip().split("'")[1] for line in
+                         picker_source.splitlines()
+                         if 'pickerParams.rawsps' in line), None)
+        else:
+            soup = BeautifulSoup(picker_source, 'html.parser')
+            param_tag = soup.find('script', id='params')
+            param_obj = json.loads(param_tag.string) if param_tag else {}
+            rawsps = param_obj.get('rawsps', None)
 
         if rawsps:
-            rawsps = rawsps.split("'")[1]
             picker_params = json.loads(base64.b64decode(rawsps).decode("utf-8"))
-            token = picker_params.get('pickerToken', None)
+            token = picker_params.get('loadToken', None)
             if token:
-                self.url_from_id += '&pickerToken=' + token
+                self.url_from_id += '&loadToken=' + token
 
     def find_puzzle_url_from_id(self, puzzle_id):
         return self.url_from_id.format(puzzle_id=puzzle_id)
@@ -69,16 +75,24 @@ class AmuseLabsDownloader(BaseDownloader):
 
     def fetch_data(self, solver_url):
         res = requests.get(solver_url)
-        rawc = next((line.strip() for line in res.text.splitlines()
-                     if 'window.rawc' in line), None)
 
-        if not rawc:
-            raise XWordDLException("Crossword puzzle not found.")
-
-        rawc = rawc.split("'")[1]
+        if 'window.rawc' in res.text or 'window.puzzleEnv.rawc' in res.text:
+            rawc = next((line.strip().split("'")[1] for line in res.text.splitlines()
+                         if ('window.rawc' in line
+                            or 'window.puzzleEnv.rawc' in line)), None)
+        else:
+            # As of 2023-12-01, it looks like the rawc value is sometimes
+            # given as a parameter in an embedded json blob, which means
+            # parsing the page
+            try:
+                soup = BeautifulSoup(res.text, 'html.parser')
+                rawc = json.loads(soup.find('script', id='params').string)['rawc']
+            except AttributeError:
+                raise XWordDLException("Crossword puzzle not found.")
 
         ## In some cases we need to pull the underlying JavaScript ##
         # Find the JavaScript URL
+        amuseKey = None
         m1 = re.search(r'"([^"]+c-min.js[^"]+)"', res.text)
         js_url_fragment = m1.groups()[0]
         js_url = urllib.parse.urljoin(solver_url, js_url_fragment)
@@ -88,8 +102,27 @@ class AmuseLabsDownloader(BaseDownloader):
 
         # matches a 7-digit hex string preceded by `="` and followed by `"`
         m2 = re.search(r'="([0-9a-f]{7})"', res2.text)
+        if m2:
+            # in this format, add 2 to each digit
+            amuseKey = [int(c,16)+2 for c in m2.groups()[0]]
+        else:
+            # otherwise, grab the new format key and do not add 2
+            amuseKey = [int(x) for x in
+                        re.findall(r'=\[\]\).push\(([0-9]{1,2})\)', res2.text)]
 
-        amuseKey = m2.groups()[0] if m2 else None
+        # But now that might not be the right key, and there's another one
+        # that we need to try!
+        # (current as of 10/26/2023)
+        key_2_order_regex = r'[a-z]+=(\d+);[a-z]+<[a-z]+.length;[a-z]+\+='
+        key_2_digit_regex = r'<[a-z]+.length\?(\d+)'
+
+        key_digits = [int(x) for x in
+                      re.findall(key_2_digit_regex, res2.text)]
+        key_orders = [int(x) for x in
+                      re.findall(key_2_order_regex, res2.text)]
+
+        amuseKey2 = [x for x, _ in sorted(zip(key_digits, key_orders), key=lambda pair: pair[1])]
+
 
         # helper function to decode rawc
         # as occasionally it can be obfuscated
@@ -123,14 +156,12 @@ class AmuseLabsDownloader(BaseDownloader):
 
                         while F<len(H):
                             J=H[F]
-                            K=int(J,16)
-                            E.append(K)
+                            E.append(J)
                             F+=1
 
                         A, G, I = 0, 0, len(e)-1
                         while A < I:
                             B = E[G]
-                            B += 2
                             L = I - A + 1
                             C = A
                             B = min(B, L)
@@ -148,15 +179,18 @@ class AmuseLabsDownloader(BaseDownloader):
                                         amuse_b64(rawc, amuseKey)
                                         ).decode("utf-8"))
 
-        xword_data = load_rawc(rawc, amuseKey=amuseKey)
+        try:
+            xword_data = load_rawc(rawc, amuseKey=amuseKey)
+        except (UnicodeDecodeError, base64.binascii.Error):
+            xword_data = load_rawc(rawc, amuseKey=amuseKey2)
 
         return xword_data
 
     def parse_xword(self, xword_data):
         puzzle = puz.Puzzle()
-        puzzle.title = unidecode(xword_data.get('title', '').strip())
-        puzzle.author = unidecode(xword_data.get('author', '').strip())
-        puzzle.copyright = unidecode(xword_data.get('copyright', '').strip())
+        puzzle.title = xword_data.get('title', '').strip()
+        puzzle.author = xword_data.get('author', '').strip()
+        puzzle.copyright = xword_data.get('copyright', '').strip()
         puzzle.width = xword_data.get('w')
         puzzle.height = xword_data.get('h')
 
@@ -191,7 +225,7 @@ class AmuseLabsDownloader(BaseDownloader):
                     solution += cell[0]
                     fill += '-'
                     rebus_board.append(rebus_index + 1)
-                    rebus_table += '{:2d}:{};'.format(rebus_index, cell)
+                    rebus_table += '{:2d}:{};'.format(rebus_index, unidecode(cell))
                     rebus_index += 1
 
         puzzle.solution = solution
@@ -207,9 +241,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         clues = [word['clue']['clue'] for word in weirdass_puz_clue_sorting]
 
-        normalized_clues = [extract_text(unidecode(clue)).strip()
-                            for clue in clues]
-        puzzle.clues.extend(normalized_clues)
+        puzzle.clues.extend(clues)
 
         has_markup = b'\x80' in markup
         has_rebus = any(rebus_board)

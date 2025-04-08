@@ -2,6 +2,7 @@
 
 import argparse
 import inspect
+import json
 import sys
 import textwrap
 import time
@@ -81,9 +82,13 @@ def parse_for_embedded_puzzle(url, **kwargs):
     res = requests.get(url, headers={'User-Agent':'xword-dl'})
     soup = BeautifulSoup(res.text, 'lxml')
 
-    sources = [urllib.parse.urljoin(url, iframe.get('src', '') or
-                iframe.get('data-crossword-url', '')) for iframe in
-                soup.find_all('iframe')]
+    sources = [urllib.parse.urljoin(url,
+                    iframe.get('data-crossword-url', '') or
+                    iframe.get('data-src', '') or
+                    iframe.get('src', ''))
+                for iframe in soup.find_all('iframe')]
+
+    sources = [src for src in sources if src != 'about:blank']
 
     sources.insert(0, url)
 
@@ -191,6 +196,20 @@ def main():
                             (currently only the New York Times)"""),
                         default=None)
 
+    parser.add_argument('--preserve-html',
+                        help=textwrap.dedent("""\
+                            preserves any HTML present in scraped puzzle
+                            (by default, HTML is converted into plain
+                            markdown)"""),
+                        action='store_true',
+                        default=False)
+
+    parser.add_argument('--settings',
+                        help=textwrap.dedent("""\
+                            JSON-encoded object specifying settings
+                            values for given keys"""),
+                        default=None)
+
     parser.add_argument('-o', '--output',
                         help=textwrap.dedent("""\
                             filename (or filename template) for the
@@ -214,17 +233,26 @@ def main():
         sys.exit('Authentication flag must use a puzzle outlet keyword.')
 
     if not args.source:
-        sys.exit(parser.print_help())
+        sys.exit(parser.format_help())
 
     options = {}
     if args.username:
         options['username'] = args.username
     if args.password:
         options['password'] = args.password
+    if args.preserve_html:
+        options['preserve_html'] = args.preserve_html
     if args.output:
         options['filename'] = args.output
     if args.date:
         options['date'] = args.date
+    if args.settings:
+        try:
+            raw_settings = json.loads(args.settings)
+            settings = {k.replace('-','_'):raw_settings[k] for k in raw_settings}
+        except json.JSONDecodeError:
+            sys.exit('Settings object not valid JSON.')
+        options.update(settings)
 
     try:
         if args.source.startswith('http'):

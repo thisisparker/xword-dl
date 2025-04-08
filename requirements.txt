@@ -1,10 +1,10 @@
-beautifulsoup4==4.11.1
+beautifulsoup4==4.13.3
 bs4==0.0.1
-dateparser==1.1.4
+dateparser==1.2.1
 html_text==0.5.2
-puzpy==0.2.5
-requests==2.28.1
+puzpy==0.2.6
+requests==2.32.3
 anyascii==0.3.1
-pyyaml==6.0
-xmltodict==0.13.0
-lxml==4.9.2
+pyyaml==6.0.2
+xmltodict==0.14.2
+lxml==5.3.1

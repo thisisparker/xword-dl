@@ -1,0 +1,177 @@
+name: Status check on supported outlets
+
+on:
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '15 12 * * *'
+
+jobs:
+  install-xword-dl-and-test-existing-outlets:
+    name: Install xword-dl and test existing outlets
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - name: Set up Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
+        with:
+          python-version: '3.11'
+      - name: Install xword-dl
+        id: install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .
+      - name: Test Atlantic latest
+        if: '!cancelled()'
+        run: xword-dl atl
+      - name: Test Atlantic by date
+        if: '!cancelled()'
+        run: xword-dl atl -d 12/15/23
+      - name: Test Crossword Club latest
+        if: '!cancelled()'
+        run: xword-dl club
+      - name: Test Crossword Club by date
+        if: '!cancelled()'
+        run: xword-dl club -d 1/3/23
+      - name: Test Crossword Club by URL
+        if: '!cancelled()'
+        run: xword-dl "https://crosswordclub.com/puzzles/sunday-january-07-2024/"
+      - name: Test Daily Beast latest
+        if: '!cancelled()'
+        run: xword-dl db
+      - name: Test Daily Pop latest
+        if: '!cancelled()'
+        run: xword-dl pop
+      - name: Test Der Standard latest
+        if: '!cancelled()'
+        run: xword-dl std
+      - name: Test Der Standard by URL
+        if: '!cancelled()'
+        run: xword-dl "https://www.derstandard.at/story/3000000201583/kreuzwortraetsel-h-10580"
+      - name: Test Guardian Cryptic
+        if: '!cancelled()'
+        run: xword-dl grdc
+      - name: Test Guardian Everyman
+        if: '!cancelled()'
+        run: xword-dl grde
+      - name: Test Guardian Prize
+        if: '!cancelled()'
+        run: xword-dl grdp
+      - name: Test Guardian Quick
+        if: '!cancelled()'
+        run: xword-dl grdq
+      - name: Test Guardian Quiptic
+        if: '!cancelled()'
+        run: xword-dl grdu
+      - name: Test Guardian Speedy
+        if: '!cancelled()'
+        run: xword-dl grds
+      - name: Test Guardian Weekend
+        if: '!cancelled()'
+        run: xword-dl grdw
+      - name: Test LA Times latest
+        if: '!cancelled()'
+        run: xword-dl lat
+      - name: Test LA Times by date
+        if: '!cancelled()'
+        run: xword-dl lat -d "2022/12/14"
+      - name: Test McKinsey latest
+        if: '!cancelled()'
+        run: xword-dl mck
+      - name: Test McKinsey by date
+        if: '!cancelled()'
+        run: xword-dl mck -d "september 26, 2023"
+      - name: Test McKinsey by URL
+        if: '!cancelled()'
+        run: xword-dl "https://www.mckinsey.com/featured-insights/the-mckinsey-crossword/october-31-2023"
+      - name: Test New York Times latest
+        if: '!cancelled()'
+        env:
+          NYT_S_VALUE: ${{ secrets.NYT_S_VALUE }}
+        run: |
+          xword-dl nyt --settings '{"NYT-S": "'$NYT_S_VALUE'"}'
+      - name: Test New York Times by date
+        if: '!cancelled()'
+        env:
+          NYT_S_VALUE: ${{ secrets.NYT_S_VALUE }}
+        run: |
+          xword-dl nyt --settings '{"NYT-S": "'$NYT_S_VALUE'"}' -d "5/17/23"
+      - name: Test New York Times rebus
+        if: '!cancelled()'
+        env:
+          NYT_S_VALUE: ${{ secrets.NYT_S_VALUE }}
+        run: |
+          xword-dl nyt --settings '{"NYT-S": "'$NYT_S_VALUE'"}' -d "aug 10, 2023"
+      - name: Test New York Times rebus special chars
+        if: '!cancelled()'
+        env:
+          NYT_S_VALUE: ${{ secrets.NYT_S_VALUE }}
+        run: |
+          xword-dl nyt --settings '{"NYT-S": "'$NYT_S_VALUE'"}' -d 7/17/22
+      - name: Test New York Times blanks and circles
+        if: '!cancelled()'
+        env:
+          NYT_S_VALUE: ${{ secrets.NYT_S_VALUE }}
+        run: |
+          xword-dl nyt --settings '{"NYT-S": "'$NYT_S_VALUE'"}' -d "12/17/23"
+      - name: Test New York Times blank clues
+        if: '!cancelled()'
+        env:
+          NYT_S_VALUE: ${{ secrets.NYT_S_VALUE }}
+        run: |
+          xword-dl nyt --settings '{"NYT-S": "'$NYT_S_VALUE'"}' -d "9/27/18"
+      - name: Test New Yorker latest
+        if: '!cancelled()'
+        run: xword-dl tny
+      - name: Test New Yorker by date
+        if: '!cancelled()'
+        run: xword-dl tny -d "3/31/23"
+      - name: Test New Yorker by URL
+        if: '!cancelled()'
+        run: xword-dl "https://www.newyorker.com/puzzles-and-games-dept/crossword/2024/01/01"
+      - name: Test New Yorker themed
+        if: '!cancelled()'
+        run: xword-dl "https://www.newyorker.com/puzzles-and-games-dept/crossword/2024/01/05"
+      - name: Test New Yorker themed, special chars title
+        if: '!cancelled()'
+        run: xword-dl tny -d 1/12/24
+      - name: Test Newsday latest
+        if: '!cancelled()'
+        run: xword-dl nd
+      - name: Test Newsday by date
+        if: '!cancelled()'
+        run: xword-dl nd -d "dec. 12, 2023"
+      - name: Test Puzzmo latest
+        if: '!cancelled()'
+        run: xword-dl pzm
+      - name: Test Simply Daily Puzzles
+        if: '!cancelled()'
+        run: xword-dl sdp
+      - name: Test Simply Daily Puzzles Cryptic
+        if: '!cancelled()'
+        run: xword-dl sdpc
+      - name: Test Simply Daily Puzzles Quick
+        if: '!cancelled()'
+        run: xword-dl sdpq
+      - name: Test Universal latest
+        if: '!cancelled()'
+        run: xword-dl uni
+      - name: Test Universal by date
+        if: '!cancelled()'
+        run: xword-dl uni -d "october 6, 2023"
+      - name: Test USA Today latest
+        if: '!cancelled()'
+        run: xword-dl usa
+      - name: Test USA Today by date
+        if: '!cancelled()'
+        run: xword-dl usa -d "january 7, 2024"
+      - name: Test Vox
+        if: '!cancelled()'
+        run: xword-dl vox
+      - name: Test Washington Post latest
+        if: '!cancelled()'
+        run: xword-dl wp
+      - name: Test Washington Post by date
+        if: '!cancelled()'
+        run: xword-dl wp -d "12/17/23"

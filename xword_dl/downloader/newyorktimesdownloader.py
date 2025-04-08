@@ -5,7 +5,7 @@ import puz
 import requests
 
 from .basedownloader import BaseDownloader
-from ..util import XWordDLException, join_bylines, unidecode, update_config_file
+from ..util import XWordDLException, join_bylines, update_config_file, unidecode
 
 class NewYorkTimesDownloader(BaseDownloader):
     command = 'nyt'
@@ -31,7 +31,7 @@ class NewYorkTimesDownloader(BaseDownloader):
             nyts_token = self.authenticate(username, password)
             update_config_file('nyt', {'NYT-S': nyts_token})
         else:
-            nyts_token = self.settings.get('NYT-S')
+            nyts_token = self.settings.get('NYT_S')
 
         if not nyts_token:
             raise XWordDLException('No credentials provided or stored. Try running xword-dl nyt --authenticate')
@@ -113,7 +113,7 @@ class NewYorkTimesDownloader(BaseDownloader):
         puzzle = puz.Puzzle()
 
         puzzle.author = join_bylines(xword_data['constructors'], "and").strip()
-        puzzle.copyright = xword_data['copyright'].strip()
+        puzzle.copyright = xword_data['copyright']
         puzzle.height = int(xword_data['body'][0]['dimensions']['height'])
         puzzle.width =  int(xword_data['body'][0]['dimensions']['width'])
 
@@ -125,7 +125,7 @@ class NewYorkTimesDownloader(BaseDownloader):
                 '%A, %B %d, %Y')
 
         if xword_data.get('notes'):
-            puzzle.notes = unidecode(xword_data.get('notes')[0]['text']).strip()
+            puzzle.notes = xword_data.get('notes')[0]['text']
 
         solution = ''
         fill = ''
@@ -139,18 +139,24 @@ class NewYorkTimesDownloader(BaseDownloader):
                 solution += '.'
                 fill += '.'
                 rebus_board.append(0)
-            elif square and len(square['answer']) == 1:
+            elif square and len(square.get('answer','')) == 1:
                 solution += square['answer']
                 fill += '-'
                 rebus_board.append(0)
             else:
-                solution += square['answer'][0]
+                try:
+                    suitable_answer = unidecode(square.get('answer') or 
+                                        square['moreAnswers']['valid'][0])
+                except (IndexError, KeyError):
+                    raise XWordDLException('Unable to parse puzzle JSON. Possibly something .puz incompatible')
+
+                solution += suitable_answer[0]
                 fill += '-'
                 rebus_board.append(rebus_index + 1)
-                rebus_table += '{:2d}:{};'.format(rebus_index, square['answer'])
+                rebus_table += '{:2d}:{};'.format(rebus_index, suitable_answer)
                 rebus_index += 1
 
-            markup += (b'\x00' if square.get('type') == 1 else b'\x80')
+            markup += (b'\x00' if square.get('type', 1) == 1 else b'\x80')
 
         puzzle.solution = solution
         puzzle.fill = fill
@@ -169,7 +175,7 @@ class NewYorkTimesDownloader(BaseDownloader):
         clue_list = xword_data['body'][0]['clues']
         clue_list.sort(key=lambda c: (int(c['label']), c['direction']))
 
-        puzzle.clues = [unidecode(c['text'][0]['plain']) for c in clue_list]
+        puzzle.clues = [c['text'][0].get('plain') or '' for c in clue_list]
 
         return puzzle
 
@@ -191,24 +197,6 @@ class NewYorkTimesVarietyDownloader(NewYorkTimesDownloader):
         super().__init__(inherit_settings='nyt', **kwargs)
 
         self.url_from_date = 'https://www.nytimes.com/svc/crosswords/v6/puzzle/variety/{}.json'
-
-    @staticmethod
-    def matches_url(url_components):
-        return ('nytimes.com' in url_components.netloc
-                    and 'variety' in url_components.path)
-
-    def find_latest(self):
-        latest_puzzles = 'https://www.nytimes.com/svc/crosswords/v3/puzzles.json?format_type=pdf%2Cnormal%2Cdiagramless&publish_type=variety%2Cassorted&sort_order=asc&sort_by=print_date&date_start={}&date_end={}'
-
-        today_string = datetime.datetime.today().strftime('%Y-%m-%d')
-        a_while_back = (datetime.datetime.today()
-                            - datetime.timedelta(days=90)).strftime('%Y-%m-%d')
-
-        res = requests.get(latest_puzzles.format(a_while_back, today_string))
-        normal_puzzles = [p for p in res.json()['results']
-                                if p['format_type'] == 'Normal']
-
-        return self.url_from_date.format(normal_puzzles[-1]['print_date'])
 
     def parse_xword(self, xword_data):
         try:

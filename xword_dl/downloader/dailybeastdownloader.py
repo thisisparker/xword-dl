@@ -18,11 +18,12 @@ class DailyBeastDownloader(AmuseLabsDownloader):
     def parse_xword(self, xword_data):
         puzzle = super().parse_xword(xword_data)
 
-        # Daily Beast puzzle IDs, unusually for AmuseLabs puzzles, don't include
-        # the date. This pulls it out of the puzzle title, which will work
-        # as long as that stays consistent.
+        # Daily Beast puzzle IDs don't include the date.
+        # This pulls it out of the puzzle title (with periods removed because
+        # they mess with the date parser)
 
-        possible_dates = dateparser.search.search_dates(puzzle.title)
+        possible_dates = dateparser.search.search_dates(
+                            puzzle.title.replace('.',''))
 
         if possible_dates:
             self.date = possible_dates[-1][1]

@@ -27,9 +27,12 @@ class McKinseyDownloader(AmuseLabsDownloader):
     def find_by_date(self, dt):
         """
         date format: month-day-year (e.g. november-15-2022)
+        no leading zeros on dates (so: e.g., august-1-2023)
         crosswords are published every tuesday (as of november 2022)
         """
-        url_format = str(dt.strftime('%B-%d-%Y')).lower()
+        month_names = ['january','february','march','april','may','june','july',
+                       'august','september','october','november','december']
+        url_format = f'{month_names[dt.month-1]}-{dt.day}-{dt.year}'
         guessed_url = urllib.parse.urljoin(
             'https://www.mckinsey.com/featured-insights/the-mckinsey-crossword/',
             url_format)
@@ -40,8 +43,7 @@ class McKinseyDownloader(AmuseLabsDownloader):
         index_res = requests.get(index_url)
         index_soup = BeautifulSoup(index_res.text, "html.parser")
 
-        latest_fragment = next(a for a in index_soup.select('a.item-title-link[href^="/featured-insights/the-mckinsey-crossword/"]')
-                               if a.find('h3'))['href']
+        latest_fragment = next(a for a in index_soup.select('a[href^="/featured-insights/the-mckinsey-crossword/"]') if a.find('div'))['href']
         latest_absolute = urllib.parse.urljoin('https://www.mckinsey.com',
                                                latest_fragment)
 
@@ -59,7 +61,10 @@ class McKinseyDownloader(AmuseLabsDownloader):
 
         soup = BeautifulSoup(res.text, "html.parser")
 
-        iframe_tag = soup.select('#divArticleBody iframe[name="mckinsey"]')
+        iframe_tag = soup.select('iframe[src*="amuselabs.com"]')
+
+        if len(iframe_tag) == 0:
+            raise XWordDLException('Cannot find puzzle iframe node at {}.'.format(url))
 
         iframe_url = str(iframe_tag[0].get('src'))
 

@@ -20,6 +20,8 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         self.url_from_id = 'https://cdn3.amuselabs.com/tny/crossword?id={puzzle_id}&set=tny-weekly'
 
+        self.theme_title = ''
+
     @staticmethod
     def matches_url(url_components):
         return ('newyorker.com' in url_components.netloc and '/puzzles-and-games-dept/crossword' in url_components.path)
@@ -34,19 +36,22 @@ class NewYorkerDownloader(AmuseLabsDownloader):
             url_format)
         return guessed_url
 
-    def find_latest(self):
-        index_url = "https://www.newyorker.com/puzzles-and-games-dept/crossword"
-        index_res = requests.get(index_url)
-        index_soup = BeautifulSoup(index_res.text, "html.parser")
+    def find_latest(self, search_string='/crossword/'):
+        url = "https://www.newyorker.com/puzzles-and-games-dept/crossword"
+        res = self.session.get(url)
+        soup = BeautifulSoup(res.text, "html.parser")
 
-        latest_fragment = next(a for a in index_soup.findAll('a')
-                               if a.find('h4'))['href']
-        latest_absolute = urllib.parse.urljoin('https://www.newyorker.com',
-                                               latest_fragment)
+        puzzle_list = json.loads(soup.find('script',
+                                           attrs={'type':'application/ld+json'})
+                                           .get_text()).get('itemListElement',{})
+        latest_url = next((item for item in puzzle_list
+                            if search_string in item.get('url', '')),
+                          {}).get('url')
 
-        landing_page_url = latest_absolute
+        if not latest_url:
+            raise XWordDLException('Could not identify the latest puzzle at {}'.format(url))
 
-        return landing_page_url
+        return latest_url
 
     def find_solver(self, url):
         res = requests.get(url)
@@ -58,17 +63,16 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         soup = BeautifulSoup(res.text, "html.parser")
 
-        script_tag = soup.find('script', attrs={'type': 'application/ld+json'})
-
-        json_data = json.loads(script_tag.contents[0])
-
-        iframe_url = json_data['articleBody'].strip().strip('[]')[
-            len('#crossword: '):]
+        iframe_tag = soup.find('iframe', id='crossword')
 
         try:
+            iframe_url = iframe_tag['data-src']
             query = urllib.parse.urlparse(iframe_url).query
             query_id = urllib.parse.parse_qs(query)['id']
             self.id = query_id[0]
+
+        # Will hit this KeyError if there's no matching iframe
+        # or if there's no 'id' query string
         except KeyError:
             raise XWordDLException('Cannot find puzzle at {}.'.format(url))
 
@@ -76,6 +80,12 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         pubdate_dt = dateparser.parse(pubdate)
 
         self.date = pubdate_dt
+
+        theme_supra = "Today’s theme: "
+        desc = soup.find('meta',attrs={'property':
+                                       'og:description'}).get('content', '')
+        if desc.startswith(theme_supra):
+            self.theme_title = desc[len(theme_supra):].rstrip('.')
 
         return self.find_puzzle_url_from_id(self.id)
         
@@ -85,13 +95,18 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         if '<' in puzzle.title:
             puzzle.title = puzzle.title.split('<')[0]
 
+        if self.theme_title:
+            puzzle.title += f' - {self.theme_title}'
+
         return puzzle
 
     def pick_filename(self, puzzle, **kwargs):
         try:
             supra, main = puzzle.title.split(':', 1)
+            if self.theme_title:
+                main = main.rsplit(' - ')[0]
             if supra == 'The Crossword' and dateparser.parse(main):
-                title = ''
+                title = self.theme_title
             else:
                 title = main.strip()
         except XWordDLException:

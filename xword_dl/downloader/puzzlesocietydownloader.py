@@ -1,5 +1,6 @@
 import datetime
 import json
+import urllib
 
 import requests
 
@@ -8,16 +9,25 @@ from bs4 import BeautifulSoup
 from .compilerdownloader import CrosswordCompilerDownloader
 
 class TheModernDownloader(CrosswordCompilerDownloader):
-    command = 'mod'
+    # command = 'mod' # Removing as of March 2024, as its gone behind a paywall
+                      # We may find a way to feed credentials but it seems
+                      # non-trivial.
     outlet = 'The Modern'
     outlet_prefix = 'The Modern'
 
-    def init(self, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     @staticmethod
     def matches_url(url_components):
         return 'puzzlesociety.com' in url_components.netloc and 'modern-crossword' in url_components.path
+        
+    def find_by_date(self, dt):
+        url_format = dt.strftime('%Y/%m/%d')
+        guessed_url = urllib.parse.urljoin(
+            'https://www.puzzlesociety.com/crossword-puzzles/modern-crossword/',
+            url_format)
+        return guessed_url
 
     def find_latest(self):
         return 'https://www.puzzlesociety.com/crossword-puzzles/modern-crossword'
@@ -37,10 +47,16 @@ class TheModernDownloader(CrosswordCompilerDownloader):
 
         return url
 
+    def fetch_data(self, url):
+        res = requests.get(url)
+        xw_data = res.content.decode('utf-8-sig')
+
+        return xw_data
+
     def parse_xword(self, xword_data):
         puzzle = super().parse_xword(xword_data, enumeration=False)
 
-        if not puzzle.author:
+        if not puzzle.author or puzzle.author.casefold().startswith('edited'):
             puzzle.author = puzzle.title[3:]
             puzzle.title = self.date.strftime('%A, %B %d, %Y')
 
@@ -52,6 +68,7 @@ class TheModernDownloader(CrosswordCompilerDownloader):
         for i in range(len(puzzle.clues)):
             clue_dict = all_clues_numbered.pop(0)
             clue_id = str(clue_dict['num']) + clue_dict['dir'] + ': '
+            puzzle.clues[i] = urllib.parse.unquote(puzzle.clues[i])
             if '@@' in puzzle.clues[i]:
                 clue, note = puzzle.clues[i].split('@@')
                 constructor_notes.append(clue_id + note.strip())
