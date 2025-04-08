@@ -5,7 +5,8 @@ import dateparser
 import emoji
 import yaml
 
-from html2text import html2text
+from html_text import extract_text
+
 # This imports the anyascii module, which converts Unicode strings to
 # plain ASCII. The puz format, however, can accept Latin1, which is a larger
 # subset, so we implement a copy of the anyascii function that employs the
@@ -85,8 +86,7 @@ def cleanup(field, preserve_html=False):
     if preserve_html:
         field = unidecode(emoji.demojize(field)).strip()
     else:
-        field = unidecode(emoji.demojize(html2text(field,
-                                         bodywidth=0))).strip()
+        field = unidecode(emoji.demojize(extract_text(unidecode(field)))).strip()
     return field
 
 
