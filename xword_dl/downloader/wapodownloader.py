@@ -10,8 +10,8 @@ class WaPoDownloader(AmuseLabsDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.picker_url = 'https://cdn1.amuselabs.com/wapo/wp-picker?set=wapo-eb'
-        self.url_from_id = 'https://cdn1.amuselabs.com/wapo/crossword?id={puzzle_id}&set=wapo-eb'
+        self.picker_url = 'https://wapo.amuselabs.com/wapo/date-picker?set=wapo-eb'
+        self.url_from_id = 'https://wapo.amuselabs.com/wapo/crossword?id={puzzle_id}&set=wapo-eb'
 
     def guess_date_from_id(self, puzzle_id):
         self.date = datetime.datetime.strptime('20'
