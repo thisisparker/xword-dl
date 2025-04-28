@@ -99,19 +99,23 @@ def parse_for_embedded_puzzle(url, **kwargs):
 
             return dl, puzzle_url
 
-        if not soup:
-            res = requests.get(src)
-            soup = BeautifulSoup(res.text, 'lxml')
+        try:
+            if not soup:
+                res = requests.get(src)
+                soup = BeautifulSoup(res.text, 'lxml')
 
-        for script in [s for s in soup.find_all('script') if s.get('src')]:
-            js_url = urllib.parse.urljoin(url, script.get('src'))
-            res = requests.get(js_url, headers={'User-Agent':'xword-dl'})
-            if res.text.startswith('var CrosswordPuzzleData'):
-                dl = downloader.CrosswordCompilerDownloader(url=url, **kwargs)
-                puzzle_url = js_url
-                dl.fetch_data = dl.fetch_jsencoded_data
+            for script in [s for s in soup.find_all('script') if s.get('src')]:
+                js_url = urllib.parse.urljoin(url, script.get('src'))
+                res = requests.get(js_url, headers={'User-Agent':'xword-dl'})
+                if res.text.startswith('var CrosswordPuzzleData'):
+                    dl = downloader.CrosswordCompilerDownloader(url=url, **kwargs)
+                    puzzle_url = js_url
+                    dl.fetch_data = dl.fetch_jsencoded_data
 
-                return dl, puzzle_url
+                    return dl, puzzle_url
+        except Exception as e:
+            pass
+            # print(f"Error processing {src}: {e}")
 
         soup = None
 
@@ -121,7 +125,7 @@ def parse_for_embedded_puzzle(url, **kwargs):
 def get_supported_outlets(command_only=True):
     all_classes = inspect.getmembers(sys.modules['xword_dl.downloader'],
                                      inspect.isclass)
-    dls = [d for d in all_classes if issubclass(d[1], 
+    dls = [d for d in all_classes if issubclass(d[1],
                    downloader.BaseDownloader)]
 
     if command_only:
