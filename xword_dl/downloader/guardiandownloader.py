@@ -5,7 +5,7 @@ import re
 import puz
 import requests
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from .basedownloader import BaseDownloader
 from ..util import XWordDLException
@@ -23,11 +23,16 @@ class GuardianDownloader(BaseDownloader):
         res = requests.get(self.landing_page)
         soup = BeautifulSoup(res.text, 'html.parser')
 
-        url = 'https://www.theguardian.com'
         xword_link_re = re.compile(r'/crosswords/\w+/\d+')
-        url += soup.find('a', href=xword_link_re).get('href')
+        link_tag = soup.find('a', href=xword_link_re)
+        if not isinstance(link_tag, Tag):
+            raise XWordDLException("Could not find latest crossword.")
 
-        return url
+        link = link_tag['href']
+        if isinstance(link, list):
+            link = link[0]
+
+        return 'https://www.theguardian.com' + link
 
     def find_solver(self, url):
         return url
@@ -36,29 +41,36 @@ class GuardianDownloader(BaseDownloader):
         res = requests.get(solver_url)
         soup = BeautifulSoup(res.text, 'html.parser')
 
-        xw_data = json.loads(soup.find('gu-island',
-                    attrs={'name':'CrosswordComponent'}).get('props')).get('data')
+        xw_json = soup.find('gu-island', attrs={'name': 'CrosswordComponent'})
+        if not isinstance(xw_json, Tag):
+            raise XWordDLException("Could not find crossword in solver data.")
+
+        xw_json_str = xw_json.get('props')
+        if not isinstance(xw_json_str, str):
+            raise XWordDLException("Could not get JSON from solver data.")
+
+        xw_data = json.loads(xw_json_str).get('data')
 
         return xw_data
 
-    def parse_xword(self, xword_data):
+    def parse_xword(self, xw_data):
         puzzle = puz.Puzzle()
 
-        puzzle.author = xword_data.get('creator', {}).get('name') or ''
-        puzzle.height = xword_data.get('dimensions').get('rows')
-        puzzle.width  = xword_data.get('dimensions').get('cols')
+        puzzle.author = xw_data.get('creator', {}).get('name', '')
+        puzzle.height = xw_data.get('dimensions').get('rows')
+        puzzle.width  = xw_data.get('dimensions').get('cols')
 
-        puzzle.title = xword_data.get('name') or ''
+        puzzle.title = xw_data.get('name') or ''
 
-        if not all(e.get('solution') for e in xword_data['entries']):
+        if not all(e.get('solution') for e in xw_data['entries']):
             puzzle.title += ' - no solution provided'
 
         self.date = datetime.datetime.fromtimestamp(
-                                        xword_data.get('date') // 1000)
+                                        xw_data['date'] // 1000)
 
         grid_dict = {}
 
-        for e in xword_data.get('entries'):
+        for e in xw_data.get('entries'):
             pos = (e.get('position').get('x'), e.get('position').get('y'))
             for index in range(e.get('length')):
                 grid_dict[pos] = e.get('solution', 'X' * e.get('length'))[index]
@@ -77,7 +89,7 @@ class GuardianDownloader(BaseDownloader):
         puzzle.solution = solution
         puzzle.fill = fill
 
-        clues = [e.get('clue') for e in sorted(xword_data.get('entries'),
+        clues = [e.get('clue') for e in sorted(xw_data.get('entries'),
                     key=lambda x: (x.get('number'), x.get('direction')))]
 
         puzzle.clues = clues
@@ -95,8 +107,8 @@ class GuardianCrypticDownloader(GuardianDownloader):
 
         self.landing_page += '/series/cryptic'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/cryptic' in url_components.path)
 
@@ -111,8 +123,8 @@ class GuardianEverymanDownloader(GuardianDownloader):
 
         self.landing_page += '/series/everyman'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/everyman' in url_components.path)
 
@@ -127,8 +139,8 @@ class GuardianSpeedyDownloader(GuardianDownloader):
 
         self.landing_page += '/series/speedy'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/speedy' in url_components.path)
 
@@ -142,8 +154,8 @@ class GuardianQuickDownloader(GuardianDownloader):
 
         self.landing_page += '/series/quick'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/quick' in url_components.path)
 
@@ -157,8 +169,8 @@ class GuardianPrizeDownloader(GuardianDownloader):
 
         self.landing_page += '/series/prize'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/prize' in url_components.path)
 
@@ -172,8 +184,8 @@ class GuardianWeekendDownloader(GuardianDownloader):
 
         self.landing_page += '/series/weekend-crossword'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/weekend' in url_components.path)
 
@@ -187,7 +199,7 @@ class GuardianQuipticDownloader(GuardianDownloader):
 
         self.landing_page += '/series/quiptic'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('theguardian.com' in url_components.netloc
                     and '/crosswords/quiptic' in url_components.path)

@@ -1,8 +1,9 @@
 import datetime
-import urllib
+import urllib.parse
 
 import puz
 import requests
+from getpass import getpass
 
 from .basedownloader import BaseDownloader
 from ..util import XWordDLException, join_bylines, update_config_file, unidecode
@@ -28,23 +29,25 @@ class NewYorkTimesDownloader(BaseDownloader):
         password = self.settings.get('password')
 
         if username and password:
-            nyts_token = self.authenticate(username, password)
-            update_config_file('nyt', {'NYT-S': nyts_token})
-        else:
-            nyts_token = self.settings.get('NYT_S')
+            self.authenticate(username, password)
+        nyts_token = self.settings.get('NYT_S')
 
         if not nyts_token:
             raise XWordDLException('No credentials provided or stored. Try running xword-dl nyt --authenticate')
         else:
             self.cookies.update({'NYT-S': nyts_token})
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('nytimes.com' in url_components.netloc
                     and 'crosswords/game/daily' in url_components.path)
 
-    def authenticate(self, username, password):
+    @classmethod
+    def authenticate(cls, username, password):
         """Given a NYT username and password, returns the NYT-S cookie value"""
+
+        username = username or input("New York Times username: ")
+        password = password or getpass("Password: ")
 
         try:
             res = requests.post('https://myaccount.nytimes.com/svc/ios/v2/login',
@@ -64,7 +67,7 @@ class NewYorkTimesDownloader(BaseDownloader):
                 nyts_token = cookie['cipheredValue']
 
         if nyts_token:
-            return nyts_token
+            update_config_file('nyt', {'NYT-S': nyts_token})
         else:
             raise XWordDLException('NYT-S cookie not found.')
 
@@ -109,23 +112,23 @@ class NewYorkTimesDownloader(BaseDownloader):
         xword_data = res.json()
         return xword_data
 
-    def parse_xword(self, xword_data):
+    def parse_xword(self, xw_data):
         puzzle = puz.Puzzle()
 
-        puzzle.author = join_bylines(xword_data['constructors'], "and").strip()
-        puzzle.copyright = xword_data['copyright']
-        puzzle.height = int(xword_data['body'][0]['dimensions']['height'])
-        puzzle.width =  int(xword_data['body'][0]['dimensions']['width'])
+        puzzle.author = join_bylines(xw_data['constructors'], "and").strip()
+        puzzle.copyright = xw_data['copyright']
+        puzzle.height = int(xw_data['body'][0]['dimensions']['height'])
+        puzzle.width =  int(xw_data['body'][0]['dimensions']['width'])
 
         if not self.date:
-            self.date = datetime.datetime.strptime(xword_data['publicationDate'],
+            self.date = datetime.datetime.strptime(xw_data['publicationDate'],
                                           '%Y-%m-%d')
 
-        puzzle.title = xword_data.get('title') or self.date.strftime(
+        puzzle.title = xw_data.get('title') or self.date.strftime(
                 '%A, %B %d, %Y')
 
-        if xword_data.get('notes'):
-            puzzle.notes = xword_data.get('notes')[0]['text']
+        if xw_data.get('notes'):
+            puzzle.notes = xw_data.get('notes')[0]['text']
 
         solution = ''
         fill = ''
@@ -134,7 +137,7 @@ class NewYorkTimesDownloader(BaseDownloader):
         rebus_index = 0
         rebus_table = ''
 
-        for idx, square in enumerate(xword_data['body'][0]['cells']):
+        for idx, square in enumerate(xw_data['body'][0]['cells']):
             if not square:
                 solution += '.'
                 fill += '.'
@@ -145,7 +148,7 @@ class NewYorkTimesDownloader(BaseDownloader):
                 rebus_board.append(0)
             else:
                 try:
-                    suitable_answer = unidecode(square.get('answer') or 
+                    suitable_answer = unidecode(square.get('answer') or
                                         square['moreAnswers']['valid'][0])
                 except (IndexError, KeyError):
                     raise XWordDLException('Unable to parse puzzle JSON. Possibly something .puz incompatible')
@@ -172,7 +175,7 @@ class NewYorkTimesDownloader(BaseDownloader):
             puzzle._extensions_order.extend([b'GRBS', b'RTBL'])
             puzzle.rebus()
 
-        clue_list = xword_data['body'][0]['clues']
+        clue_list = xw_data['body'][0]['clues']
         clue_list.sort(key=lambda c: (int(c['label']), c['direction']))
 
         puzzle.clues = [c['text'][0].get('plain') or '' for c in clue_list]
@@ -198,9 +201,9 @@ class NewYorkTimesVarietyDownloader(NewYorkTimesDownloader):
 
         self.url_from_date = 'https://www.nytimes.com/svc/crosswords/v6/puzzle/variety/{}.json'
 
-    def parse_xword(self, xword_data):
+    def parse_xword(self, xw_data):
         try:
-            return super().parse_xword(xword_data)
+            return super().parse_xword(xw_data)
         except ValueError:
             raise XWordDLException('Encountered error while parsing data. Maybe the selected puzzle is not a crossword?')
 
@@ -215,8 +218,8 @@ class NewYorkTimesMiniDownloader(NewYorkTimesDownloader):
 
         self.url_from_date = 'https://www.nytimes.com/svc/crosswords/v6/puzzle/mini/{}.json'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('nytimes.com' in url_components.netloc
                     and 'mini' in url_components.path)
 
