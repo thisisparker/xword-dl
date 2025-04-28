@@ -3,7 +3,6 @@ import datetime
 import json
 import urllib
 
-import puz
 import requests
 
 import re
@@ -187,12 +186,11 @@ class AmuseLabsDownloader(BaseDownloader):
         return xword_data
 
     def parse_xword(self, xword_data):
-        puzzle = puz.Puzzle()
-        puzzle.title = xword_data.get('title', '').strip()
-        puzzle.author = xword_data.get('author', '').strip()
-        puzzle.copyright = xword_data.get('copyright', '').strip()
-        puzzle.width = xword_data.get('w')
-        puzzle.height = xword_data.get('h')
+        self.puzzle.title = xword_data.get('title', '').strip()
+        self.puzzle.author = xword_data.get('author', '').strip()
+        self.puzzle.copyright = xword_data.get('copyright', '').strip()
+        self.puzzle.width = xword_data.get('w')
+        self.puzzle.height = xword_data.get('h')
 
         markup_data = xword_data.get('cellInfos', '')
 
@@ -228,8 +226,8 @@ class AmuseLabsDownloader(BaseDownloader):
                     rebus_table += '{:2d}:{};'.format(rebus_index, unidecode(cell))
                     rebus_index += 1
 
-        puzzle.solution = solution
-        puzzle.fill = fill
+        self.puzzle.solution = solution
+        self.puzzle.fill = fill
 
         placed_words = xword_data['placedWords']
         across_words = [word for word in placed_words if word['acrossNotDown']]
@@ -241,26 +239,25 @@ class AmuseLabsDownloader(BaseDownloader):
 
         clues = [word['clue']['clue'] for word in weirdass_puz_clue_sorting]
 
-        puzzle.clues.extend(clues)
+        self.puzzle.clues.extend(clues)
 
         has_markup = b'\x80' in markup
         has_rebus = any(rebus_board)
 
         if has_markup:
-            puzzle.extensions[b'GEXT'] = markup
-            puzzle._extensions_order.append(b'GEXT')
-            puzzle.markup()
+            self.puzzle.extensions[b'GEXT'] = markup
+            self.puzzle._extensions_order.append(b'GEXT')
+            self.puzzle.markup()
 
         if has_rebus:
-            puzzle.extensions[b'GRBS'] = bytes(rebus_board)
-            puzzle.extensions[b'RTBL'] = rebus_table.encode(puz.ENCODING)
-            puzzle._extensions_order.extend([b'GRBS', b'RTBL'])
-            puzzle.rebus()
+            self.puzzle.extensions[b'GRBS'] = bytes(rebus_board)
+            self.puzzle.extensions[b'RTBL'] = rebus_table.encode(self.puzzle.encoding)
+            self.puzzle._extensions_order.extend([b'GRBS', b'RTBL'])
+            self.puzzle.rebus()
 
-        return puzzle
+        return self.puzzle
 
     def pick_filename(self, puzzle, **kwargs):
         if not self.date and self.id:
             self.guess_date_from_id(self.id)
         return super().pick_filename(puzzle, **kwargs)
-
