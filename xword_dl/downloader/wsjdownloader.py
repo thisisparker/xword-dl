@@ -3,6 +3,7 @@ import datetime
 import puz
 
 from bs4 import BeautifulSoup
+from html_text import extract_text
 
 from .basedownloader import BaseDownloader
 from ..util import XWordDLException
@@ -64,6 +65,10 @@ class WSJDownloader(BaseDownloader):
         date_string = xword_metadata.get('date-publish-analytics').split()[0]
 
         self.date = datetime.datetime.strptime(date_string, '%Y/%m/%d')
+
+        fetched = {}
+        for field in ['title', 'byline', 'publisher', 'description']:
+            fetched[field] = html_text(xword_metadata.get(field, '')).strip()
 
         puzzle = puz.Puzzle()
         puzzle.title = xword_metadata.get('title') or ''

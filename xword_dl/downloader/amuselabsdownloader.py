@@ -9,7 +9,7 @@ import requests
 import re
 
 from bs4 import BeautifulSoup
-
+from html_text import extract_text
 from .basedownloader import BaseDownloader
 from ..util import *
 
