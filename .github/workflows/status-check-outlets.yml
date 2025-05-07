@@ -145,6 +145,15 @@ jobs:
       - name: Test Puzzmo latest
         if: '!cancelled()'
         run: xword-dl pzm
+      - name: Test Puzzmo Big latest
+        if: '!cancelled()'
+        run: xword-dl pzmb
+      - name: Test Puzzmo by date
+        if: '!cancelled()'
+        run: xword-dl pzm -d "2024-08-02"
+      - name: Test Puzzmo Big by date
+        if: '!cancelled()'
+        run: xword-dl pzmb -d "2025-04-21"
       - name: Test Simply Daily Puzzles
         if: '!cancelled()'
         run: xword-dl sdp
