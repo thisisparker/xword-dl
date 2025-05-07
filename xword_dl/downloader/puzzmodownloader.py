@@ -11,6 +11,10 @@ from .basedownloader import BaseDownloader
 from ..util import join_bylines, XWordDLException
 
 class PuzzmoDownloader(BaseDownloader):
+    command = 'pzm'
+    outlet = 'Puzzmo'
+    outlet_prefix = 'Puzzmo'
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -18,12 +22,17 @@ class PuzzmoDownloader(BaseDownloader):
         self.session.headers.update({'Puzzmo-Gameplay-Id': 
                                         self.temporary_user_id})
 
+        self.finder_key = 'today:/{date_string}/crossword'
+
     def find_latest(self):
         now_et = datetime.now(tz=ZoneInfo("America/New_York"))
-        puzzmo_date = now_et.date() if now_et.hour >= 1 \
-                        else now_et.date() - timedelta(days=1)
+        puzzmo_date = now_et if now_et.hour >= 1 \
+                        else now_et - timedelta(days=1)
 
-        self.date_string = puzzmo_date.isoformat()
+        return self.find_by_date(puzzmo_date)
+
+    def find_by_date(self, dt):
+        self.date_string = dt.strftime('%Y-%m-%d')
 
         # This URL is arbitrary but it seems better to return the solving page, why not?
         # In practice, setting the date_string above does everything we need here.
@@ -63,7 +72,7 @@ class PuzzmoDownloader(BaseDownloader):
                           }
                         }
                       }
-                      }"""
+                    }"""
 
         variables = {'finderKey': self.finder_key.format(date_string=self.date_string),
                      'gameContext': {'partnerSlug': None, 'pingOwnerForMultiplayer': True}}
@@ -75,6 +84,12 @@ class PuzzmoDownloader(BaseDownloader):
                    'variables': variables}
 
         res = self.session.post('https://www.puzzmo.com/_api/prod/graphql?PlayGameScreenQuery', json=payload)
+
+        response = res.json()['data']['startOrFindGameplay']
+
+        if response['__typename'] == 'ErrorableResponse':
+            error = response['message']
+            raise XWordDLException(f'Puzzmo error: {error}')
 
         try:
             xw_data = res.json()['data']['startOrFindGameplay']['gamePlayed']['puzzle']
@@ -90,7 +105,7 @@ class PuzzmoDownloader(BaseDownloader):
                     dateparser.parse(xw_data['dailyTitle'].split('-')[0])
 
         puzzle.title = xw_data.get('name','')
-        puzzle.author = join_bylines([a.get('publishingName', a.get('name')) \
+        puzzle.author = join_bylines([a.get('publishingName') or a.get('name') \
                             for a in xw_data['authors']])
         puzzle_lines = [l.strip() for l in xw_data['puzzle'].splitlines()]
 
@@ -183,17 +198,6 @@ class PuzzmoDownloader(BaseDownloader):
         return puzzle
 
 
-class PuzzmoDailyDownloader(PuzzmoDownloader):
-    command = 'pzm'
-    outlet = 'Puzzmo'
-    outlet_prefix = 'Puzzmo'
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        self.finder_key = 'today:/{date_string}/crossword'
-
-
 class PuzzmoBigDownloader(PuzzmoDownloader):
     command = 'pzmb'
     outlet = 'Puzzmo Big'
@@ -202,7 +206,7 @@ class PuzzmoBigDownloader(PuzzmoDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.finder_key = 'today:/{date_string}/crossword/big'
+        self.finder_key += '/big'
 
     def find_latest(self):
         return super().find_latest()  + '/big'
