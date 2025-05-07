@@ -53,9 +53,9 @@ class AmuseLabsDownloader(BaseDownloader):
 
         if rawsps:
             picker_params = json.loads(base64.b64decode(rawsps).decode("utf-8"))
-            token = picker_params.get('pickerToken', None)
+            token = picker_params.get('loadToken', None)
             if token:
-                self.url_from_id += '&pickerToken=' + token
+                self.url_from_id += '&loadToken=' + token
 
     def find_puzzle_url_from_id(self, puzzle_id):
         return self.url_from_id.format(puzzle_id=puzzle_id)

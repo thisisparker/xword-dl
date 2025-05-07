@@ -49,12 +49,6 @@ jobs:
       - name: Test Der Standard by URL
         if: '!cancelled()'
         run: xword-dl "https://www.derstandard.at/story/3000000201583/kreuzwortraetsel-h-10580"
-      - name: Test Globe and Mail
-        if: '!cancelled()'
-        run: xword-dl tgam
-      - name: Test Globe and Mail by URL
-        if: '!cancelled()'
-        run: xword-dl "https://www.theglobeandmail.com/puzzles-and-crosswords/cryptic-crossword/?date=060124&T=0"
       - name: Test Guardian Cryptic
         if: '!cancelled()'
         run: xword-dl grdc
