@@ -4,14 +4,13 @@ import secrets
 import dateparser
 import puz
 
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
 from .basedownloader import BaseDownloader
 from ..util import join_bylines, XWordDLException
 
 class PuzzmoDownloader(BaseDownloader):
-    command = 'pzm'
-    outlet = 'Puzzmo'
-    outlet_prefix = 'Puzzmo'
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -20,68 +19,54 @@ class PuzzmoDownloader(BaseDownloader):
                                         self.temporary_user_id})
 
     def find_latest(self):
-        query = """mutation PlayGameRedirectScreenMutation(
-                    $gameSlug: String!
-                    $puzzleSlug: String
-                    $temporaryUserID: String
-                    $partnerSlug: String
-                  ) {
-                    startPlayingGame(gameSlug: $gameSlug, puzzleSlug: $puzzleSlug, temporaryUserID: $temporaryUserID, partnerSlug: $partnerSlug) {
-                      slug
-                      id
-                  }
-                }"""
+        now_et = datetime.now(tz=ZoneInfo("America/New_York"))
+        puzzmo_date = now_et.date() if now_et.hour >= 1 \
+                        else now_et.date() - timedelta(days=1)
 
-        variables = {'gameSlug': 'crossword',
-                     'puzzleSlug': None,
-                     'tempraryUserID': self.temporary_user_id,
-                     'partnerSlug': None}
+        self.date_string = puzzmo_date.isoformat()
 
-        operation_name = 'PlayGameRedirectScreenMutation'
-
-        payload = {'operationName': operation_name,
-                  'query': query,
-                  'variables': variables}
-
-        redirect_res = self.session.post('https://www.puzzmo.com/_api/prod/graphql?PlayGameRedirectScreenMutation', json=payload)
-
-        slug = redirect_res.json()['data']['startPlayingGame']['slug']
-
-        return f'https://www.puzzmo.com/play/crossword/{slug}'
+        # This URL is arbitrary but it seems better to return the solving page, why not?
+        # In practice, setting the date_string above does everything we need here.
+        return f'https://www.puzzmo.com/puzzle/{self.date_string}/crossword'
 
     def find_solver(self, url):
         return url
 
     def fetch_data(self, solver_url):
-        slug = solver_url.rsplit('/')[-1] 
         query = """query PlayGameScreenQuery(
-                      $slug: ID!
+                      $finderKey: String!
+                      $gameContext: StartGameContext!
                     ) {
-                      todaysDaily {
-                        dayString
-                        id
-                      }
-                      gamePlay(id: $slug, pingOwnerForMultiplayer: true) {
-                        puzzle {
-                          name
-                          emoji
-                          puzzle
-                          author
-                          authors {
-                            username
-                            usernameID
-                            name
-                            id
+                      startOrFindGameplay(finderKey: $finderKey, context: $gameContext) {
+                        __typename
+                        ... on ErrorableResponse {
+                          message
+                          failed
+                          success
+                        }
+                        ...on HasGamePlayed {
+                          gamePlayed{
+                            puzzle {
+                              name
+                              emoji
+                              puzzle
+                              dailyTitle
+                              author
+                              authors {
+                                publishingName
+                                username
+                                usernameID
+                                name
+                                id
+                              }
+                            }
                           }
                         }
                       }
-                    }"""
+                      }"""
 
-        variables = {'gameSlug': 'crossword',
-                     'myUserStateID': self.temporary_user_id + ':userstate',
-                     'partnerSlug': None,
-                     'playerID': self.temporary_user_id + ':userstate',
-                     'slug': slug}
+        variables = {'finderKey': self.finder_key.format(date_string=self.date_string),
+                     'gameContext': {'partnerSlug': None, 'pingOwnerForMultiplayer': True}}
 
         operation_name = 'PlayGameScreenQuery'
 
@@ -91,16 +76,22 @@ class PuzzmoDownloader(BaseDownloader):
 
         res = self.session.post('https://www.puzzmo.com/_api/prod/graphql?PlayGameScreenQuery', json=payload)
 
-        self.date = dateparser.parse(
-                res.json()['data']['todaysDaily']['dayString'])
+        try:
+            xw_data = res.json()['data']['startOrFindGameplay']['gamePlayed']['puzzle']
+        except KeyError as e:
+            raise XWordDLException('Unable to extract puzzle data.')
 
-        return res.json()['data']['gamePlay']['puzzle']
+        return xw_data
 
     def parse_xword(self, xw_data):
         puzzle = puz.Puzzle()
 
+        self.date = dateparser.parse(xw_data['dailyTitle']) or \
+                    dateparser.parse(xw_data['dailyTitle'].split('-')[0])
+
         puzzle.title = xw_data.get('name','')
-        puzzle.author = join_bylines([a['name'] for a in xw_data['authors']])
+        puzzle.author = join_bylines([a.get('publishingName', a.get('name')) \
+                            for a in xw_data['authors']])
         puzzle_lines = [l.strip() for l in xw_data['puzzle'].splitlines()]
 
         section = None
@@ -190,3 +181,28 @@ class PuzzmoDownloader(BaseDownloader):
         puzzle.clues = [c[2].split(' ~ ')[0].strip() for c in clue_list]
 
         return puzzle
+
+
+class PuzzmoDailyDownloader(PuzzmoDownloader):
+    command = 'pzm'
+    outlet = 'Puzzmo'
+    outlet_prefix = 'Puzzmo'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.finder_key = 'today:/{date_string}/crossword'
+
+
+class PuzzmoBigDownloader(PuzzmoDownloader):
+    command = 'pzmb'
+    outlet = 'Puzzmo Big'
+    outlet_prefix = 'Puzzmo Big'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.finder_key = 'today:/{date_string}/crossword/big'
+
+    def find_latest(self):
+        return super().find_latest()  + '/big'
