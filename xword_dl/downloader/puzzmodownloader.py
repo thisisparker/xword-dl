@@ -24,6 +24,8 @@ class PuzzmoDownloader(BaseDownloader):
 
         self.finder_key = 'today:/{date_string}/crossword'
 
+        self.date_string = ''
+
     def _get_puzzmo_date(self, dt=None):
         # Returns what "today" is for Puzzmo, right now or for a given datetime object
         if not dt:
@@ -32,6 +34,10 @@ class PuzzmoDownloader(BaseDownloader):
             dt = dt.astimezone(tz=ZoneInfo("America/New_York"))
 
         return dt if dt.hour >= 1 else dt - timedelta(days=1)
+
+    @staticmethod
+    def matches_url(url_components):
+        return ('puzzmo.com' in url_components.netloc and re.match(r"^/puzzle/\d{4}-\d{2}-\d{2}/crossword/?$", url_components.path))
 
     def find_latest(self):
         puzzmo_date = self._get_puzzmo_date()
@@ -46,6 +52,8 @@ class PuzzmoDownloader(BaseDownloader):
         return f'https://www.puzzmo.com/puzzle/{self.date_string}/crossword'
 
     def find_solver(self, url):
+        if not self.date_string:
+            self.date_string = re.search(r"(\d{4}-\d{2}-\d{2})", url).group(1)
         return url
 
     def fetch_data(self, solver_url):
@@ -225,6 +233,10 @@ class PuzzmoBigDownloader(PuzzmoDownloader):
         most_recent_even_monday = start_date + timedelta(weeks=even_weeks)
 
         return most_recent_even_monday
+
+    @staticmethod
+    def matches_url(url_components):
+        return ('puzzmo.com' in url_components.netloc and re.match(r"^/puzzle/\d{4}-\d{2}-\d{2}/crossword/big/?$", url_components.path))
 
     def find_latest(self):
         today = self._get_puzzmo_date()
