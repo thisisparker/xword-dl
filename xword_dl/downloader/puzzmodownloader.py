@@ -24,10 +24,17 @@ class PuzzmoDownloader(BaseDownloader):
 
         self.finder_key = 'today:/{date_string}/crossword'
 
+    def _get_puzzmo_date(self, dt=None):
+        # Returns what "today" is for Puzzmo, right now or for a given datetime object
+        if not dt:
+            dt = datetime.now(tz=ZoneInfo("America/New_York"))
+        else:
+            dt = dt.astimezone(tz=ZoneInfo("America/New_York"))
+
+        return dt if dt.hour >= 1 else dt - timedelta(days=1)
+
     def find_latest(self):
-        now_et = datetime.now(tz=ZoneInfo("America/New_York"))
-        puzzmo_date = now_et if now_et.hour >= 1 \
-                        else now_et - timedelta(days=1)
+        puzzmo_date = self._get_puzzmo_date()
 
         return self.find_by_date(puzzmo_date)
 
@@ -208,5 +215,19 @@ class PuzzmoBigDownloader(PuzzmoDownloader):
 
         self.finder_key += '/big'
 
+    def _get_most_recent_puzzmo_big_date(self, dt):
+        # Assumes publication cadence continues to be every two weeks from launch
+        start_date = datetime(2025, 1, 13)
+
+        delta_days = (dt.date() - start_date.date()).days
+        even_weeks = (delta_days // 7) // 2 * 2
+
+        most_recent_even_monday = start_date + timedelta(weeks=even_weeks)
+
+        return most_recent_even_monday
+
     def find_latest(self):
-        return super().find_latest()  + '/big'
+        today = self._get_puzzmo_date()
+        guessed_most_recent_date = self._get_most_recent_puzzmo_big_date(today)
+
+        return self.find_by_date(guessed_most_recent_date)  + '/big'
