@@ -175,11 +175,10 @@ def main():
 
     parser.add_argument('-a', '--authenticate',
                         help=textwrap.dedent("""\
-                            when used with the nyt puzzle keyword,
-                            stores an authenticated New York Times cookie
-                            without downloading a puzzle. If username
-                            or password are not provided as flags,
-                            xword-dl will prompt for those values
+                            when used with an authenticated puzzle source,
+                            stores a cookie without downloading a puzzle.
+                            If username or password are not provided as
+                            flags, xword-dl will prompt for those values
                             at runtime"""),
                         action='store_true',
                         default=False)
@@ -187,13 +186,13 @@ def main():
     parser.add_argument('-u', '--username',
                         help=textwrap.dedent("""\
                             username for a site that requires credentials
-                            (currently only the New York Times)"""),
+                            (currently only the New York Times and AVCX)"""),
                         default=None)
 
     parser.add_argument('-p', '--password',
                         help=textwrap.dedent("""\
                             password for a site that requires credentials
-                            (currently only the New York Times)"""),
+                            (currently only the New York Times and AVCX)"""),
                         default=None)
 
     parser.add_argument('--preserve-html',
@@ -229,6 +228,15 @@ def main():
             sys.exit('Authentication successful.')
         except Exception as e:
             sys.exit(' '.join(['Authentication failed:', str(e)]))
+    elif args.authenticate and args.source.startswith("avc"):
+        email = args.username or input("AVCX email address: ")
+        password = args.password or getpass("Password: ")
+        try:
+            dl = downloader.AVCXBaseDownloader(
+                    username=email, password=password)
+            sys.exit("Authentication successful.")
+        except Exception as e:
+            sys.exit(" ".join(["Authentication failed:", str(e)]))
     elif args.authenticate:
         sys.exit('Authentication flag must use a puzzle outlet keyword.')
 
