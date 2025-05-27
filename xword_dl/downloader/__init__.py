@@ -1,10 +1,14 @@
 import importlib
 import pkgutil
-from typing import Type
+from typing import TypeVar, Type
 
 from .basedownloader import BaseDownloader as __bd
 
-def __get_subclasses[T](cls: Type[T]) -> list[Type[T]]:
+
+# FIXME: after Python 3.11 deprecation, switch to PEP 695 style generics
+T = TypeVar("T")
+
+def __get_subclasses(cls: Type[T]) -> list[Type[T]]:
     """Recursively returns a list of subclasses of `cls` in imported namespaces."""
     return [cls] + [
         r_cls
