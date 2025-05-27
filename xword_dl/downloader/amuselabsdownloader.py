@@ -42,7 +42,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         puzzles = soup.find('div', attrs={'class': 'puzzles'})
         if not isinstance(puzzles, Tag):
-            raise XWordDLException("Unable to find class 'puzzles' in picker HTML soruce.")
+            raise XWordDLException("Unable to find class 'puzzles' in picker HTML source.")
 
         puzzle_id = puzzles.find(
             'div',
