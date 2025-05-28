@@ -25,7 +25,8 @@ Supported outlets:
 |*New York Times Variety*|`nytv`||✔️||
 |*The New Yorker*|`tny`|✔️|✔️|✔️|
 |*Newsday*|`nd`|✔️|✔️||
-|*Puzzmo*|`pzm`|✔️|||
+|*Puzzmo*|`pzm`|✔️|✔️|✔️|
+|*Puzzmo Big*|`pzmb`|✔️|✔️|✔️|
 |*Simply Daily Puzzles*|`sdp`|✔️|✔️|✔️|
 |*Simply Daily Puzzles Cryptic*|`sdpc`|✔️|✔️|✔️|
 |*Simply Daily Puzzles Quick*|`sdpq`|✔️|✔️|✔️|
