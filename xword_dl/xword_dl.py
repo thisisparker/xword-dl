@@ -12,7 +12,7 @@ import requests
 from bs4 import BeautifulSoup
 from puz import Puzzle
 
-from .downloader import get_plugins
+from .downloader import get_plugins, __bd
 from .util import XWordDLException, parse_date_or_exit, save_puzzle
 
 with open(os.path.join(os.path.dirname(__file__), 'version')) as f:
@@ -50,9 +50,7 @@ def by_keyword(keyword: str, **kwargs) -> tuple[Puzzle, str]:
 
 
 def by_url(url: str, **kwargs) -> tuple[Puzzle, str]:
-    supported_downloaders = [d for d in
-            get_supported_outlets(command_only=False)
-            if hasattr(d, 'matches_url')]
+    supported_downloaders = get_supported_outlets(command_only=False, matches_url=True)
 
     dl = None
 
@@ -77,11 +75,7 @@ def by_url(url: str, **kwargs) -> tuple[Puzzle, str]:
 
 
 def parse_for_embedded_puzzle(url: str, **kwargs):
-    supported_downloaders = [
-        d
-        for d in get_supported_outlets(command_only=False)
-        if hasattr(d, 'matches_embed_url')
-    ]
+    supported_downloaders = get_supported_outlets(command_only=False, matches_url=True)
 
     res = requests.get(url, headers={'User-Agent':'xword-dl'})
     soup = BeautifulSoup(res.text, 'lxml')
@@ -107,9 +101,12 @@ def parse_for_embedded_puzzle(url: str, **kwargs):
     return None, None
 
 
-def get_supported_outlets(command_only=True):
+def get_supported_outlets(command_only=True, matches_url=False):
     if command_only:
         return [d for d in plugins if hasattr(d, 'command') and d.command]
+    if matches_url:
+        return [d for d in plugins if hasattr(d, 'matches_url')
+                and getattr(d.matches_url, '__func__', None) is not getattr(__bd.matches_url, '__func__', None)]
     return plugins
 
 
