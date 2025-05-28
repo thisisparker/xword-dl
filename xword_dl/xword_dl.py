@@ -109,7 +109,7 @@ def parse_for_embedded_puzzle(url: str, **kwargs):
 
 def get_supported_outlets(command_only=True):
     if command_only:
-        return [d for d in plugins if hasattr(d, 'command')]
+        return [d for d in plugins if hasattr(d, 'command') and d.command]
     return plugins
 
 
