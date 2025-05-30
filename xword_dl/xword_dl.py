@@ -12,7 +12,8 @@ import requests
 from bs4 import BeautifulSoup
 from puz import Puzzle
 
-from .downloader import get_plugins, __bd
+from .downloader import get_plugins
+from .downloader.basedownloader import BaseDownloader as __bd
 from .util import XWordDLException, parse_date_or_exit, save_puzzle
 
 with open(os.path.join(os.path.dirname(__file__), "version")) as f:
@@ -23,7 +24,8 @@ plugins = get_plugins()
 
 def by_keyword(keyword: str, **kwargs) -> tuple[Puzzle, str]:
     selected_downloader = next(
-        (d for d in get_supported_outlets() if d.command == keyword), None
+        (d for d in get_supported_outlets(command_only=True) if d.command == keyword),
+        None,
     )
 
     if selected_downloader:
@@ -51,7 +53,7 @@ def by_keyword(keyword: str, **kwargs) -> tuple[Puzzle, str]:
 
 
 def by_url(url: str, **kwargs) -> tuple[Puzzle, str]:
-    supported_downloaders = get_supported_outlets(command_only=False, matches_url=True)
+    supported_downloaders = get_supported_outlets(matches_url=True)
 
     dl = None
 
@@ -76,7 +78,7 @@ def by_url(url: str, **kwargs) -> tuple[Puzzle, str]:
 
 
 def parse_for_embedded_puzzle(url: str, **kwargs):
-    supported_downloaders = get_supported_outlets(command_only=False, matches_url=True)
+    supported_downloaders = get_supported_outlets(matches_embed_url=True)
 
     res = requests.get(url, headers={"User-Agent": "xword-dl"})
     soup = BeautifulSoup(res.text, "lxml")
@@ -106,23 +108,35 @@ def parse_for_embedded_puzzle(url: str, **kwargs):
     return None, None
 
 
-def get_supported_outlets(command_only=True, matches_url=False):
-    if command_only:
-        return [d for d in plugins if hasattr(d, "command") and d.command]
-    if matches_url:
-        return [
-            d
-            for d in plugins
-            if hasattr(d, "matches_url")
-            and getattr(d.matches_url, "__func__", None)
-            is not getattr(__bd.matches_url, "__func__", None)
-        ]
-    return plugins
+def get_supported_outlets(
+    command_only=False, matches_url=False, matches_embed_url=False
+):
+    matched_plugins = []
+
+    # build a list of plugins with the requested features
+    for plugin in plugins:
+        if command_only and not plugin.command:
+            continue
+        # detects whether a plugin has implemented matches_url as a @classmethod
+        if matches_url and (
+            getattr(plugin.matches_url, "__func__")
+            is getattr(__bd.matches_url, "__func__")
+        ):
+            continue
+        if matches_embed_url and (
+            getattr(plugin.matches_embed_url, "__func__")
+            is getattr(__bd.matches_embed_url, "__func__")
+        ):
+            continue
+        matched_plugins.append(plugin)
+    return matched_plugins
 
 
 def get_help_text_formatted_list():
     text = ""
-    for d in sorted(get_supported_outlets(), key=lambda x: x.outlet.lower()):
+    for d in sorted(
+        get_supported_outlets(command_only=True), key=lambda x: x.outlet.lower()
+    ):
         text += "{:<5} {}\n".format(d.command, d.outlet)
 
     return text
@@ -231,7 +245,12 @@ def main():
     args = parser.parse_args()
     if args.authenticate and args.source:
         selected_downloader = next(
-            (d for d in get_supported_outlets() if d.command == args.source), None
+            (
+                d
+                for d in get_supported_outlets(command_only=True)
+                if d.command == args.source
+            ),
+            None,
         )
         if selected_downloader is None:
             raise XWordDLException("Keyword {} not recognized.".format(args.source))

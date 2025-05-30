@@ -35,8 +35,8 @@ class PuzzmoDownloader(BaseDownloader):
 
         return dt if dt.hour >= 1 else dt - timedelta(days=1)
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('puzzmo.com' in url_components.netloc and re.match(r"^/puzzle/\d{4}-\d{2}-\d{2}/crossword/?$", url_components.path))
 
     def find_latest(self):
@@ -234,8 +234,8 @@ class PuzzmoBigDownloader(PuzzmoDownloader):
 
         return most_recent_even_monday
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('puzzmo.com' in url_components.netloc and re.match(r"^/puzzle/\d{4}-\d{2}-\d{2}/crossword/big/?$", url_components.path))
 
     def find_latest(self):
