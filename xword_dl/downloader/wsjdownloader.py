@@ -2,7 +2,7 @@ import datetime
 
 import puz
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from .basedownloader import BaseDownloader
 from ..util import XWordDLException
@@ -19,8 +19,8 @@ class WSJDownloader(BaseDownloader):
     def __init__(self, **kwargs):
         super().__init__(headers={'User-Agent': 'xword-dl'}, **kwargs)
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return False # disabling, see above # 'wsj.com' in url_components.netloc
 
     def find_latest(self):
@@ -47,19 +47,25 @@ class WSJDownloader(BaseDownloader):
         else:
             res = self.session.get(url)
             soup = BeautifulSoup(res.text, 'html.parser')
-            try:
-                puzzle_link = soup.find('iframe').get('src')
-            except AttributeError:
-                raise XWordDLException('Cannot find puzzle at {}.'.format(url))
+
+            iframe = soup.find('iframe')
+            if not isinstance(iframe, Tag):
+                raise XWordDLException('Cannot find puzzle at {}. No iframe tag.'.format(url))
+
+            puzzle_link = iframe['src']
+
+            if isinstance(puzzle_link, list):
+                puzzle_link = puzzle_link[0]
+
             return self.find_solver(puzzle_link)
 
     def fetch_data(self, solver_url):
         data_url = solver_url.rsplit('/', maxsplit=1)[0] + '/data.json'
         return self.session.get(data_url).json()['data']
 
-    def parse_xword(self, xword_data):
-        xword_metadata = xword_data.get('copy', '')
-        xword_data = xword_data.get('grid', '')
+    def parse_xword(self, xw_data):
+        xword_metadata = xw_data.get('copy', '')
+        xw_data = xw_data.get('grid', '')
 
         date_string = xword_metadata.get('date-publish-analytics').split()[0]
 
@@ -78,7 +84,7 @@ class WSJDownloader(BaseDownloader):
         fill = ''
         markup = b''
 
-        for row in xword_data:
+        for row in xw_data:
             for cell in row:
                 if cell.get('Blank'):
                     fill += '.'

@@ -1,5 +1,6 @@
 import datetime
-import urllib
+import urllib.parse
+from functools import partial
 
 from .compilerdownloader import CrosswordCompilerDownloader
 from ..util import XWordDLException
@@ -14,8 +15,8 @@ class GlobeAndMailDownloader(CrosswordCompilerDownloader):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
-        self.fetch_data = self.fetch_jsencoded_data
+
+        self.fetch_data = partial(self._fetch_data, js_encoded=True)
         self.date = None
 
         if 'url' in kwargs and not self.date:
@@ -23,8 +24,8 @@ class GlobeAndMailDownloader(CrosswordCompilerDownloader):
 
         self.url_format = 'https://www.theglobeandmail.com/puzzles-and-crosswords/cryptic-crossword/?date={url_encoded_date}'
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return 'theglobeandmail.com' in url_components.netloc
 
     def parse_date_from_url(self, url):
@@ -52,6 +53,9 @@ class GlobeAndMailDownloader(CrosswordCompilerDownloader):
 
     def find_solver(self, url):
         start_date = datetime.datetime(2011, 1, 2)
+
+        if not isinstance(self.date, datetime.datetime):
+            raise XWordDLException("No solver date provided. This is a bug.")
 
         date_diff = self.date - start_date
         weeks_diff, extra_days = divmod(date_diff.days, 7)

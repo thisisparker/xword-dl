@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from .basedownloader import BaseDownloader
-from ..util import join_bylines, XWordDLException
+from ..util import join_bylines
 
 class PuzzmoDownloader(BaseDownloader):
     command = 'pzm'
@@ -19,7 +19,7 @@ class PuzzmoDownloader(BaseDownloader):
         super().__init__(**kwargs)
 
         self.temporary_user_id = secrets.token_urlsafe(21)
-        self.session.headers.update({'Puzzmo-Gameplay-Id': 
+        self.session.headers.update({'Puzzmo-Gameplay-Id':
                                         self.temporary_user_id})
 
         self.finder_key = 'today:/{date_string}/crossword'
@@ -35,8 +35,8 @@ class PuzzmoDownloader(BaseDownloader):
 
         return dt if dt.hour >= 1 else dt - timedelta(days=1)
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('puzzmo.com' in url_components.netloc and re.match(r"^/puzzle/\d{4}-\d{2}-\d{2}/crossword/?$", url_components.path))
 
     def find_latest(self):
@@ -147,7 +147,7 @@ class PuzzmoDownloader(BaseDownloader):
                     continue
 
                 elif not named_sections and blank_count >= 2:
-                    section == default_sections.pop(0)
+                    section = default_sections.pop(0)
                     blank_count = 0
 
             if section == 'metadata':
@@ -182,7 +182,7 @@ class PuzzmoDownloader(BaseDownloader):
 
             elif section == 'clues':
                 if clue_parts := re.match(r'([AD])(\d{1,2})\.(.*)', line):
-                    clue_list.append((clue_parts[1], 
+                    clue_list.append((clue_parts[1],
                                      int(clue_parts[2]),
                                      clue_parts[3]))
                 else:
@@ -234,8 +234,8 @@ class PuzzmoBigDownloader(PuzzmoDownloader):
 
         return most_recent_even_monday
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('puzzmo.com' in url_components.netloc and re.match(r"^/puzzle/\d{4}-\d{2}-\d{2}/crossword/big/?$", url_components.path))
 
     def find_latest(self):
