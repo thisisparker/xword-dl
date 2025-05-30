@@ -136,6 +136,15 @@ jobs:
       - name: Test New Yorker themed, special chars title
         if: '!cancelled()'
         run: xword-dl tny -d 1/12/24
+      - name: Test New Yorker Mini latest
+        if: '!cancelled()'
+        run: xword-dl tnym  # Or whatever command you chose
+      - name: Test New Yorker Mini by date
+        if: '!cancelled()'
+        run: xword-dl tnym -d "5/16/25" # Use a valid recent date for testing
+      - name: Test New Yorker Mini by URL
+        if: '!cancelled()'
+        run: xword-dl "https://www.newyorker.com/puzzles-and-games-dept/mini-crossword/2025/05/16"	
       - name: Test Newsday latest
         if: '!cancelled()'
         run: xword-dl nd
