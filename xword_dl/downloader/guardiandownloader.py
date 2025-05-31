@@ -2,7 +2,6 @@ import datetime
 import json
 import re
 
-import puz
 import requests
 
 from bs4 import BeautifulSoup, Tag
@@ -54,16 +53,14 @@ class GuardianDownloader(BaseDownloader):
         return xw_data
 
     def parse_xword(self, xw_data):
-        puzzle = puz.Puzzle()
+        self.puzzle.author = xw_data.get('creator', {}).get('name') or ''
+        self.puzzle.height = xw_data.get('dimensions').get('rows')
+        self.puzzle.width  = xw_data.get('dimensions').get('cols')
 
-        puzzle.author = xw_data.get('creator', {}).get('name', '')
-        puzzle.height = xw_data.get('dimensions').get('rows')
-        puzzle.width  = xw_data.get('dimensions').get('cols')
-
-        puzzle.title = xw_data.get('name') or ''
+        self.puzzle.title = xw_data.get('name') or ''
 
         if not all(e.get('solution') for e in xw_data['entries']):
-            puzzle.title += ' - no solution provided'
+            self.puzzle.title += ' - no solution provided'
 
         self.date = datetime.datetime.fromtimestamp(
                                         xw_data['date'] // 1000)
@@ -80,21 +77,21 @@ class GuardianDownloader(BaseDownloader):
         solution = ''
         fill = ''
 
-        for y in range(puzzle.height):
-            for x in range(puzzle.width):
+        for y in range(self.puzzle.height):
+            for x in range(self.puzzle.width):
                 sol_at_space = grid_dict.get((x,y), '.')
                 solution += sol_at_space
                 fill += '.' if sol_at_space == '.' else '-'
 
-        puzzle.solution = solution
-        puzzle.fill = fill
+        self.puzzle.solution = solution
+        self.puzzle.fill = fill
 
         clues = [e.get('clue') for e in sorted(xw_data.get('entries'),
                     key=lambda x: (x.get('number'), x.get('direction')))]
 
-        puzzle.clues = clues
+        self.puzzle.clues = clues
 
-        return puzzle
+        return self.puzzle
 
 
 class GuardianCrypticDownloader(GuardianDownloader):
