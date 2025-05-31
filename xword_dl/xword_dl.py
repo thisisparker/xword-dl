@@ -241,6 +241,15 @@ def main():
                             will be used)"""),
         default=None,
     )
+    parser.add_argument(
+        "-1",
+        "--v1",
+        help=textwrap.dedent("""\
+                                saves the output file as an AcrossLite v1.4
+                                file (by default, version 2.0 is used)"""),
+        action="store_true",
+        default=False,
+    )
 
     args = parser.parse_args()
     if args.authenticate and args.source:
@@ -275,6 +284,8 @@ def main():
         options["preserve_html"] = args.preserve_html
     if args.output:
         options["filename"] = args.output
+    if args.v1:
+        options["puzzle_v1"] = True
     if args.date:
         options["date"] = args.date
     if args.settings:

@@ -1,7 +1,6 @@
 import datetime
 import urllib.parse
 
-import puz
 import requests
 from getpass import getpass
 
@@ -113,22 +112,19 @@ class NewYorkTimesDownloader(BaseDownloader):
         return xword_data
 
     def parse_xword(self, xw_data):
-        puzzle = puz.Puzzle()
-
-        puzzle.author = join_bylines(xw_data['constructors'], "and").strip()
-        puzzle.copyright = xw_data['copyright']
-        puzzle.height = int(xw_data['body'][0]['dimensions']['height'])
-        puzzle.width =  int(xw_data['body'][0]['dimensions']['width'])
+        self.puzzle.author = join_bylines(xw_data['constructors'], "and").strip()
+        self.puzzle.copyright = xw_data['copyright']
+        self.puzzle.height = int(xw_data['body'][0]['dimensions']['height'])
+        self.puzzle.width =  int(xw_data['body'][0]['dimensions']['width'])
 
         if not self.date:
             self.date = datetime.datetime.strptime(xw_data['publicationDate'],
                                           '%Y-%m-%d')
 
-        puzzle.title = xw_data.get('title') or self.date.strftime(
-                '%A, %B %d, %Y')
+        self.puzzle.title = xw_data.get('title') or self.date.strftime('%A, %B %d, %Y')
 
         if xw_data.get('notes'):
-            puzzle.notes = xw_data.get('notes')[0]['text']
+            self.puzzle.notes = xw_data.get('notes')[0]['text']
 
         solution = ''
         fill = ''
@@ -161,26 +157,26 @@ class NewYorkTimesDownloader(BaseDownloader):
 
             markup += (b'\x00' if square.get('type', 1) == 1 else b'\x80')
 
-        puzzle.solution = solution
-        puzzle.fill = fill
+        self.puzzle.solution = solution
+        self.puzzle.fill = fill
 
         if b'\x80' in markup:
-            puzzle.extensions[b'GEXT'] = markup
-            puzzle._extensions_order.append(b'GEXT')
-            puzzle.markup()
+            self.puzzle.extensions[b'GEXT'] = markup
+            self.puzzle._extensions_order.append(b'GEXT')
+            self.puzzle.markup()
 
         if any(rebus_board):
-            puzzle.extensions[b'GRBS'] = bytes(rebus_board)
-            puzzle.extensions[b'RTBL'] = rebus_table.encode(puz.ENCODING)
-            puzzle._extensions_order.extend([b'GRBS', b'RTBL'])
-            puzzle.rebus()
+            self.puzzle.extensions[b'GRBS'] = bytes(rebus_board)
+            self.puzzle.extensions[b'RTBL'] = rebus_table.encode(self.puzzle.ENCODING)
+            self.puzzle._extensions_order.extend([b'GRBS', b'RTBL'])
+            self.puzzle.rebus()
 
         clue_list = xw_data['body'][0]['clues']
         clue_list.sort(key=lambda c: (int(c['label']), c['direction']))
 
-        puzzle.clues = [c['text'][0].get('plain') or '' for c in clue_list]
+        self.puzzle.clues = [c['text'][0].get('plain') or '' for c in clue_list]
 
-        return puzzle
+        return self.puzzle
 
     def pick_filename(self, puzzle, **kwargs):
         if puzzle.title == self.date.strftime('%A, %B %d, %Y'):

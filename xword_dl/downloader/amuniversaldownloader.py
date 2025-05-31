@@ -4,7 +4,6 @@ import sys
 import time
 import xml
 
-import puz
 import requests
 import xmltodict
 
@@ -60,18 +59,17 @@ class AMUniversalDownloader(BaseDownloader):
         for field in ['Title', 'Author', 'Editor', 'Copryight']:
             fetched[field] = unquote(xw_data.get(field, '')).strip()
 
-        puzzle = puz.Puzzle()
-        puzzle.title = fetched.get('Title', '')
-        puzzle.author = ''.join([fetched.get('Author', ''),
+        self.puzzle.title = fetched.get('Title', '')
+        self.puzzle.author = ''.join([fetched.get('Author', ''),
                                  ' / Ed. ',
                                  fetched.get('Editor', '')])
-        puzzle.copyright = fetched.get('Copyright', '')
-        puzzle.width = int(xw_data.get('Width'))
-        puzzle.height = int(xw_data.get('Height'))
+        self.puzzle.copyright = fetched.get('Copyright', '')
+        self.puzzle.width = int(xw_data.get('Width'))
+        self.puzzle.height = int(xw_data.get('Height'))
 
         solution = xw_data.get('AllAnswer').replace('-', '.')
 
-        puzzle.solution = solution
+        self.puzzle.solution = solution
 
         fill = ''
         for letter in solution:
@@ -79,7 +77,7 @@ class AMUniversalDownloader(BaseDownloader):
                 fill += '.'
             else:
                 fill += '-'
-        puzzle.fill = fill
+        self.puzzle.fill = fill
 
         across_clues = xw_data['AcrossClue'].splitlines()
         down_clues = self.process_clues(xw_data['DownClue'].splitlines())
@@ -93,9 +91,9 @@ class AMUniversalDownloader(BaseDownloader):
 
         clues = [clue['clue'] for clue in clues_sorted]
 
-        puzzle.clues = clues
+        self.puzzle.clues = clues
 
-        return puzzle
+        return self.puzzle
 
 # As of Sept 2023, the JSON data for USA Today is not consistently populated.
 # I'd rather use the JSON data if possible, but until that's sorted, we can
@@ -167,24 +165,22 @@ class USATodayDownloader(BaseDownloader):
         except (xml.parsers.expat.ExpatError, KeyError):
             raise XWordDLException('Puzzle data malformed, cannot parse.')
 
-        puzzle = puz.Puzzle()
+        self.puzzle.title = unquote(xw.get('Title',[]).get('@v') or '')
+        self.puzzle.author = unquote(xw.get('Author',[]).get('@v') or '')
+        self.puzzle.copyright = unquote(xw.get('Copyright',[]).get('@v') or '')
 
-        puzzle.title = unquote(xw.get('Title',[]).get('@v') or '')
-        puzzle.author = unquote(xw.get('Author',[]).get('@v') or '')
-        puzzle.copyright = unquote(xw.get('Copyright',[]).get('@v') or '')
+        self.puzzle.width = int(xw.get('Width')['@v'])
+        self.puzzle.height = int(xw.get('Height')['@v'])
 
-        puzzle.width = int(xw.get('Width')['@v'])
-        puzzle.height = int(xw.get('Height')['@v'])
-
-        puzzle.solution = xw.get('AllAnswer',[]).get('@v').replace('-', '.')
-        puzzle.fill = ''.join([c if c == '.' else '-' for c in puzzle.solution])
+        self.puzzle.solution = xw.get('AllAnswer',[]).get('@v').replace('-', '.')
+        self.puzzle.fill = ''.join([c if c == '.' else '-' for c in self.puzzle.solution])
 
         xw_clues = sorted(list(xw['across'].values()) + list(xw['down'].values()),
                           key=lambda c: int(c['@cn']))
 
-        puzzle.clues = [unquote(c.get('@c') or '') for c in xw_clues]
+        self.puzzle.clues = [unquote(c.get('@c') or '') for c in xw_clues]
 
-        return puzzle
+        return self.puzzle
 
 
 class UniversalDownloader(AMUniversalDownloader):
