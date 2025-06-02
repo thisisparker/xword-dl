@@ -1,6 +1,8 @@
 name: Status check on supported outlets
 
 on:
+  push:
+    branches: [ no-gpl ]
   pull_request:
     branches: [ main ]
   schedule:
