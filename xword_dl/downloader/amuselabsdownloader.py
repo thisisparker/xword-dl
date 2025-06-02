@@ -10,7 +10,7 @@ import re
 
 from bs4 import BeautifulSoup, Tag
 from .basedownloader import BaseDownloader
-from ..util import XWordDLException
+from ..util import XWordDLException, latinize
 
 class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, **kwargs):
