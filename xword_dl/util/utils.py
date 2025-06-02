@@ -57,7 +57,7 @@ def cleanup(field: str, preserve_html=False):
     if preserve_html:
         field = latinize(emoji.demojize(field)).strip()
     else:
-        field = latinize(emoji.demojize(extract_text(latinize(field)))).strip()
+        field = latinize(emoji.demojize(extract_text(field))).strip()
     return field
 
 
