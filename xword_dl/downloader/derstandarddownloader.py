@@ -1,9 +1,6 @@
-import datetime
-import json
 import re
-import urllib
+import urllib.parse
 
-import dateparser
 import requests
 
 from bs4 import BeautifulSoup
@@ -25,8 +22,8 @@ class DerStandardDownloader(AmuseLabsDownloader):
             'DNT':'1'
         }
 
-    @staticmethod
-    def matches_url(url_components):
+    @classmethod
+    def matches_url(cls, url_components):
         return ('derstandard.at' in url_components.netloc and '/kreuzwortraetsel' in url_components.path)
 
     def find_latest(self):
@@ -35,6 +32,10 @@ class DerStandardDownloader(AmuseLabsDownloader):
         index_soup = BeautifulSoup(index_res.text, "html.parser")
 
         latest_fragment = next(a for a in index_soup.select('.teaser-inner > a'))['href']
+
+        if not isinstance(latest_fragment, str):
+            raise XWordDLException("Could not load latest crossword. Fragment not found.")
+
         latest_absolute = urllib.parse.urljoin('https://www.derstandard.at',
                                                latest_fragment)
 
@@ -53,10 +54,10 @@ class DerStandardDownloader(AmuseLabsDownloader):
         try:
             # html embed content is encoded -> beautifulsoup parsing would not work
             query_id = list(re.findall(r'(http)(s)*(:\/\/cdn\-eu1\.amuselabs\.com\/pmm\/crossword)(\?id\=)([0-9a-z]{8})', str(res.text)))
-            
+
             if len(query_id) == 0:
                 raise XWordDLException('Cannot find puzzle at {} -> failed to retrieve amuselabs url from encoded html.'.format(url))
-            
+
             self.id = str(query_id[0][-1])
         except KeyError:
             raise XWordDLException('Cannot find puzzle at {}.'.format(url))
