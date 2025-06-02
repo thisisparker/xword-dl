@@ -9,9 +9,8 @@ import requests
 import re
 
 from bs4 import BeautifulSoup, Tag
-from html_text import extract_text
 from .basedownloader import BaseDownloader
-from ..util import XWordDLException, unidecode
+from ..util import XWordDLException
 
 class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, **kwargs):

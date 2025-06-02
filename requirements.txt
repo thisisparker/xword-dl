@@ -1,5 +1,4 @@
 beautifulsoup4==4.13.4
-bs4==0.0.1
 dateparser==1.2.1
 emoji==2.14.1
 html_text==0.5.2
