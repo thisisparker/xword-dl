@@ -74,7 +74,7 @@ class WSJDownloader(BaseDownloader):
 
         fetched = {}
         for field in ['title', 'byline', 'publisher', 'description']:
-            fetched[field] = html_text(xword_metadata.get(field, '')).strip()
+            fetched[field] = extract_text(xword_metadata.get(field, '')).strip()
 
         puzzle = puz.Puzzle()
         puzzle.title = xword_metadata.get('title') or ''
