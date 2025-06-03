@@ -16,7 +16,8 @@ def latinize(string):
     Calling it on one character at a time is still efficient because
     anyascii caches lookups using a module global."""
 
-    return "".join(c if ord(c) <= 0xFF else anyascii(c) for c in string)
+    # Replace any colons coming from anyascii with empty string to match previous unidecode behavior
+    return "".join(c if ord(c) <= 0xFF else anyascii(c).replace(':', '') for c in string)
 
 
 CONFIG_PATH = os.environ.get('XDG_CONFIG_HOME') or os.path.expanduser('~/.config')
