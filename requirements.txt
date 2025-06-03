@@ -1,10 +1,10 @@
 beautifulsoup4==4.13.4
 dateparser==1.2.1
 emoji==2.14.1
-html2text==2025.4.15
+html_text==0.7.0
 puzpy==0.2.6
 requests==2.32.3
-Unidecode==1.4.0
+anyascii==0.3.1
 pyyaml==6.0.2
 xmltodict==0.14.2
 lxml==5.4.0
