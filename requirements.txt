@@ -7,4 +7,4 @@ requests==2.32.3
 anyascii==0.3.1
 pyyaml==6.0.2
 xmltodict==0.14.2
-lxml==5.3.1
+lxml==5.4.0
