@@ -1,7 +1,7 @@
 beautifulsoup4==4.13.4
 dateparser==1.2.1
 emoji==2.14.1
-html_text==0.5.2
+html_text==0.7.0
 puzpy==0.2.6
 requests==2.32.3
 anyascii==0.3.1
