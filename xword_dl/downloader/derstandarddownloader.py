@@ -1,9 +1,8 @@
 import re
 import urllib.parse
 
-import requests
-
 from bs4 import BeautifulSoup
+from requests.exceptions import HTTPError
 
 from .amuselabsdownloader import AmuseLabsDownloader
 from ..util import XWordDLException
@@ -17,10 +16,10 @@ class DerStandardDownloader(AmuseLabsDownloader):
         super().__init__(**kwargs)
 
         self.url_from_id = 'https://cdn-eu1.amuselabs.com/pmm/crossword?id={puzzle_id}&set=phoenixen'
-        self.headers = {
+        self.session.headers.update({
             'User-Agent':'Googlebot', # needed to get around privacy consent screen
             'DNT':'1'
-        }
+        })
 
     @classmethod
     def matches_url(cls, url_components):
@@ -28,10 +27,10 @@ class DerStandardDownloader(AmuseLabsDownloader):
 
     def find_latest(self):
         index_url = "https://www.derstandard.at/lifestyle/raetsel-sudoku/kreuzwortraetsel"
-        index_res = requests.get(index_url, headers=self.headers, timeout=10)
-        index_soup = BeautifulSoup(index_res.text, "html.parser")
+        index_res = self.session.get(index_url, timeout=10)
+        index_soup = BeautifulSoup(index_res.text, "lxml")
 
-        latest_fragment = next(a for a in index_soup.select('.teaser-inner > a'))['href']
+        latest_fragment = next(a for a in index_soup.select('.teaser-inner a'))['href']
 
         if not isinstance(latest_fragment, str):
             raise XWordDLException("Could not load latest crossword. Fragment not found.")
@@ -44,11 +43,11 @@ class DerStandardDownloader(AmuseLabsDownloader):
         return landing_page_url
 
     def find_solver(self, url):
-        res = requests.get(url, headers=self.headers, timeout=10)
+        res = self.session.get(url, timeout=10)
 
         try:
             res.raise_for_status()
-        except requests.exceptions.HTTPError:
+        except HTTPError:
             raise XWordDLException('Unable to load {}'.format(url))
 
         try:
