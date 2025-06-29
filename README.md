@@ -7,6 +7,7 @@ Supported outlets:
 |Outlet|Keyword|Download latest|Search by date|Search by URL|
 |------|-------|:-------------:|:------------:|:-----------:|
 |*Atlantic*|`atl`|✔️|✔️||
+|*Atlas Obscura*|`ao`|✔️|||
 |*Crossword Club*|`club`|✔️|✔️|✔️|
 |*The Daily Beast*|`db`|✔️|||
 |*Daily Pop*|`pop`|✔️|✔️||
