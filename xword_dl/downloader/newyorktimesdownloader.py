@@ -6,7 +6,7 @@ import requests
 from getpass import getpass
 
 from .basedownloader import BaseDownloader
-from ..util import XWordDLException, join_bylines, update_config_file, unidecode
+from ..util import XWordDLException, join_bylines, latinize, update_config_file
 
 class NewYorkTimesDownloader(BaseDownloader):
     command = 'nyt'
@@ -148,7 +148,7 @@ class NewYorkTimesDownloader(BaseDownloader):
                 rebus_board.append(0)
             else:
                 try:
-                    suitable_answer = unidecode(square.get('answer') or
+                    suitable_answer = latinize(square.get('answer') or
                                         square['moreAnswers']['valid'][0])
                 except (IndexError, KeyError):
                     raise XWordDLException('Unable to parse puzzle JSON. Possibly something .puz incompatible')
