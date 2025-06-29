@@ -24,6 +24,7 @@ Supported outlets:
 |*New York Times Mini*|`nytm`|✔️|✔️|✔️|
 |*New York Times Variety*|`nytv`||✔️||
 |*The New Yorker*|`tny`|✔️|✔️|✔️|
+|*The New Yorker Mini*|`tnym`|✔️|✔️|✔️|
 |*Newsday*|`nd`|✔️|✔️||
 |*Puzzmo*|`pzm`|✔️|✔️|✔️|
 |*Puzzmo Big*|`pzmb`|✔️|✔️|✔️|
