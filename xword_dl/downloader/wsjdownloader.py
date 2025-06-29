@@ -1,7 +1,5 @@
 import datetime
 
-import puz
-
 from bs4 import BeautifulSoup, Tag
 
 from .basedownloader import BaseDownloader
@@ -71,14 +69,13 @@ class WSJDownloader(BaseDownloader):
 
         self.date = datetime.datetime.strptime(date_string, '%Y/%m/%d')
 
-        puzzle = puz.Puzzle()
-        puzzle.title = xword_metadata.get('title') or ''
-        puzzle.author = xword_metadata.get('byline') or ''
-        puzzle.copyright = xword_metadata.get('publisher') or ''
-        puzzle.width = int(xword_metadata.get('gridsize').get('cols'))
-        puzzle.height = int(xword_metadata.get('gridsize').get('rows'))
+        self.puzzle.title = xword_metadata.get('title') or ''
+        self.puzzle.author = xword_metadata.get('byline') or ''
+        self.puzzle.copyright = xword_metadata.get('publisher') or ''
+        self.puzzle.width = int(xword_metadata.get('gridsize').get('cols'))
+        self.puzzle.height = int(xword_metadata.get('gridsize').get('rows'))
 
-        puzzle.notes = xword_metadata.get('crosswordadditionalcopy') or ''
+        self.puzzle.notes = xword_metadata.get('crosswordadditionalcopy') or ''
 
         solution = ''
         fill = ''
@@ -98,11 +95,11 @@ class WSJDownloader(BaseDownloader):
                                            == 'circle')
                                else b'\x00')
 
-        puzzle.fill = fill
-        puzzle.solution = solution
+        self.puzzle.fill = fill
+        self.puzzle.solution = solution
 
-        if all(c in ['.', 'X'] for c in puzzle.solution):
-            puzzle.solution_state = 0x0002
+        if all(c in ['.', 'X'] for c in self.puzzle.solution):
+            self.puzzle.solution_state = 0x0002
 
         clue_list = xword_metadata['clues'][0]['clues'] + \
             xword_metadata['clues'][1]['clues']
@@ -110,13 +107,13 @@ class WSJDownloader(BaseDownloader):
 
         clues = [clue['clue'] for clue in sorted_clue_list]
 
-        puzzle.clues = clues
+        self.puzzle.clues = clues
 
         has_markup = b'\x80' in markup
 
         if has_markup:
-            puzzle.extensions[b'GEXT'] = markup
-            puzzle._extensions_order.append(b'GEXT')
-            puzzle.markup()
+            self.puzzle.extensions[b'GEXT'] = markup
+            self.puzzle._extensions_order.append(b'GEXT')
+            self.puzzle.markup()
 
-        return puzzle
+        return self.puzzle

@@ -1,8 +1,8 @@
 import urllib.parse
 from datetime import datetime
 
+import puz
 import requests
-from puz import Puzzle
 
 from ..util import (
     read_config_values,
@@ -42,7 +42,16 @@ class BaseDownloader:
         self.session.headers.update(self.settings.get('headers', {}))
         self.session.cookies.update(self.settings.get('cookies', {}))
 
-    def pick_filename(self, puzzle: Puzzle, **kwargs) -> str:
+        self.puzzle = puz.Puzzle()
+
+        if 'puzzle_v1' not in kwargs:
+            # this is hack-ily patching constants that puzpy does not
+            # currently provide a method for setting
+            self.puzzle.version = b'2.0'
+            self.puzzle.fileversion = b'2.0\0'
+            self.puzzle.encoding = 'UTF-8'
+
+    def pick_filename(self, puzzle: puz.Puzzle, **kwargs) -> str:
         tokens = {'outlet':  self.outlet or '',
                   'prefix':  self.outlet_prefix or '',
                   'title':   puzzle.title or '',
@@ -77,7 +86,7 @@ class BaseDownloader:
 
         return template
 
-    def download(self, url: str) -> Puzzle:
+    def download(self, url: str) -> puz.Puzzle:
         """Download, parse, and return a puzzle at a given URL."""
 
         solver_url = self.find_solver(url)
@@ -86,7 +95,8 @@ class BaseDownloader:
 
         puzzle = sanitize_for_puzfile(
             puzzle,
-            preserve_html=self.settings.get("preserve_html", False)
+            preserve_html=self.settings.get("preserve_html", False),
+            demojize=(self.puzzle.encoding != "UTF-8")
         )
 
         return puzzle
@@ -108,7 +118,7 @@ class BaseDownloader:
         """
         raise NotImplementedError
 
-    def parse_xword(self, xw_data) -> Puzzle:
+    def parse_xword(self, xw_data) -> puz.Puzzle:
         """Given a blob of crossword data, parse and stuff into puz format.
 
         This method is implemented in subclasses based on the differences in
