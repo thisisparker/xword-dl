@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from .basedownloader import BaseDownloader
-from ..util import join_bylines
+from ..util import join_bylines, XWordDLException
 
 class PuzzmoDownloader(BaseDownloader):
     command = 'pzm'
