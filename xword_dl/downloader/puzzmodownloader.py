@@ -233,21 +233,44 @@ class PuzzmoBigDownloader(PuzzmoDownloader):
         self.finder_key += "/big"
 
     def _get_most_recent_puzzmo_big_date(self, dt):
-        # Assumes publication cadence continues to be every two weeks from launch
-        start_date = datetime(2025, 1, 13)
+        # Puzzles were every two weeks from 2025-01-13 (launch) to 2025-06-16
+        # Starting 2025-07-07, they are monthly first monday
 
-        delta_days = (dt.date() - start_date.date()).days
-        even_weeks = (delta_days // 7) // 2 * 2
+        start_date = datetime(2025, 1, 13, 1, tzinfo=ZoneInfo("America/New_York"))
+        last_biweekly = datetime(2025, 6, 16, 1, tzinfo=ZoneInfo("America/New_York"))
+        first_monthly = datetime(2025, 7, 7, 1, tzinfo=ZoneInfo("America/New_York"))
 
-        most_recent_even_monday = start_date + timedelta(weeks=even_weeks)
+        guessed_most_recent = last_biweekly
 
-        return most_recent_even_monday
+        if start_date <= dt < last_biweekly:
+            delta_days = (dt.date() - start_date.date()).days
+            even_weeks = (delta_days // 7) // 2 * 2
+
+            most_recent_even_monday = start_date + timedelta(weeks=even_weeks)
+            guessed_most_recent = most_recent_even_monday
+
+        elif last_biweekly <= dt < first_monthly:
+            pass
+
+        elif first_monthly <= dt:
+            month_with_puzzle = dt.month - 1 if dt.day <= dt.weekday() else dt.month
+            year_with_puzzle = dt.year
+            if month_with_puzzle == 0:
+                month_with_puzzle = 12
+                year_with_puzzle -= 1
+            reference_date = datetime(year_with_puzzle, month_with_puzzle, 7)
+            offset = reference_date.weekday()
+            guessed_most_recent = reference_date - timedelta(offset)
+
+        return guessed_most_recent
 
     @classmethod
     def matches_url(cls, url_components):
-        return "puzzmo.com" in url_components.netloc and bool(re.match(
-            r"^/puzzle/\d{4}-\d{2}-\d{2}/crossword/big/?$", url_components.path
-        ))
+        return "puzzmo.com" in url_components.netloc and bool(
+            re.match(
+                r"^/puzzle/\d{4}-\d{2}-\d{2}/crossword/big/?$", url_components.path
+            )
+        )
 
     def find_latest(self):
         today = self._get_puzzmo_date()
