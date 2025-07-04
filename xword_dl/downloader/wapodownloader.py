@@ -23,6 +23,7 @@ class WaPoDownloader(BaseDownloader):
         return self.find_by_date(most_recent_sunday)
 
     def find_by_date(self, dt):
+        self.date = dt
         url_formatted_date = dt.strftime("%Y/%m/%d")
 
         return f"https://games-service-prod.site.aws.wapo.pub/crossword/levels/sunday/{url_formatted_date}"
