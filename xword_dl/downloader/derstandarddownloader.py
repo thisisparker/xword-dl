@@ -16,9 +16,6 @@ class DerStandardDownloader(AmuseLabsDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.url_from_id = (
-            "https://cdn-eu1.amuselabs.com/pmm/crossword?id={puzzle_id}&set=phoenixen"
-        )
         self.session.headers.update(
             {
                 "User-Agent": "Googlebot",  # needed to get around privacy consent screen
@@ -67,7 +64,7 @@ class DerStandardDownloader(AmuseLabsDownloader):
             # html embed content is encoded -> beautifulsoup parsing would not work
             query_id = list(
                 re.findall(
-                    r"(http)(s)*(:\/\/cdn\-eu1\.amuselabs\.com\/pmm\/crossword)(\?id\=)([0-9a-z]{8})",
+                    r"(http)(s)*(:\/\/cdn\-eu1\.amuselabs\.com\/pmm\/crossword)(\?id\=)([0-9a-z]{8}&)amp;(set\=[^&]+)",
                     str(res.text),
                 )
             )
@@ -79,11 +76,13 @@ class DerStandardDownloader(AmuseLabsDownloader):
                     )
                 )
 
-            self.id = str(query_id[0][-1])
+            self.id = str(query_id[0][-2])
+            matched_url = ''.join(query_id[0])
+
         except KeyError:
             raise XWordDLException("Cannot find puzzle at {}.".format(url))
 
-        return self.find_puzzle_url_from_id(self.id)
+        return matched_url
 
     def pick_filename(self, puzzle, **kwargs):
         """
