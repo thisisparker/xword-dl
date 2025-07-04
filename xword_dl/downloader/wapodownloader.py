@@ -38,7 +38,10 @@ class WaPoDownloader(BaseDownloader):
         except Exception as err:
             raise XWordDLException("Error downloading puzzle:", err)
 
-        xw_data = res.json()
+        try:
+            xw_data = res.json()
+        except Exception:
+            raise XWordDLException(f"No parseable JSON at {solver_url}")
 
         return xw_data
 
