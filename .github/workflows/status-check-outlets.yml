@@ -183,4 +183,4 @@ jobs:
         run: xword-dl wp
       - name: Test Washington Post by date
         if: '!cancelled()'
-        run: xword-dl wp -d "12/17/23"
+        run: xword-dl wp -d "6/22/25"
