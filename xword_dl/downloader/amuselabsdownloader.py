@@ -287,7 +287,7 @@ def load_rawc(rawc, amuseKey=None):
             E.append(J)
             F+=1
 
-        A, G, I = 0, 0, len(e)-1
+        A, G, I = 0, 0, len(e)-1  # noqa: E741
         while A < I:
             B = E[G]
             L = I - A + 1
