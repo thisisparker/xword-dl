@@ -1,5 +1,7 @@
 import datetime
 
+import dateparser
+
 from .amuselabsdownloader import AmuseLabsDownloader
 
 
@@ -25,6 +27,9 @@ class LATimesDownloader(AmuseLabsDownloader):
         except ValueError:
             pass
 
+    def guess_date_from_puzzle_title(self, title):
+        self.date = dateparser.parse(title.split(",", maxsplit=1)[-1].strip())
+
     def find_by_date(self, dt):
         url_formatted_date = dt.strftime("%y%m%d")
         self.id = "tca" + url_formatted_date
@@ -34,6 +39,12 @@ class LATimesDownloader(AmuseLabsDownloader):
         return self.find_puzzle_url_from_id(self.id)
 
     def pick_filename(self, puzzle, **kwargs):
+        if not self.date and self.id:
+            self.guess_date_from_id(self.id)
+
+        if not self.date and puzzle.title:
+            self.guess_date_from_puzzle_title(puzzle.title)
+
         split_on_dashes = puzzle.title.split(" - ")
         if len(split_on_dashes) > 1:
             title = split_on_dashes[-1].strip()
