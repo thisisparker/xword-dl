@@ -10,70 +10,72 @@ from ..util import (
     sanitize_for_puzfile,
 )
 
+
 class BaseDownloader:
     command = ""
     outlet = ""
     outlet_prefix = None
 
     def __init__(self, **kwargs):
-        self.date = kwargs.get('date', None)
-        self.netloc = urllib.parse.urlparse(kwargs.get('url','')).netloc
+        self.date = kwargs.get("date", None)
+        self.netloc = urllib.parse.urlparse(kwargs.get("url", "")).netloc
 
         self.settings = {}
 
-        self.settings.update(read_config_values('general'))
+        self.settings.update(read_config_values("general"))
 
-        if 'inherit_settings' in kwargs:
-            self.settings.update(read_config_values(kwargs['inherit_settings']))
+        if "inherit_settings" in kwargs:
+            self.settings.update(read_config_values(kwargs["inherit_settings"]))
 
         if self.command:
             self.settings.update(read_config_values(self.command))
 
-        elif 'url' in kwargs:
-            self.settings.update(read_config_values('url'))
+        elif "url" in kwargs:
+            self.settings.update(read_config_values("url"))
             self.settings.update(read_config_values(self.netloc))
 
         self.settings.update(kwargs)
 
-        if kwargs.get('filename'):
-            self.settings['filename'] = kwargs.get('filename')
+        if kwargs.get("filename"):
+            self.settings["filename"] = kwargs.get("filename")
 
         self.session = requests.Session()
-        self.session.headers.update(self.settings.get('headers', {}))
-        self.session.cookies.update(self.settings.get('cookies', {}))
+        self.session.headers.update(self.settings.get("headers", {}))
+        self.session.cookies.update(self.settings.get("cookies", {}))
 
     def pick_filename(self, puzzle: Puzzle, **kwargs) -> str:
-        tokens = {'outlet':  self.outlet or '',
-                  'prefix':  self.outlet_prefix or '',
-                  'title':   puzzle.title or '',
-                  'author':  puzzle.author or '',
-                  'cmd':     getattr(self, "command", self.netloc or ""),
-                  'netloc':  self.netloc or '',
-                 }
+        tokens = {
+            "outlet": self.outlet or "",
+            "prefix": self.outlet_prefix or "",
+            "title": puzzle.title or "",
+            "author": puzzle.author or "",
+            "cmd": getattr(self, "command", self.netloc or ""),
+            "netloc": self.netloc or "",
+        }
 
-        tokens = {t:kwargs[t] if t in kwargs else tokens[t] for t in tokens}
+        tokens = {t: kwargs[t] if t in kwargs else tokens[t] for t in tokens}
 
-        date = kwargs.get('date', self.date)
+        date = kwargs.get("date", self.date)
 
-        template = self.settings.get('filename') or ''
+        template = self.settings.get("filename") or ""
 
         if not template:
-            template += '%prefix' if tokens.get('prefix') else '%author'
-            template += ' - %Y%m%d' if date  else ''
-            template += ' - %title' if tokens.get('title') else ''
+            template += "%prefix" if tokens.get("prefix") else "%author"
+            template += " - %Y%m%d" if date else ""
+            template += " - %title" if tokens.get("title") else ""
 
         for token in tokens.keys():
             replacement = kwargs.get(token, tokens[token])
             replacement = remove_invalid_chars_from_filename(replacement)
-            template = template.replace('%' + token, replacement)
+            template = template.replace("%" + token, replacement)
 
         if date:
             template = date.strftime(template)
 
-        if not template.endswith('.puz'):
-            template += '.puz'
+        if not template.endswith(".puz"):
+            template += ".puz"
 
-        template = ' '.join(template.split())
+        template = " ".join(template.split())
 
         return template
 
@@ -85,8 +87,7 @@ class BaseDownloader:
         puzzle = self.parse_xword(xword_data)
 
         puzzle = sanitize_for_puzfile(
-            puzzle,
-            preserve_html=self.settings.get("preserve_html", False)
+            puzzle, preserve_html=self.settings.get("preserve_html", False)
         )
 
         return puzzle
