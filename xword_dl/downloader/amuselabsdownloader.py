@@ -109,8 +109,11 @@ class AmuseLabsDownloader(BaseDownloader):
     def fetch_data(self, solver_url):
         res = requests.get(solver_url)
 
-        if not res.ok:
-            raise XWordDLException("Could not fetch solver.")
+        # It looks like Amuse returns 200s instead of 404s. This is hacky but catches them
+        # early and produces a more informative error than letting it through to fail at
+        # the parsing stage
+        if (not res.ok or "The puzzle you are trying to access was not found" in res.text):
+            raise XWordDLException(f"Could not fetch solver at {solver_url}")
 
         if 'window.rawc' in res.text or 'window.puzzleEnv.rawc' in res.text:
             rawc = next((line.strip().split("'")[1] for line in res.text.splitlines()

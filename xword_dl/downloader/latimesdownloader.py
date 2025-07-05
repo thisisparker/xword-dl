@@ -18,7 +18,12 @@ class LATimesDownloader(AmuseLabsDownloader):
 
     def guess_date_from_id(self, puzzle_id):
         date_string = "".join([char for char in puzzle_id if char.isdigit()])
-        self.date = datetime.datetime.strptime(date_string, "%y%m%d")
+        # Historically the Amuse ID has very consistently been tca_yyyymmdd
+        # but if it's not (as on 2025-07-05) this breaks without the try/except
+        try:
+            self.date = datetime.datetime.strptime(date_string, "%y%m%d")
+        except ValueError:
+            pass
 
     def find_by_date(self, dt):
         url_formatted_date = dt.strftime("%y%m%d")
@@ -32,7 +37,9 @@ class LATimesDownloader(AmuseLabsDownloader):
         split_on_dashes = puzzle.title.split(" - ")
         if len(split_on_dashes) > 1:
             title = split_on_dashes[-1].strip()
-        else:
+        elif self.date:
             title = ""
+        else:
+            title = puzzle.title
 
         return super().pick_filename(puzzle, title=title, **kwargs)
