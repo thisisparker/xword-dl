@@ -98,12 +98,16 @@ def parse_for_embedded_puzzle(url: str, **kwargs):
     sources.insert(0, url)
 
     for src in sources:
-        for dlr in supported_downloaders:
-            puzzle_url = dlr.matches_embed_url(src)
-            # TODO: would it be better to just return a URL and have controller
-            # request this from the plugin via normal methods?
-            if puzzle_url is not None:
-                return (dlr(), puzzle_url)
+        try:
+            for dlr in supported_downloaders:
+                puzzle_url = dlr.matches_embed_url(src)
+                # TODO: would it be better to just return a URL and have controller
+                # request this from the plugin via normal methods?
+                if puzzle_url is not None:
+                    return (dlr(), puzzle_url)
+        except Exception as e:
+            pass
+            # print(f"Error processing {src}: {e}")
 
     return None, None
 
