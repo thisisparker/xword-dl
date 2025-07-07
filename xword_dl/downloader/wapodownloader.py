@@ -63,14 +63,17 @@ class WaPoDownloader(BaseDownloader):
 
         solution = ""
         fill = ""
+        markup = b""
 
         for cell in xw_data["cells"]:
             if ans := cell.get("answer"):
                 solution += ans
                 fill += "-"
+                markup += b"\x80" if cell.get("circle") else b"\x00"
             else:
                 solution += "."
                 fill += "."
+                markup += b"\x00"
 
         puzzle.solution = solution
         puzzle.fill = fill
@@ -81,5 +84,12 @@ class WaPoDownloader(BaseDownloader):
         clues.sort(key=lambda x: (min(x["indexes"]), x["direction"]))
 
         puzzle.clues = [clue["clue"].strip() for clue in clues]
+
+        has_markup = b"\x80" in markup
+
+        if has_markup:
+            puzzle.extensions[b"GEXT"] = markup
+            puzzle._extensions_order.append(b"GEXT")
+            puzzle.markup()
 
         return puzzle
