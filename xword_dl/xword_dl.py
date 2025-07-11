@@ -103,7 +103,7 @@ def parse_for_embedded_puzzle(url: str, **kwargs):
             # TODO: would it be better to just return a URL and have controller
             # request this from the plugin via normal methods?
             if puzzle_url is not None:
-                return (dlr(), puzzle_url)
+                return (dlr(url=url, **kwargs), puzzle_url)
 
     return None, None
 
