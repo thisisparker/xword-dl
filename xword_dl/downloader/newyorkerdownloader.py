@@ -2,6 +2,7 @@ import json
 import urllib.parse
 
 import dateparser
+import datetime
 import requests
 
 from bs4 import BeautifulSoup, Tag
@@ -32,7 +33,11 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         )
 
     def find_by_date(self, dt):
-        url_format = dt.strftime("%Y/%m/%d")
+        # On 2025-07-09 New Yorker changed URL format from /Y/m/d to /Y-m-d
+        separator = '-'
+        if dt < datetime.datetime(2025, 7, 9, 0, 0, 0, 0):
+            separator = '/'
+        url_format = dt.strftime("%Y" + separator + "%m" + separator + "%d")
         guessed_url = urllib.parse.urljoin(
             "https://www.newyorker.com/puzzles-and-games-dept/crossword/", url_format
         )
