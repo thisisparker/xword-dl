@@ -19,6 +19,7 @@ Supported outlets:
 |*Guardian Speedy*|`grds`|✔️||✔️|
 |*Guardian Weekend*|`grdw`|✔️||✔️|
 |*Los Angeles Times*|`lat`|✔️|✔️||
+|*Los Angeles Times Mini*|`latm`|✔️|✔️||
 |*The McKinsey Crossword*|`mck`|✔️|✔️|✔️|
 |*New York Times*|`nyt`|✔️|✔️|✔️|
 |*New York Times Mini*|`nytm`|✔️|✔️|✔️|
