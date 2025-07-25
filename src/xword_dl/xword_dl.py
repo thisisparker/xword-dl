@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import os
 import sys
 import textwrap
 import urllib.parse
@@ -16,8 +15,7 @@ from .downloader import get_plugins
 from .downloader.basedownloader import BaseDownloader as __bd
 from .util import XWordDLException, parse_date_or_exit, save_puzzle
 
-with open(os.path.join(os.path.dirname(__file__), "version")) as f:
-    __version__ = f.read().strip()
+from ._version import __version__ as __version__
 
 plugins = get_plugins()
 
