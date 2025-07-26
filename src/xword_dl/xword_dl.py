@@ -15,7 +15,10 @@ from .downloader import get_plugins
 from .downloader.basedownloader import BaseDownloader as __bd
 from .util import XWordDLException, parse_date_or_exit, save_puzzle
 
-from ._version import __version__ as __version__
+try:
+    from ._version import __version__ as __version__
+except ModuleNotFoundError:
+    __version__ = '0.0.0-dev'
 
 plugins = get_plugins()
 
