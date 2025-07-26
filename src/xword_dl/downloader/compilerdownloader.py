@@ -2,7 +2,7 @@ import puz
 import requests
 import urllib.parse
 import xmltodict
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from .basedownloader import BaseDownloader
 
@@ -34,8 +34,8 @@ class CrosswordCompilerDownloader(BaseDownloader):
             return None
         soup = BeautifulSoup(res.text, "lxml")
 
-        for script in [s for s in soup.find_all("script") if s.get("src")]:
-            js_url = urllib.parse.urljoin(src, script.get("src"))
+        for script in [s for s in soup.find_all("script") if isinstance(s, Tag) and s.get("src")]:
+            js_url = urllib.parse.urljoin(src, str(script.get("src")))
             res = requests.get(js_url, headers={"User-Agent": "xword-dl"})
             if res.text.startswith("var CrosswordPuzzleData"):
                 return js_url

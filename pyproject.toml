@@ -38,3 +38,11 @@ version-file = "src/xword_dl/_version.py"
 
 [tool.hatch.version.raw-options]
 version_scheme = "no-guess-dev"
+
+[tool.ruff]
+fix = true
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
