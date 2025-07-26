@@ -46,3 +46,9 @@ fix = true
 venvPath = "."
 venv = ".venv"
 typeCheckingMode = "standard"
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.403",
+    "ruff>=0.12.5",
+]
