@@ -34,7 +34,9 @@ class CrosswordCompilerDownloader(BaseDownloader):
             return None
         soup = BeautifulSoup(res.text, "lxml")
 
-        for script in [s for s in soup.find_all("script") if isinstance(s, Tag) and s.get("src")]:
+        for script in [
+            s for s in soup.find_all("script") if isinstance(s, Tag) and s.get("src")
+        ]:
             js_url = urllib.parse.urljoin(src, str(script.get("src")))
             res = requests.get(js_url, headers={"User-Agent": "xword-dl"})
             if res.text.startswith("var CrosswordPuzzleData"):

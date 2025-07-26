@@ -78,7 +78,7 @@ class DerStandardDownloader(AmuseLabsDownloader):
                 )
 
             self.id = str(query_id[0][-3])
-            matched_url = ''.join(query_id[0])
+            matched_url = "".join(query_id[0])
 
         except KeyError:
             raise XWordDLException("Cannot find puzzle at {}.".format(url))
