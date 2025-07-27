@@ -1,0 +1,54 @@
+[project]
+name = "xword-dl"
+description = "CLI download tool for online crossword puzzles"
+readme = "README.md"
+license = "MIT"
+license-files = [ "LICENSE" ]
+authors = [ { name = "Parker Higgins", email = "parker@parkerhiggins.net"} ]
+requires-python = ">=3.10"
+dynamic = [ "version" ]
+dependencies = [
+    "beautifulsoup4==4.13.4",
+    "dateparser==1.2.2",
+    "emoji==2.14.1",
+    "html2text==2025.4.15",
+    "lxml==6.0.0",
+    "puzpy==0.2.6",
+    "pyyaml==6.0.2",
+    "requests==2.32.4",
+    "unidecode==1.4.0",
+    "xmltodict==0.14.2",
+]
+
+[project.scripts]
+xword-dl = "xword_dl.xword_dl:main"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = [
+    "hatch-vcs",
+    "hatchling>=1.27",
+]
+
+[tool.hatch]
+version.source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/xword_dl/_version.py"
+
+[tool.hatch.version.raw-options]
+version_scheme = "no-guess-dev"
+
+[tool.ruff]
+fix = true
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.403",
+    "ruff>=0.12.5",
+]

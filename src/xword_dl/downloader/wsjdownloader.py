@@ -1,3 +1,7 @@
+# type: ignore
+
+# Skip type checking while this downloader is inactive, but hopefully will fix someday!
+
 import datetime
 
 import puz
