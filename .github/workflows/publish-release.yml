@@ -2,8 +2,6 @@ name: Publish release and tag repo
 
 on:
   push:
-    branches:
-      - 'main'
     tags:
       - 'v20*'
 
@@ -11,6 +9,8 @@ jobs:
   build-and-publish-release:
     runs-on: ubuntu-latest
     environment: publish
+    permissions:
+      id-token: write
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
@@ -30,4 +30,4 @@ jobs:
       - name: Build package
         run: uv build
       - name: Publish package
-        run: uv publish
+        run: uv publish --trusted-publishing always
