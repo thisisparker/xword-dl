@@ -1,7 +1,6 @@
 import datetime
 import requests
 import urllib.parse
-from functools import partial
 
 from .compilerdownloader import CrosswordCompilerDownloader
 from ..util import XWordDLException
@@ -21,7 +20,7 @@ class DailyPopDownloader(CrosswordCompilerDownloader):
         if "x-api-key" not in self.settings["headers"]:
             self.settings["headers"]["x-api-key"] = self.get_api_key()
 
-        self.fetch_data = partial(self._fetch_data, headers=self.settings["headers"])
+        self.session.headers.update(self.settings["headers"])
 
     def get_api_key(self):
         res = requests.get(
