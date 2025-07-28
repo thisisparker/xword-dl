@@ -13,9 +13,9 @@ class LATimesDownloader(AmuseLabsDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.picker_url = "https://cdn4.amuselabs.com/lat/date-picker?set=latimes"
+        self.picker_url = "https://lat.amuselabs.com/lat/date-picker?set=latimes"
         self.url_from_id = (
-            "https://cdn4.amuselabs.com/lat/crossword?id={puzzle_id}&set=latimes"
+            "https://lat.amuselabs.com/lat/crossword?id={puzzle_id}&set=latimes"
         )
 
     def guess_date_from_id(self, puzzle_id):
@@ -64,9 +64,9 @@ class LATimesMiniDownloader(LATimesDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.picker_url = "https://cdn4.amuselabs.com/lat/date-picker?set=latimes-mini"
+        self.picker_url = "https://lat.amuselabs.com/lat/date-picker?set=latimes-mini"
         self.url_from_id = (
-            "https://cdn4.amuselabs.com/lat/crossword?id={puzzle_id}&set=latimes-mini"
+            "https://lat.amuselabs.com/lat/crossword?id={puzzle_id}&set=latimes-mini"
         )
 
     def guess_date_from_puzzle_title(self, title):
