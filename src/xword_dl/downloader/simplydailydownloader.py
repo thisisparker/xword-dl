@@ -1,11 +1,10 @@
 from datetime import datetime
-from functools import partial
 import urllib.parse
 
-from .compilerdownloader import CrosswordCompilerDownloader
+from .compilerdownloader import CrosswordCompilerJSEncodedDownloader
 
 
-class SimplyDailyDownloader(CrosswordCompilerDownloader):
+class SimplyDailyDownloader(CrosswordCompilerJSEncodedDownloader):
     command = "sdp"
     website = "simplydailypuzzles.com"
     outlet = "Simply Daily Puzzles"
@@ -20,8 +19,6 @@ class SimplyDailyDownloader(CrosswordCompilerDownloader):
 
         if "url" in kwargs and not self.date:
             self.date = self.parse_date_from_url(kwargs.get("url"))
-
-        self.fetch_data = partial(self._fetch_data, js_encoded=True)
 
     @classmethod
     def matches_url(cls, url_components):
