@@ -178,9 +178,11 @@ class AmuseLabsDownloader(BaseDownloader):
 
         # But now that might not be the right key, and there's another one
         # that we need to try!
-        # (current as of 10/26/2023)
-        key_2_order_regex = r"[a-z]+=(\d+);[a-z]+<[a-z]+.length;[a-z]+\+="
-        key_2_digit_regex = r"<[a-z]+.length\?(\d+)"
+        # added on 2023-10-26
+        # updated with stricter regex on 2025-08-04
+        # TODO: Find a better system for finding this
+        key_2_order_regex = r"n=(\d+);n<t\.length;n\+="
+        key_2_digit_regex = r"<t\.length\?(\d+)"
 
         key_digits = [int(x) for x in re.findall(key_2_digit_regex, res2.text)]
         key_orders = [int(x) for x in re.findall(key_2_order_regex, res2.text)]
