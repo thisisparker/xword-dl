@@ -9,9 +9,8 @@ import requests
 import re
 
 from bs4 import BeautifulSoup, Tag
-
 from .basedownloader import BaseDownloader
-from ..util import XWordDLException, unidecode
+from ..util import XWordDLException, latinize
 
 
 class AmuseLabsDownloader(BaseDownloader):
@@ -240,7 +239,7 @@ class AmuseLabsDownloader(BaseDownloader):
                     solution += cell[0]
                     fill += "-"
                     rebus_board.append(rebus_index + 1)
-                    rebus_table += "{:2d}:{};".format(rebus_index, unidecode(cell))
+                    rebus_table += "{:2d}:{};".format(rebus_index, latinize(cell))
                     rebus_index += 1
 
         puzzle.solution = solution
