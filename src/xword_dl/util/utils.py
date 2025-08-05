@@ -7,20 +7,22 @@ import yaml
 from puz import Puzzle
 
 from anyascii import anyascii
-from html_text import extract_text
+from html_text.html_text import extract_text
 
 
 def latinize(string):
     """Get latin-1 version of string using the anyascii module.
-# replacement values for these characters to unidecode, we prevent it from
-# changing them.
-_unidecode.Cache[0] = [chr(c) if c > 127 else "" for c in range(256)]
+    # replacement values for these characters to unidecode, we prevent it from
+    # changing them.
+    _unidecode.Cache[0] = [chr(c) if c > 127 else "" for c in range(256)]
 
-    Calling it on one character at a time is still efficient because
-    anyascii caches lookups using a module global."""
+        Calling it on one character at a time is still efficient because
+        anyascii caches lookups using a module global."""
 
     # Replace any colons coming from anyascii with empty string to match previous unidecode behavior
-    return "".join(c if ord(c) <= 0xFF else anyascii(c).replace(':', '') for c in string)
+    return "".join(
+        c if ord(c) <= 0xFF else anyascii(c).replace(":", "") for c in string
+    )
 
 
 CONFIG_PATH = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")

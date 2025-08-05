@@ -1,4 +1,5 @@
 import re
+
 import urllib.parse
 
 from bs4 import BeautifulSoup
@@ -64,7 +65,7 @@ class DerStandardDownloader(AmuseLabsDownloader):
             # html embed content is encoded -> beautifulsoup parsing would not work
             query_id = list(
                 re.findall(
-                    r"(http)(s)*(:\/\/cdn\-eu1\.amuselabs\.com\/pmm\/crossword)(\?id\=)([0-9a-z]{8}&)amp;(set\=[^&]+)",
+                    r"(http)(s)*(:\/\/.*\.amuselabs\.com\/pmm\/crossword)(\?id\=)([0-9a-zA-Z]+)(&)amp;(set\=[^&]+)",
                     str(res.text),
                 )
             )
@@ -76,8 +77,8 @@ class DerStandardDownloader(AmuseLabsDownloader):
                     )
                 )
 
-            self.id = str(query_id[0][-2])
-            matched_url = ''.join(query_id[0])
+            self.id = str(query_id[0][-3])
+            matched_url = "".join(query_id[0])
 
         except KeyError:
             raise XWordDLException("Cannot find puzzle at {}.".format(url))

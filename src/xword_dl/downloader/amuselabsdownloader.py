@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup, Tag
 from .basedownloader import BaseDownloader
 from ..util import XWordDLException, latinize
 
+
 class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -24,36 +25,36 @@ class AmuseLabsDownloader(BaseDownloader):
 
     @classmethod
     def matches_url(cls, url_components):
-        return 'amuselabs.com' in url_components.netloc
+        return "amuselabs.com" in url_components.netloc
 
     @classmethod
     def matches_embed_url(cls, src):
         url = urllib.parse.urlparse(src)
-        if 'amuselabs.com' in url.netloc:
+        if "amuselabs.com" in url.netloc:
             return src
         return None
 
     def find_latest(self) -> str:
         if self.picker_url is None or self.url_from_id is None:
-            raise XWordDLException("This outlet does not support finding the latest crossword.")
+            raise XWordDLException(
+                "This outlet does not support finding the latest crossword."
+            )
         res = requests.get(self.picker_url)
-        soup = BeautifulSoup(res.text, 'html.parser')
+        soup = BeautifulSoup(res.text, "html.parser")
 
-        puzzles = soup.find('div', attrs={'class': 'puzzles'})
+        puzzles = soup.find("div", attrs={"class": "puzzles"})
         if not isinstance(puzzles, Tag):
-            raise XWordDLException("Unable to find class 'puzzles' in picker HTML source.")
+            raise XWordDLException(
+                "Unable to find class 'puzzles' in picker HTML source."
+            )
 
-        puzzle_id = puzzles.find(
-            'div',
-            attrs={'class': 'tile'}
-        ) or puzzles.find(
-            'li',
-            attrs={'class': 'tile'}
+        puzzle_id = puzzles.find("div", attrs={"class": "tile"}) or puzzles.find(
+            "li", attrs={"class": "tile"}
         )
 
         if not isinstance(puzzle_id, Tag):
             raise XWordDLException("Unable to find puzzle ID in picker HTML source.")
-        self.id = puzzle_id.get('data-id', '')
+        self.id = puzzle_id.get("data-id", "")
 
         self.get_and_add_picker_token(res.text)
 
@@ -68,22 +69,29 @@ class AmuseLabsDownloader(BaseDownloader):
             res = requests.get(self.picker_url)
             picker_source = res.text
 
-        if 'pickerParams.rawsps' in picker_source:
-            rawsps = next((line.strip().split("'")[1] for line in
-                         picker_source.splitlines()
-                         if 'pickerParams.rawsps' in line), None)
+        if "pickerParams.rawsps" in picker_source:
+            rawsps = next(
+                (
+                    line.strip().split("'")[1]
+                    for line in picker_source.splitlines()
+                    if "pickerParams.rawsps" in line
+                ),
+                None,
+            )
         else:
-            soup = BeautifulSoup(picker_source, 'html.parser')
-            param_tag = soup.find('script', id='params')
-            param_obj = json.loads(param_tag.string or "") if isinstance(param_tag, Tag) else {}
-            rawsps = param_obj.get('rawsps', None)
+            soup = BeautifulSoup(picker_source, "html.parser")
+            param_tag = soup.find("script", id="params")
+            param_obj = (
+                json.loads(param_tag.string or "") if isinstance(param_tag, Tag) else {}
+            )
+            rawsps = param_obj.get("rawsps", None)
 
         # FIXME: should this raise an exception when not defined?
         if rawsps:
             picker_params = json.loads(base64.b64decode(rawsps).decode("utf-8"))
-            token = picker_params.get('loadToken', None)
+            token = picker_params.get("loadToken", None)
             if token:
-                self.url_from_id += '&loadToken=' + token
+                self.url_from_id += "&loadToken=" + token
 
     def find_puzzle_url_from_id(self, puzzle_id):
         if self.url_from_id is None:
@@ -111,26 +119,38 @@ class AmuseLabsDownloader(BaseDownloader):
         # It looks like Amuse returns 200s instead of 404s. This is hacky but catches them
         # early and produces a more informative error than letting it through to fail at
         # the parsing stage
-        if (not res.ok or "The puzzle you are trying to access was not found" in res.text):
+        if (
+            not res.ok
+            or "The puzzle you are trying to access was not found" in res.text
+        ):
             raise XWordDLException(f"Could not fetch solver at {solver_url}")
 
-        if 'window.rawc' in res.text or 'window.puzzleEnv.rawc' in res.text:
-            rawc = next((line.strip().split("'")[1] for line in res.text.splitlines()
-                         if ('window.rawc' in line
-                            or 'window.puzzleEnv.rawc' in line)), None)
+        if "window.rawc" in res.text or "window.puzzleEnv.rawc" in res.text:
+            rawc = next(
+                (
+                    line.strip().split("'")[1]
+                    for line in res.text.splitlines()
+                    if ("window.rawc" in line or "window.puzzleEnv.rawc" in line)
+                ),
+                None,
+            )
         else:
             # As of 2023-12-01, it looks like the rawc value is sometimes
             # given as a parameter in an embedded json blob, which means
             # parsing the page
-            soup = BeautifulSoup(res.text, 'html.parser')
+            soup = BeautifulSoup(res.text, "html.parser")
             if not isinstance(soup, Tag):
-                raise XWordDLException("Crossword puzzle not found. Could not parse HTML.")
+                raise XWordDLException(
+                    "Crossword puzzle not found. Could not parse HTML."
+                )
 
-            script_tag = soup.find('script', id='params')
+            script_tag = soup.find("script", id="params")
             if not isinstance(script_tag, Tag):
-                raise XWordDLException("Crossword puzzle not found. Could not find script tag.")
+                raise XWordDLException(
+                    "Crossword puzzle not found. Could not find script tag."
+                )
 
-            rawc = json.loads(script_tag.string or "").get('rawc')
+            rawc = json.loads(script_tag.string or "").get("rawc")
 
         ## In some cases we need to pull the underlying JavaScript ##
         # Find the JavaScript URL
@@ -148,27 +168,32 @@ class AmuseLabsDownloader(BaseDownloader):
         m2 = re.search(r'="([0-9a-f]{7})"', res2.text)
         if m2:
             # in this format, add 2 to each digit
-            amuseKey = [int(c,16)+2 for c in m2.groups()[0]]
+            amuseKey = [int(c, 16) + 2 for c in m2.groups()[0]]
         else:
             # otherwise, grab the new format key and do not add 2
-            amuseKey = [int(x) for x in
-                        re.findall(r'=\[\]\).push\(([0-9]{1,2})\)', res2.text)]
+            amuseKey = [
+                int(x) for x in re.findall(r"=\[\]\).push\(([0-9]{1,2})\)", res2.text)
+            ]
 
         # But now that might not be the right key, and there's another one
         # that we need to try!
-        # (current as of 10/26/2023)
-        key_2_order_regex = r'[a-z]+=(\d+);[a-z]+<[a-z]+.length;[a-z]+\+='
-        key_2_digit_regex = r'<[a-z]+.length\?(\d+)'
+        # added on 2023-10-26
+        # updated with stricter regex on 2025-08-04
+        # TODO: Find a better system for finding this
+        key_2_order_regex = r"n=(\d+);n<t\.length;n\+="
+        key_2_digit_regex = r"<t\.length\?(\d+)"
 
-        key_digits = [int(x) for x in
-                      re.findall(key_2_digit_regex, res2.text)]
-        key_orders = [int(x) for x in
-                      re.findall(key_2_order_regex, res2.text)]
+        key_digits = [int(x) for x in re.findall(key_2_digit_regex, res2.text)]
+        key_orders = [int(x) for x in re.findall(key_2_order_regex, res2.text)]
 
-        amuseKey2 = [x for x, _ in sorted(zip(key_digits, key_orders), key=lambda pair: pair[1])]
+        amuseKey2 = [
+            x for x, _ in sorted(zip(key_digits, key_orders), key=lambda pair: pair[1])
+        ]
 
         # try to decode potentially obsfucated rawc with the two detected keys
-        xword_data = load_rawc(rawc, amuseKey=amuseKey) or load_rawc(rawc, amuseKey=amuseKey2)
+        xword_data = load_rawc(rawc, amuseKey=amuseKey) or load_rawc(
+            rawc, amuseKey=amuseKey2
+        )
 
         if xword_data is None:
             raise XWordDLException("Could not decode rawc for AmuseLabs puzzle.")
@@ -177,70 +202,72 @@ class AmuseLabsDownloader(BaseDownloader):
 
     def parse_xword(self, xw_data):
         puzzle = puz.Puzzle()
-        puzzle.title = xw_data.get('title', '').strip()
-        puzzle.author = xw_data.get('author', '').strip()
-        puzzle.copyright = xw_data.get('copyright', '').strip()
-        puzzle.width = xw_data.get('w')
-        puzzle.height = xw_data.get('h')
+        puzzle.title = xw_data.get("title", "").strip()
+        puzzle.author = xw_data.get("author", "").strip()
+        puzzle.copyright = xw_data.get("copyright", "").strip()
+        puzzle.width = xw_data.get("w")
+        puzzle.height = xw_data.get("h")
 
-        markup_data = xw_data.get('cellInfos', '')
+        markup_data = xw_data.get("cellInfos", "")
 
-        circled = [(square['x'], square['y']) for square in markup_data
-                   if square['isCircled']]
+        circled = [
+            (square["x"], square["y"]) for square in markup_data if square["isCircled"]
+        ]
 
-        solution = ''
-        fill = ''
-        markup = b''
+        solution = ""
+        fill = ""
+        markup = b""
         rebus_board = []
         rebus_index = 0
-        rebus_table = ''
+        rebus_table = ""
 
-        box = xw_data['box']
-        for row_num in range(xw_data.get('h')):
+        box = xw_data["box"]
+        for row_num in range(xw_data.get("h")):
             for col_num, column in enumerate(box):
                 cell = column[row_num]
-                if cell == '\x00':
-                    solution += '.'
-                    fill += '.'
-                    markup += b'\x00'
+                if cell == "\x00":
+                    solution += "."
+                    fill += "."
+                    markup += b"\x00"
                     rebus_board.append(0)
                 elif len(cell) == 1:
                     solution += cell
-                    fill += '-'
-                    markup += b'\x80' if (col_num,
-                                          row_num) in circled else b'\x00'
+                    fill += "-"
+                    markup += b"\x80" if (col_num, row_num) in circled else b"\x00"
                     rebus_board.append(0)
                 else:
                     solution += cell[0]
-                    fill += '-'
+                    fill += "-"
                     rebus_board.append(rebus_index + 1)
-                    rebus_table += '{:2d}:{};'.format(rebus_index, latinize(cell))
+                    rebus_table += "{:2d}:{};".format(rebus_index, latinize(cell))
                     rebus_index += 1
 
         puzzle.solution = solution
         puzzle.fill = fill
 
-        placed_words = xw_data['placedWords']
+        placed_words = xw_data["placedWords"]
 
-        weirdass_puz_clue_sorting = sorted(placed_words, key=lambda word: (word['y'], word['x'],
-                                                                           not word['acrossNotDown']))
+        weirdass_puz_clue_sorting = sorted(
+            placed_words,
+            key=lambda word: (word["y"], word["x"], not word["acrossNotDown"]),
+        )
 
-        clues = [word['clue']['clue'] for word in weirdass_puz_clue_sorting]
+        clues = [word["clue"]["clue"] for word in weirdass_puz_clue_sorting]
 
         puzzle.clues.extend(clues)
 
-        has_markup = b'\x80' in markup
+        has_markup = b"\x80" in markup
         has_rebus = any(rebus_board)
 
         if has_markup:
-            puzzle.extensions[b'GEXT'] = markup
-            puzzle._extensions_order.append(b'GEXT')
+            puzzle.extensions[b"GEXT"] = markup
+            puzzle._extensions_order.append(b"GEXT")
             puzzle.markup()
 
         if has_rebus:
-            puzzle.extensions[b'GRBS'] = bytes(rebus_board)
-            puzzle.extensions[b'RTBL'] = rebus_table.encode(puz.ENCODING)
-            puzzle._extensions_order.extend([b'GRBS', b'RTBL'])
+            puzzle.extensions[b"GRBS"] = bytes(rebus_board)
+            puzzle.extensions[b"RTBL"] = rebus_table.encode(puz.ENCODING)
+            puzzle._extensions_order.extend([b"GRBS", b"RTBL"])
             puzzle.rebus()
 
         return puzzle
@@ -260,18 +287,18 @@ def load_rawc(rawc, amuseKey=None):
         pass
     try:
         # case 2 is the first obfuscation
-        E = rawc.split('.')
+        E = rawc.split(".")
         A = list(E[0])
         H = E[1][::-1]
-        F = [int(A,16)+2 for A in H]
+        F = [int(A, 16) + 2 for A in H]
         B, G = 0, 0
         while B < len(A) - 1:
             C = min(F[G % len(F)], len(A) - B)
-            for D in range(C//2):
-                A[B+D], A[B+C-D-1] = A[B+C-D-1], A[B+D]
-            B+=C
-            G+=1
-        newRawc=''.join(A)
+            for D in range(C // 2):
+                A[B + D], A[B + C - D - 1] = A[B + C - D - 1], A[B + D]
+            B += C
+            G += 1
+        newRawc = "".join(A)
         return json.loads(base64.b64decode(newRawc).decode("utf-8"))
     except (binascii.Error, IndexError, json.JSONDecodeError, UnicodeError):
         if amuseKey is None:
@@ -280,16 +307,16 @@ def load_rawc(rawc, amuseKey=None):
     try:
         # case 3 is the most recent obfuscation
         e = list(rawc)
-        H=amuseKey
-        E=[]
-        F=0
+        H = amuseKey
+        E = []
+        F = 0
 
-        while F<len(H):
-            J=H[F]
+        while F < len(H):
+            J = H[F]
             E.append(J)
-            F+=1
+            F += 1
 
-        A, G, I = 0, 0, len(e)-1  # noqa: E741
+        A, G, I = 0, 0, len(e) - 1  # noqa: E741
         while A < I:
             B = E[G]
             L = I - A + 1
@@ -304,7 +331,7 @@ def load_rawc(rawc, amuseKey=None):
                 C += 1
             A += B
             G = (G + 1) % len(E)
-        deobfuscated = ''.join(e)
+        deobfuscated = "".join(e)
         return json.loads(base64.b64decode(deobfuscated).decode("utf-8"))
     except (binascii.Error, IndexError, json.JSONDecodeError, UnicodeError):
         return None

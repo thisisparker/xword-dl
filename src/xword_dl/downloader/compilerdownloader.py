@@ -2,7 +2,7 @@ import puz
 import requests
 import urllib.parse
 import xmltodict
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from .basedownloader import BaseDownloader
 
@@ -16,33 +16,11 @@ class CrosswordCompilerDownloader(BaseDownloader):
     def find_solver(self, url):
         return url
 
-    @staticmethod
-    def _fetch_data(solver_url, js_encoded=False, headers=None):
-        headers = headers or {"User-Agent": "xword-dl"}
-        res = requests.get(solver_url, headers=headers)
-
-        if js_encoded:
-            xw_data = res.text[len('var CrosswordPuzzleData = "') : -len('";')]
-            return xw_data.replace("\\", "")
-
-        return res.text
-
-    @classmethod
-    def matches_embed_url(cls, src):
-        res = requests.get(src)
-        if not res.ok:
-            return None
-        soup = BeautifulSoup(res.text, "lxml")
-
-        for script in [s for s in soup.find_all("script") if s.get("src")]:
-            js_url = urllib.parse.urljoin(src, script.get("src"))
-            res = requests.get(js_url, headers={"User-Agent": "xword-dl"})
-            if res.text.startswith("var CrosswordPuzzleData"):
-                return js_url
-
     # subclasses of CCD may want to override this method with different defaults
     def fetch_data(self, solver_url):
-        return self._fetch_data(solver_url)
+        res = self.session.get(solver_url)
+
+        return res.text
 
     def parse_xword(self, xw_data, enumeration=True):
         xw = xmltodict.parse(xw_data)
@@ -98,3 +76,28 @@ class CrosswordCompilerDownloader(BaseDownloader):
             puzzle.markup()
 
         return puzzle
+
+
+class CrosswordCompilerJSEncodedDownloader(CrosswordCompilerDownloader):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    @classmethod
+    def matches_embed_url(cls, src):
+        res = requests.get(src)
+        if not res.ok:
+            return None
+        soup = BeautifulSoup(res.text, "lxml")
+
+        for script in [
+            s for s in soup.find_all("script") if isinstance(s, Tag) and s.get("src")
+        ]:
+            js_url = urllib.parse.urljoin(src, str(script.get("src")))
+            res = requests.get(js_url, headers={"User-Agent": "xword-dl"})
+            if res.text.startswith("var CrosswordPuzzleData"):
+                return js_url
+
+    def fetch_data(self, solver_url):
+        xw_data = super().fetch_data(solver_url)
+        xw_data = xw_data[len('var CrosswordPuzzleData = "') : -len('";')]
+        return xw_data.replace("\\", "")

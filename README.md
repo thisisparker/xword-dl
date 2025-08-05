@@ -19,6 +19,7 @@ Supported outlets:
 |*Guardian Speedy*|`grds`|✔️||✔️|
 |*Guardian Weekend*|`grdw`|✔️||✔️|
 |*Los Angeles Times*|`lat`|✔️|✔️||
+|*Los Angeles Times Mini*|`latm`|✔️|✔️||
 |*The McKinsey Crossword*|`mck`|✔️|✔️|✔️|
 |*New York Times*|`nyt`|✔️|✔️|✔️|
 |*New York Times Mini*|`nytm`|✔️|✔️|✔️|
@@ -39,21 +40,25 @@ To download a puzzle, install `xword-dl` and run it on the command line.
 
 ## Installation
 
-The easiest way to install `xword-dl` is through `pip`. Install the latest version with:
+The easiest way to install `xword-dl` is with the [`uv` package manager](https://docs.astral.sh/uv/). After [installing `uv`](https://docs.astral.sh/uv/#installation), you can install the latest released version of `xword-dl` with:
 
 ```
-pip install xword-dl
+uv tool install xword-dl
 ```
 
-You can also install `xword-dl` by downloading or cloning this repository from Github. From a terminal, simply running
+You can also invoke it without installing, by running:
 
 ```
-python setup.py install
+uvx xword-dl
 ```
 
-in the downloaded directory may be enough.
+Run an unreleased version or alternative branch, with or without installation.
 
-But in either case, you probably want to install `xword-dl` and its dependencies in a dedicated virtual environment. I use `virtualenv` and `virtualenvwrapper` personally, but that's a matter of preference. If you're already feeling overwhelmed by the thought of managing Python packages, know you're not alone. The [official documentation is pretty good](https://packaging.python.org/tutorials/installing-packages/), but it's a hard problem, and it's not just you. If it's any consolation, learning how to use virtual environments today on something sort of frivolous like a crossword puzzle downloader will probably save you from serious headaches in the future when the stakes are higher.
+```
+uvx --from git+https://github.com/thisisparker/xword-dl.git<@featurebranch> xword-dl
+```
+
+It is also available through a standard `pip install`, if you want to manage your own virtual environments.
 
 ## Usage
 
@@ -139,3 +144,16 @@ and you will be prompted for your New York Times username and password. (Those c
 If authentication is successful, an authentication token will be stored in a config file. Once that token is stored, you can download puzzles with `xword-dl nyt`.
 
 In some cases, the authentication may fail because of anti-automation efforts on New York Times servers. If the automatic authentication doesn't work for you, you can [manually find your NYT-S token](https://xwstats.com/link) and save it in your config file.
+
+## Contributing
+
+`xword-dl` is open-source and freely licensed, and I welcome contributions. It is usually helpful to start by opening a new issue for discussion. Generally, only downloaders that pull crossword data from a first-party source are included in official releases.
+
+Any merged code should pass `pyright` and `ruff` checks, which are run automatically on open pull requests. Both tools are included as dev dependencies and configured in `pyproject.toml`, if you'd like to run them locally:
+
+```
+uv sync --dev
+uv run pyright
+uv run ruff check
+uv run ruff format
+```

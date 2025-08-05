@@ -162,8 +162,8 @@ class NewYorkTimesDownloader(BaseDownloader):
                 rebus_board.append(0)
             else:
                 try:
-                    suitable_answer = latinize(square.get('answer') or
-                                        square['moreAnswers']['valid'][0])
+                    suitable_answer = latinize(
+                        square.get("answer") or square["moreAnswers"]["valid"][0]
                     )
                 except (IndexError, KeyError):
                     raise XWordDLException(
