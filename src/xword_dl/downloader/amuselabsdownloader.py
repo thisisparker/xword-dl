@@ -29,10 +29,34 @@ class AmuseLabsDownloader(BaseDownloader):
         return "amuselabs.com" in url_components.netloc
 
     @classmethod
-    def matches_embed_url(cls, src):
-        url = urllib.parse.urlparse(src)
-        if "amuselabs.com" in url.netloc:
-            return src
+    def matches_embed_pattern(cls, url="", page_source=""):
+        if url and not page_source:
+            res = requests.get(url)
+            page_source = res.text
+
+        if not page_source:
+            return None
+
+        soup = BeautifulSoup(page_source, features="lxml")
+
+        sources = [
+            urllib.parse.urljoin(
+                url,
+                str(iframe.get("data-crossword-url", ""))
+                or str(iframe.get("data-src", ""))
+                or str(iframe.get("src", "")),
+            )
+            for iframe in soup.find_all("iframe")
+            if isinstance(iframe, Tag)
+        ]
+
+        sources = [src for src in sources if src != "about:blank"]
+
+        for embed_src in sources:
+            parsed_url = urllib.parse.urlparse(embed_src)
+            if "amuselabs.com" in parsed_url.netloc:
+                return embed_src
+
         return None
 
     def find_latest(self) -> str:
