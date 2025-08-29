@@ -65,7 +65,7 @@ class DerStandardDownloader(AmuseLabsDownloader):
             # html embed content is encoded -> beautifulsoup parsing would not work
             query_id = list(
                 re.findall(
-                    r"(http)(s)*(:\/\/.*\.amuselabs\.com\/pmm\/crossword)(\?id\=)([0-9a-zA-Z]+)(&)amp;(set\=[^&]+)",
+                    r"(http)(s)*(:\/\/.*\.amuselabs\.com\/pmm\/crossword)(\?id\=)([0-9a-zA-Z\-]+)(&)amp;(set\=[^&]+)",
                     str(res.text),
                 )
             )
