@@ -20,7 +20,7 @@ class CrosswordCompilerDownloader(BaseDownloader):
     def fetch_data(self, solver_url):
         res = self.session.get(solver_url)
 
-        return res.text
+        return res.content
 
     def parse_xword(self, xw_data, enumeration=True):
         xw = xmltodict.parse(xw_data)
@@ -99,5 +99,5 @@ class CrosswordCompilerJSEncodedDownloader(CrosswordCompilerDownloader):
 
     def fetch_data(self, solver_url):
         xw_data = super().fetch_data(solver_url)
-        xw_data = xw_data[len('var CrosswordPuzzleData = "') : -len('";')]
-        return xw_data.replace("\\", "")
+        xw_data = xw_data[len(b'var CrosswordPuzzleData = "') : -len(b'";')]
+        return xw_data.replace(b"\\", b"")
