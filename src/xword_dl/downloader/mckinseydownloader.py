@@ -1,9 +1,9 @@
 import urllib.parse
 
 import dateparser
-import requests
 
 from bs4 import BeautifulSoup
+from requests.exceptions import RequestException
 
 from .amuselabsdownloader import AmuseLabsDownloader
 from ..util import XWordDLException
@@ -57,7 +57,12 @@ class McKinseyDownloader(AmuseLabsDownloader):
 
     def find_latest(self):
         index_url = "https://www.mckinsey.com/featured-insights/the-mckinsey-crossword/"
-        index_res = requests.get(index_url)
+        try:
+            index_res = self.session.get(index_url, timeout=10)
+            index_res.raise_for_status()
+        except RequestException:
+            raise XWordDLException(f"Unable to connect to {index_url}")
+
         index_soup = BeautifulSoup(index_res.text, "html.parser")
 
         xword_selector = 'a[href^="/featured-insights/the-mckinsey-crossword/"]'
@@ -79,11 +84,10 @@ class McKinseyDownloader(AmuseLabsDownloader):
         return landing_page_url
 
     def find_solver(self, url):
-        res = requests.get(url)
-
         try:
+            res = self.session.get(url, timeout=10)
             res.raise_for_status()
-        except requests.exceptions.HTTPError:
+        except RequestException:
             raise XWordDLException("Unable to load {}".format(url))
 
         soup = BeautifulSoup(res.text, "html.parser")
