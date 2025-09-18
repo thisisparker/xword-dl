@@ -253,7 +253,7 @@ class AmuseLabsDownloader(BaseDownloader):
             key=lambda word: (word["y"], word["x"], not word["acrossNotDown"]),
         )
 
-        clues = [word["clue"]["clue"] for word in weirdass_puz_clue_sorting]
+        clues = [word["clue"].get("clue", "") for word in weirdass_puz_clue_sorting]
 
         puzzle.clues.extend(clues)
 
