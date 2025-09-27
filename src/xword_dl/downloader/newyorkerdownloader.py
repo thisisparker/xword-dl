@@ -142,6 +142,13 @@ class NewYorkerMiniDownloader(NewYorkerDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    @classmethod
+    def matches_url(cls, url_components):
+        return (
+            "newyorker.com" in url_components.netloc
+            and "/puzzles-and-games-dept/mini-crossword" in url_components.path
+        )
+
     def find_latest(self, search_string="/mini-crossword/"):
         return super().find_latest(search_string=search_string)
     
