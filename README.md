@@ -34,6 +34,7 @@ Supported outlets:
 |*Universal*|`uni`|✔️|✔️||
 |*USA Today*|`usa`|✔️|✔️||
 |*Vox*|`vox`|✔️|||
+|*The Walrus*|`wal`|✔️|||
 |*Washington Post*|`wp`|✔️|✔️||
 
 To download a puzzle, install `xword-dl` and run it on the command line.
