@@ -281,6 +281,11 @@ class AmuseLabsDownloader(BaseDownloader):
                     fill += "-"
                     markup += b"\x80" if (col_num, row_num) in circled else b"\x00"
                     rebus_board.append(0)
+                elif not cell:
+                    solution += "X"
+                    fill += "-"
+                    markup += b"\x00"
+                    rebus_board.append(0)
                 else:
                     solution += cell[0]
                     fill += "-"
@@ -290,6 +295,10 @@ class AmuseLabsDownloader(BaseDownloader):
 
         puzzle.solution = solution
         puzzle.fill = fill
+
+        if all(c in [".", "X"] for c in puzzle.solution):
+            puzzle.solution_state = 0x0002
+            puzzle.title += " - no solution provided"
 
         placed_words = xw_data["placedWords"]
 
