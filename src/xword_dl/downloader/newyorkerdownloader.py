@@ -151,13 +151,14 @@ class NewYorkerMiniDownloader(NewYorkerDownloader):
 
     def find_latest(self, search_string="/mini-crossword/"):
         return super().find_latest(search_string=search_string)
-    
+
     def find_by_date(self, dt):
         url_format = dt.strftime("%Y/%m/%d")
         guessed_url = urllib.parse.urljoin(
-            "https://www.newyorker.com/puzzles-and-games-dept/mini-crossword/", url_format
+            "https://www.newyorker.com/puzzles-and-games-dept/mini-crossword/",
+            url_format,
         )
         return guessed_url
-    
+
     def pick_filename(self, puzzle, boilerplate_supra="The Mini Crossword", **kwargs):
         return super().pick_filename(puzzle, boilerplate_supra, **kwargs)
