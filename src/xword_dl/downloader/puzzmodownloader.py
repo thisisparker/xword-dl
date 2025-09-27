@@ -124,8 +124,11 @@ class PuzzmoDownloader(BaseDownloader):
         return xw_data
 
     def parse_xword(self, xw_data):
-        puzzle = puz.Puzzle()
+        xd_data = xw_data["puzzle"]
 
+        puzzle = self.parse_xd_format(xd_data)
+
+        # Override xd metadata with more reliable API results
         self.date = dateparser.parse(xw_data["dailyTitle"]) or dateparser.parse(
             xw_data["dailyTitle"].split("-")[0]
         )
@@ -134,7 +137,13 @@ class PuzzmoDownloader(BaseDownloader):
         puzzle.author = join_bylines(
             [a.get("publishingName") or a.get("name") for a in xw_data["authors"]]
         )
-        puzzle_lines = [line.strip() for line in xw_data["puzzle"].splitlines()]
+
+        return puzzle
+
+    def parse_xd_format(self, xd_data):
+        puzzle = puz.Puzzle()
+
+        puzzle_lines = [line.strip() for line in xd_data.splitlines()]
 
         section = None
         blank_count = 2
@@ -167,14 +176,18 @@ class PuzzmoDownloader(BaseDownloader):
                     k, v = line.split(":", 1)
                     k, v = k.strip().lower(), v.strip()
 
-                    # In practice, these fields (and the height and width) are
-                    # less reliable than the other API-provided fields, so we will
-                    # only fall back to them.
-
-                    if k == "title" and not puzzle.title:
+                    if k == "title":
                         puzzle.title = v
-                    elif k == "author" and not puzzle.author:
+                    elif k == "author":
                         puzzle.author = v
+                    # This is how we WOULD set the date here, but so far Puzzmo
+                    # is always "Not set" and the New Yorker is always 2025-09-02
+                    # elif k == "date":
+                    #     try:
+                    #         self.date = datetime.strptime(v, "%Y-%m-%d")
+                    #         print("setting date as", self.date)
+                    #     except ValueError:
+                    #         pass
                     elif k == "copyright":
                         puzzle.copyright = v.strip(" ©")
 
@@ -194,7 +207,12 @@ class PuzzmoDownloader(BaseDownloader):
 
             elif section == "clues":
                 if clue_parts := re.match(r"([AD])(\d{1,2})\.(.*)", line):
-                    clue_list.append((clue_parts[1], int(clue_parts[2]), clue_parts[3]))
+                    clue_text = clue_parts[3]
+                    markdown_sigils = "/*-_~^"
+                    for sigil in markdown_sigils:
+                        clue_text = clue_text.replace("{" + sigil, sigil)
+                        clue_text = clue_text.replace(sigil + "}", sigil)
+                    clue_list.append((clue_parts[1], int(clue_parts[2]), clue_text))
                 else:
                     continue
 
