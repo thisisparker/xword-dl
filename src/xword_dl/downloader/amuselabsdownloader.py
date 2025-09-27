@@ -65,7 +65,9 @@ class AmuseLabsDownloader(BaseDownloader):
             base_path = ""
             puzzle_id = ""
             puzzle_set = ""
-            base_path_regex_match = re.search(r"PM_BasePath\s*=\s*\"(.*)\"", page_source)
+            base_path_regex_match = re.search(
+                r"PM_BasePath\s*=\s*\"(.*)\"", page_source
+            )
             if base_path_regex_match:
                 base_path = base_path_regex_match.groups()[0]
             embed_div = soup.find("div", attrs={"class": "pm-embed-div"})
