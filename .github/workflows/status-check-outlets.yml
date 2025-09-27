@@ -135,10 +135,10 @@ jobs:
         run: xword-dl tny -d 1/12/24
       - name: Test New Yorker Mini latest
         if: '!cancelled()'
-        run: xword-dl tnym  # Or whatever command you chose
+        run: xword-dl tnym
       - name: Test New Yorker Mini by date
         if: '!cancelled()'
-        run: xword-dl tnym -d "5/16/25" # Use a valid recent date for testing
+        run: xword-dl tnym -d "5/16/25"
       - name: Test New Yorker Mini by URL
         if: '!cancelled()'
         run: xword-dl "https://www.newyorker.com/puzzles-and-games-dept/mini-crossword/2025/05/16"	
@@ -148,6 +148,18 @@ jobs:
       - name: Test Newsday by date
         if: '!cancelled()'
         run: xword-dl nd -d "dec. 12, 2023"
+      - name: Test Observer Everyman latest
+        if: '!cancelled()'
+        run: xword-dl ever
+      - name: Test Observer Everyman by URL
+        if: '!cancelled()'
+        run: xword-dl 'https://observer.co.uk/puzzles/everyman/article/everyman-no-4109'
+      - name: Test Observer Speedy latest
+        if: '!cancelled()'
+        run: xword-dl spdy
+      - name: Test Observer Speedy by URL
+        if: '!cancelled()'
+        run: xword-dl 'https://observer.co.uk/puzzles/speedy/article/speedy-no-1563'
       - name: Test Puzzmo latest
         if: '!cancelled()'
         run: xword-dl pzm
