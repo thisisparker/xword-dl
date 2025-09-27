@@ -10,7 +10,11 @@ from ..util import XWordDLException
 
 
 class McKinseyDownloader(AmuseLabsDownloader):
-    command = "mck"
+    # command = "mck"
+    # Disabling as of 2025-09-27, because of anti-scraping tech used on McKinsey.com
+    # For posterity: they appear to be closing inbound requests by sniffing something
+    # on the SSL handshake to exclude non-browser user agents.
+    # Testing with curl showed results similar to https://github.com/curl/curl/issues/18608
     outlet = "The McKinsey Crossword"
     outlet_prefix = "McKinsey"
 
@@ -23,10 +27,11 @@ class McKinseyDownloader(AmuseLabsDownloader):
 
     @classmethod
     def matches_url(cls, url_components):
-        return (
-            "mckinsey.com" in url_components.netloc
-            and "/featured-insights/the-mckinsey-crossword" in url_components.path
-        )
+        # return (
+        #     "mckinsey.com" in url_components.netloc
+        #     and "/featured-insights/the-mckinsey-crossword" in url_components.path
+        # )
+        return False
 
     def find_by_date(self, dt):
         """
