@@ -81,7 +81,7 @@ def parse_for_embedded_puzzle(url: str, **kwargs):
     supported_downloaders = get_supported_outlets(matches_embed_pattern=True)
 
     res = requests.get(url, headers={"User-Agent": "xword-dl"})
-    page_source = res.content
+    page_source = res.text
 
     for dlr in supported_downloaders:
         puzzle_url = dlr.matches_embed_pattern(url, page_source)
