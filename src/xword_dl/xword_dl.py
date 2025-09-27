@@ -8,7 +8,6 @@ import urllib.parse
 
 import requests
 
-from bs4 import BeautifulSoup, Tag
 from puz import Puzzle
 
 from .downloader import get_plugins
@@ -79,39 +78,23 @@ def by_url(url: str, **kwargs) -> tuple[Puzzle, str]:
 
 
 def parse_for_embedded_puzzle(url: str, **kwargs):
-    supported_downloaders = get_supported_outlets(matches_embed_url=True)
+    supported_downloaders = get_supported_outlets(matches_embed_pattern=True)
 
     res = requests.get(url, headers={"User-Agent": "xword-dl"})
-    soup = BeautifulSoup(res.text, "lxml")
+    page_source = res.text
 
-    sources = [
-        urllib.parse.urljoin(
-            url,
-            str(iframe.get("data-crossword-url", ""))
-            or str(iframe.get("data-src", ""))
-            or str(iframe.get("src", "")),
-        )
-        for iframe in soup.find_all("iframe")
-        if isinstance(iframe, Tag)
-    ]
-
-    sources = [src for src in sources if src != "about:blank"]
-
-    sources.insert(0, url)
-
-    for src in sources:
-        for dlr in supported_downloaders:
-            puzzle_url = dlr.matches_embed_url(src)
-            # TODO: would it be better to just return a URL and have controller
-            # request this from the plugin via normal methods?
-            if puzzle_url is not None:
-                return (dlr(url=url, **kwargs), puzzle_url)
+    for dlr in supported_downloaders:
+        puzzle_url = dlr.matches_embed_pattern(url, page_source)
+        # TODO: would it be better to just return a URL and have controller
+        # request this from the plugin via normal methods?
+        if puzzle_url is not None:
+            return (dlr(url=url, **kwargs), puzzle_url)
 
     return None, None
 
 
 def get_supported_outlets(
-    command_only=False, matches_url=False, matches_embed_url=False
+    command_only=False, matches_url=False, matches_embed_pattern=False
 ):
     matched_plugins = []
 
@@ -125,9 +108,12 @@ def get_supported_outlets(
             is getattr(__bd.matches_url, "__func__")
         ):
             continue
-        if matches_embed_url and (
-            getattr(plugin.matches_embed_url, "__func__")
-            is getattr(__bd.matches_embed_url, "__func__")
+        if matches_embed_pattern and (
+            (
+                getattr(plugin.matches_embed_pattern, "__func__")
+                is getattr(__bd.matches_embed_pattern, "__func__")
+            )
+            or ("matches_embed_pattern" not in plugin.__dict__)
         ):
             continue
         matched_plugins.append(plugin)
