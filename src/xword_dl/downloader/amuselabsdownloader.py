@@ -1,5 +1,6 @@
 import base64
 import binascii
+import datetime
 import json
 import urllib.parse
 
@@ -253,6 +254,10 @@ class AmuseLabsDownloader(BaseDownloader):
         puzzle.copyright = xw_data.get("copyright", "").strip()
         puzzle.width = xw_data.get("w")
         puzzle.height = xw_data.get("h")
+
+        timestamp = int(xw_data.get("publishTime", 0)) // 1000
+        if timestamp and not self.date:
+            self.date = datetime.date.fromtimestamp(timestamp)
 
         markup_data = xw_data.get("cellInfos", "")
 
