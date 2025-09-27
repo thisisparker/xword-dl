@@ -184,6 +184,9 @@ jobs:
       - name: Test Vox
         if: '!cancelled()'
         run: xword-dl vox
+      - name: Test The Walrus
+        if: '!cancelled()'
+        run: xword-dl wal
       - name: Test Washington Post latest
         if: '!cancelled()'
         run: xword-dl wp
