@@ -120,15 +120,45 @@ class NewYorkerDownloader(PuzzmoDownloader):
 
         return puzzle
 
-    def pick_filename(self, puzzle, **kwargs):
+    def pick_filename(self, puzzle, boilerplate_supra="The Crossword", **kwargs):
         try:
             supra, main = puzzle.title.split(":", 1)
             if self.theme_title:
                 main = main.rsplit(" - ")[0]
-            if supra == "The Crossword" and dateparser.parse(main):
+            if supra == boilerplate_supra and dateparser.parse(main):
                 title = self.theme_title
             else:
                 title = main.strip()
         except XWordDLException:
             title = puzzle.title
         return super().pick_filename(puzzle, title=title, **kwargs)
+
+
+class NewYorkerMiniDownloader(NewYorkerDownloader):
+    command = "tnym"
+    outlet = "New Yorker Mini"
+    outlet_prefix = "New Yorker Mini"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    @classmethod
+    def matches_url(cls, url_components):
+        return (
+            "newyorker.com" in url_components.netloc
+            and "/puzzles-and-games-dept/mini-crossword" in url_components.path
+        )
+
+    def find_latest(self, search_string="/mini-crossword/"):
+        return super().find_latest(search_string=search_string)
+
+    def find_by_date(self, dt):
+        url_format = dt.strftime("%Y/%m/%d")
+        guessed_url = urllib.parse.urljoin(
+            "https://www.newyorker.com/puzzles-and-games-dept/mini-crossword/",
+            url_format,
+        )
+        return guessed_url
+
+    def pick_filename(self, puzzle, boilerplate_supra="The Mini Crossword", **kwargs):
+        return super().pick_filename(puzzle, boilerplate_supra, **kwargs)
