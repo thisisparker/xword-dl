@@ -82,15 +82,6 @@ jobs:
       - name: Test LA Times Mini by date
         if: '!cancelled()'
         run: xword-dl latm -d "july 20, 2025"
-      - name: Test McKinsey latest
-        if: '!cancelled()'
-        run: xword-dl mck
-      - name: Test McKinsey by date
-        if: '!cancelled()'
-        run: xword-dl mck -d "september 26, 2023"
-      - name: Test McKinsey by URL
-        if: '!cancelled()'
-        run: xword-dl "https://www.mckinsey.com/featured-insights/the-mckinsey-crossword/october-31-2023"
       - name: Test New York Times latest
         if: '!cancelled()'
         env:
