@@ -57,6 +57,25 @@ class AmuseLabsDownloader(BaseDownloader):
             if "amuselabs.com" in parsed_url.netloc:
                 return embed_src
 
+        script_sources = [
+            str(s.get("src")) for s in soup.find_all("script") if isinstance(s, Tag)
+        ]
+
+        if any(s.endswith("puzzleme-embed.js") for s in script_sources):
+            base_path = ""
+            puzzle_id = ""
+            puzzle_set = ""
+            base_path_regex_match = re.search(r"PM_BasePath\s*=\s*\"(.*)\"", page_source)
+            if base_path_regex_match:
+                base_path = base_path_regex_match.groups()[0]
+            embed_div = soup.find("div", attrs={"class": "pm-embed-div"})
+            if isinstance(embed_div, Tag):
+                puzzle_id = embed_div.get("data-id")
+                puzzle_set = embed_div.get("data-set")
+
+            if base_path and puzzle_id and puzzle_set:
+                return f"{base_path}crossword?id={puzzle_id}&set={puzzle_set}"
+
         return None
 
     def find_latest(self) -> str:
