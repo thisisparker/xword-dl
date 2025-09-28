@@ -82,5 +82,5 @@ class SpeedyDownloader(ObserverDownloader):
     def matches_url(cls, url_components):
         return (
             "observer.co.uk" in url_components.netloc
-            and "/puzzles/everyman/article" in url_components.path
+            and "/puzzles/speedy/article" in url_components.path
         )
