@@ -1,4 +1,6 @@
+import datetime
 import json
+import re
 import urllib.parse
 
 import dateparser
@@ -6,11 +8,11 @@ import requests
 
 from bs4 import BeautifulSoup, Tag
 
-from .amuselabsdownloader import AmuseLabsDownloader
+from .puzzmodownloader import PuzzmoDownloader
 from ..util import XWordDLException
 
 
-class NewYorkerDownloader(AmuseLabsDownloader):
+class NewYorkerDownloader(PuzzmoDownloader):
     command = "tny"
     outlet = "New Yorker"
     outlet_prefix = "New Yorker"
@@ -18,8 +20,8 @@ class NewYorkerDownloader(AmuseLabsDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.url_from_id = (
-            "https://cdn3.amuselabs.com/tny/crossword?id={puzzle_id}&set=tny-weekly"
+        self.api_endpoint = (
+            "https://puzzles-games-api.gp-prod.conde.digital/api/v1/games/"
         )
 
         self.theme_title = ""
@@ -64,31 +66,22 @@ class NewYorkerDownloader(AmuseLabsDownloader):
         return latest_url
 
     def find_solver(self, url):
-        res = requests.get(url)
+        res = self.session.get(url)
 
         try:
             res.raise_for_status()
         except requests.exceptions.HTTPError:
-            raise XWordDLException("Unable to load {}".format(url))
+            raise XWordDLException(f"Unable to load {url}")
 
-        soup = BeautifulSoup(res.text, "html.parser")
+        m = re.search(
+            r"\"id\":\"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\"",
+            res.text,
+        )
+        if not m:
+            raise XWordDLException(f"Puzzle ID not found on {url}")
+        puzzle_id = m.groups()[0]
 
-        iframe_tag = soup.find("iframe", id="crossword")
-        if not isinstance(iframe_tag, Tag):
-            raise XWordDLException("Could not find crossword iframe.")
-
-        iframe_url = iframe_tag.get("data-src")
-        if not isinstance(iframe_url, str):
-            raise XWordDLException("Could not get URL src for iframe.")
-
-        query = urllib.parse.urlparse(iframe_url).query
-        self.id = urllib.parse.parse_qs(query)["id"][0]
-
-        pubdate = soup.find("time")
-        if pubdate:
-            pubdate = pubdate.get_text()
-            pubdate_dt = dateparser.parse(pubdate)
-            self.date = pubdate_dt
+        soup = BeautifulSoup(res.text, features="lxml")
 
         theme_supra = "Today’s theme: "
         desc = soup.find("meta", attrs={"property": "og:description"})
@@ -98,10 +91,26 @@ class NewYorkerDownloader(AmuseLabsDownloader):
                 if desc.startswith(theme_supra):
                     self.theme_title = desc[len(theme_supra) :].rstrip(".")
 
-        return self.find_puzzle_url_from_id(self.id)
+        published_time = soup.find("time")
+        if isinstance(published_time, Tag):
+            datetime_attr = str(published_time.get("datetime"))
+            self.date = datetime.datetime.fromisoformat(datetime_attr)
+
+        return urllib.parse.urljoin(self.api_endpoint, puzzle_id)
+
+    def fetch_data(self, solver_url):
+        res = self.session.get(
+            solver_url, headers={"User-Agent": "xword-dl"}
+        )  # TODO: a custom user-agent is necessary here, but we should honor a user-set one
+        try:
+            res.raise_for_status()
+        except Exception as err:
+            raise XWordDLException(f"Error while downloading puzzle data: {err}")
+
+        return res.json()["data"]
 
     def parse_xword(self, xw_data):
-        puzzle = super().parse_xword(xw_data)
+        puzzle = self.parse_xd_format(xw_data)
 
         if "<" in puzzle.title:
             puzzle.title = puzzle.title.split("<")[0]
@@ -111,15 +120,45 @@ class NewYorkerDownloader(AmuseLabsDownloader):
 
         return puzzle
 
-    def pick_filename(self, puzzle, **kwargs):
+    def pick_filename(self, puzzle, boilerplate_supra="The Crossword", **kwargs):
         try:
             supra, main = puzzle.title.split(":", 1)
             if self.theme_title:
                 main = main.rsplit(" - ")[0]
-            if supra == "The Crossword" and dateparser.parse(main):
+            if supra == boilerplate_supra and dateparser.parse(main):
                 title = self.theme_title
             else:
                 title = main.strip()
         except XWordDLException:
             title = puzzle.title
         return super().pick_filename(puzzle, title=title, **kwargs)
+
+
+class NewYorkerMiniDownloader(NewYorkerDownloader):
+    command = "tnym"
+    outlet = "New Yorker Mini"
+    outlet_prefix = "New Yorker Mini"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    @classmethod
+    def matches_url(cls, url_components):
+        return (
+            "newyorker.com" in url_components.netloc
+            and "/puzzles-and-games-dept/mini-crossword" in url_components.path
+        )
+
+    def find_latest(self, search_string="/mini-crossword/"):
+        return super().find_latest(search_string=search_string)
+
+    def find_by_date(self, dt):
+        url_format = dt.strftime("%Y/%m/%d")
+        guessed_url = urllib.parse.urljoin(
+            "https://www.newyorker.com/puzzles-and-games-dept/mini-crossword/",
+            url_format,
+        )
+        return guessed_url
+
+    def pick_filename(self, puzzle, boilerplate_supra="The Mini Crossword", **kwargs):
+        return super().pick_filename(puzzle, boilerplate_supra, **kwargs)

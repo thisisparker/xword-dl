@@ -20,7 +20,7 @@ class CrosswordCompilerDownloader(BaseDownloader):
     def fetch_data(self, solver_url):
         res = self.session.get(solver_url)
 
-        return res.text
+        return res.content
 
     def parse_xword(self, xw_data, enumeration=True):
         xw = xmltodict.parse(xw_data)
@@ -83,21 +83,25 @@ class CrosswordCompilerJSEncodedDownloader(CrosswordCompilerDownloader):
         super().__init__(**kwargs)
 
     @classmethod
-    def matches_embed_url(cls, src):
-        res = requests.get(src)
-        if not res.ok:
+    def matches_embed_pattern(cls, url="", page_source=""):
+        if url and not page_source:
+            res = requests.get(url)
+            page_source = res.text
+
+        if not page_source:
             return None
-        soup = BeautifulSoup(res.text, "lxml")
+
+        soup = BeautifulSoup(page_source, "lxml")
 
         for script in [
             s for s in soup.find_all("script") if isinstance(s, Tag) and s.get("src")
         ]:
-            js_url = urllib.parse.urljoin(src, str(script.get("src")))
+            js_url = urllib.parse.urljoin(url, str(script.get("src")))
             res = requests.get(js_url, headers={"User-Agent": "xword-dl"})
             if res.text.startswith("var CrosswordPuzzleData"):
                 return js_url
 
     def fetch_data(self, solver_url):
         xw_data = super().fetch_data(solver_url)
-        xw_data = xw_data[len('var CrosswordPuzzleData = "') : -len('";')]
-        return xw_data.replace("\\", "")
+        xw_data = xw_data[len(b'var CrosswordPuzzleData = "') : -len(b'";')]
+        return xw_data.replace(b"\\", b"")

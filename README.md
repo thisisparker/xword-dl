@@ -20,12 +20,14 @@ Supported outlets:
 |*Guardian Weekend*|`grdw`|✔️||✔️|
 |*Los Angeles Times*|`lat`|✔️|✔️||
 |*Los Angeles Times Mini*|`latm`|✔️|✔️||
-|*The McKinsey Crossword*|`mck`|✔️|✔️|✔️|
 |*New York Times*|`nyt`|✔️|✔️|✔️|
 |*New York Times Mini*|`nytm`|✔️|✔️|✔️|
 |*New York Times Variety*|`nytv`||✔️||
 |*The New Yorker*|`tny`|✔️|✔️|✔️|
+|*The New Yorker Mini*|`tnym`|✔️|✔️|✔️|
 |*Newsday*|`nd`|✔️|✔️||
+|*Observer Everyman*|`ever`|✔️||✔️|
+|*Observer Speedy*|`spdy`|✔️||✔️|
 |*Puzzmo*|`pzm`|✔️|✔️|✔️|
 |*Puzzmo Big*|`pzmb`|✔️|✔️|✔️|
 |*Simply Daily Puzzles*|`sdp`|✔️|✔️|✔️|
@@ -34,6 +36,7 @@ Supported outlets:
 |*Universal*|`uni`|✔️|✔️||
 |*USA Today*|`usa`|✔️|✔️||
 |*Vox*|`vox`|✔️|||
+|*The Walrus*|`wal`|✔️|||
 |*Washington Post*|`wp`|✔️|✔️||
 
 To download a puzzle, install `xword-dl` and run it on the command line.

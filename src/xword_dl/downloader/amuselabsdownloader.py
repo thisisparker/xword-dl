@@ -1,5 +1,6 @@
 import base64
 import binascii
+import datetime
 import json
 import urllib.parse
 
@@ -28,10 +29,55 @@ class AmuseLabsDownloader(BaseDownloader):
         return "amuselabs.com" in url_components.netloc
 
     @classmethod
-    def matches_embed_url(cls, src):
-        url = urllib.parse.urlparse(src)
-        if "amuselabs.com" in url.netloc:
-            return src
+    def matches_embed_pattern(cls, url="", page_source=""):
+        if url and not page_source:
+            res = requests.get(url)
+            page_source = res.text
+
+        if not page_source:
+            return None
+
+        soup = BeautifulSoup(page_source, features="lxml")
+
+        sources = [
+            urllib.parse.urljoin(
+                url,
+                str(iframe.get("data-crossword-url", ""))
+                or str(iframe.get("data-src", ""))
+                or str(iframe.get("src", "")),
+            )
+            for iframe in soup.find_all("iframe")
+            if isinstance(iframe, Tag)
+        ]
+
+        sources = [src for src in sources if src != "about:blank"]
+
+        for embed_src in sources:
+            parsed_url = urllib.parse.urlparse(embed_src)
+            if "amuselabs.com" in parsed_url.netloc:
+                return embed_src
+
+        script_sources = [
+            str(s.get("src")) for s in soup.find_all("script") if isinstance(s, Tag)
+        ]
+
+        if any(s.endswith("puzzleme-embed.js") for s in script_sources):
+            base_path = ""
+            puzzle_id = ""
+            puzzle_set = ""
+            base_path_regex_match = re.search(
+                r"PM_BasePath\s*=\s*\"(.*)\"", page_source
+            )
+            if base_path_regex_match:
+                base_path = base_path_regex_match.groups()[0]
+            embed_div = soup.find("div", attrs={"class": "pm-embed-div"})
+            if isinstance(embed_div, Tag):
+                puzzle_id = embed_div.get("data-id")
+                puzzle_set = embed_div.get("data-set")
+
+            if base_path and puzzle_id and puzzle_set:
+                return f"{base_path}crossword?id={puzzle_id}&set={puzzle_set}"
+
         return None
 
     def find_latest(self) -> str:
@@ -208,6 +254,10 @@ class AmuseLabsDownloader(BaseDownloader):
         puzzle.width = xw_data.get("w")
         puzzle.height = xw_data.get("h")
 
+        timestamp = int(xw_data.get("publishTime", 0)) // 1000
+        if timestamp and not self.date:
+            self.date = datetime.date.fromtimestamp(timestamp)
+
         markup_data = xw_data.get("cellInfos", "")
 
         circled = [
@@ -235,6 +285,11 @@ class AmuseLabsDownloader(BaseDownloader):
                     fill += "-"
                     markup += b"\x80" if (col_num, row_num) in circled else b"\x00"
                     rebus_board.append(0)
+                elif not cell:
+                    solution += "X"
+                    fill += "-"
+                    markup += b"\x00"
+                    rebus_board.append(0)
                 else:
                     solution += cell[0]
                     fill += "-"
@@ -245,6 +300,10 @@ class AmuseLabsDownloader(BaseDownloader):
         puzzle.solution = solution
         puzzle.fill = fill
 
+        if all(c in [".", "X"] for c in puzzle.solution):
+            puzzle.solution_state = 0x0002
+            puzzle.title += " - no solution provided"
+
         placed_words = xw_data["placedWords"]
 
         weirdass_puz_clue_sorting = sorted(
@@ -252,7 +311,7 @@ class AmuseLabsDownloader(BaseDownloader):
             key=lambda word: (word["y"], word["x"], not word["acrossNotDown"]),
         )
 
-        clues = [word["clue"]["clue"] for word in weirdass_puz_clue_sorting]
+        clues = [word["clue"].get("clue", "") for word in weirdass_puz_clue_sorting]
 
         puzzle.clues.extend(clues)
 

@@ -82,15 +82,6 @@ jobs:
       - name: Test LA Times Mini by date
         if: '!cancelled()'
         run: xword-dl latm -d "july 20, 2025"
-      - name: Test McKinsey latest
-        if: '!cancelled()'
-        run: xword-dl mck
-      - name: Test McKinsey by date
-        if: '!cancelled()'
-        run: xword-dl mck -d "september 26, 2023"
-      - name: Test McKinsey by URL
-        if: '!cancelled()'
-        run: xword-dl "https://www.mckinsey.com/featured-insights/the-mckinsey-crossword/october-31-2023"
       - name: Test New York Times latest
         if: '!cancelled()'
         env:
@@ -142,12 +133,33 @@ jobs:
       - name: Test New Yorker themed, special chars title
         if: '!cancelled()'
         run: xword-dl tny -d 1/12/24
+      - name: Test New Yorker Mini latest
+        if: '!cancelled()'
+        run: xword-dl tnym
+      - name: Test New Yorker Mini by date
+        if: '!cancelled()'
+        run: xword-dl tnym -d "5/16/25"
+      - name: Test New Yorker Mini by URL
+        if: '!cancelled()'
+        run: xword-dl "https://www.newyorker.com/puzzles-and-games-dept/mini-crossword/2025/05/16"	
       - name: Test Newsday latest
         if: '!cancelled()'
         run: xword-dl nd
       - name: Test Newsday by date
         if: '!cancelled()'
         run: xword-dl nd -d "dec. 12, 2023"
+      - name: Test Observer Everyman latest
+        if: '!cancelled()'
+        run: xword-dl ever
+      - name: Test Observer Everyman by URL
+        if: '!cancelled()'
+        run: xword-dl 'https://observer.co.uk/puzzles/everyman/article/everyman-no-4109'
+      - name: Test Observer Speedy latest
+        if: '!cancelled()'
+        run: xword-dl spdy
+      - name: Test Observer Speedy by URL
+        if: '!cancelled()'
+        run: xword-dl 'https://observer.co.uk/puzzles/speedy/article/speedy-no-1563'
       - name: Test Puzzmo latest
         if: '!cancelled()'
         run: xword-dl pzm
@@ -184,6 +196,9 @@ jobs:
       - name: Test Vox
         if: '!cancelled()'
         run: xword-dl vox
+      - name: Test The Walrus
+        if: '!cancelled()'
+        run: xword-dl wal
       - name: Test Washington Post latest
         if: '!cancelled()'
         run: xword-dl wp

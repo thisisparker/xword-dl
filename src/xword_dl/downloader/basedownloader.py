@@ -137,8 +137,8 @@ class BaseDownloader:
         raise NotImplementedError
 
     @classmethod
-    def matches_embed_url(cls, src: str) -> str | None:
-        """Returns a URL to a puzzle, given an embedded link this plugin can parse."""
+    def matches_embed_pattern(cls, url: str, page_source: str) -> str | None:
+        """Returns a URL to a puzzle this plugin can parse, given HTML page source."""
         raise NotImplementedError
 
     @classmethod
