@@ -89,19 +89,17 @@ class AmuseLabsDownloader(BaseDownloader):
         res = requests.get(self.picker_url)
         soup = BeautifulSoup(res.text, "html.parser")
 
-        puzzles = soup.find("div", attrs={"class": "puzzles"})
-        if not isinstance(puzzles, Tag):
-            raise XWordDLException(
-                "Unable to find class 'puzzles' in picker HTML source."
-            )
-
-        puzzle_id = puzzles.find("div", attrs={"class": "tile"}) or puzzles.find(
-            "li", attrs={"class": "tile"}
+        param_tag = soup.find("script", id="params")
+        param_obj = (
+            json.loads(param_tag.string or "") if isinstance(param_tag, Tag) else {}
         )
 
-        if not isinstance(puzzle_id, Tag):
-            raise XWordDLException("Unable to find puzzle ID in picker HTML source.")
-        self.id = puzzle_id.get("data-id", "")
+        puzzles = param_obj.get("puzzles", [])
+
+        if not puzzles:
+            raise XWordDLException("Unable to find puzzles data from picker page.")
+
+        self.id = puzzles[0]["id"]
 
         self.get_and_add_picker_token(res.text)
 
