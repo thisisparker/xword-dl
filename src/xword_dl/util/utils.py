@@ -3,19 +3,27 @@ import sys
 
 import dateparser
 import emoji
-import unidecode as _unidecode
 import yaml
 from puz import Puzzle
-from unidecode import unidecode
 
-from html2text import html2text
+from anyascii import anyascii
+from html_text.html_text import extract_text
 
 
-# The unidecode module converts Unicode strings to plain ASCII. The puz format,
-# however, can accept latin-1, which is a larger subset. By adding cached
-# replacement values for these characters to unidecode, we prevent it from
-# changing them.
-_unidecode.Cache[0] = [chr(c) if c > 127 else "" for c in range(256)]
+def latinize(string):
+    """Get latin-1 version of string using the anyascii module.
+    # replacement values for these characters to unidecode, we prevent it from
+    # changing them.
+    _unidecode.Cache[0] = [chr(c) if c > 127 else "" for c in range(256)]
+
+        Calling it on one character at a time is still efficient because
+        anyascii caches lookups using a module global."""
+
+    # Replace any colons coming from anyascii with empty string to match previous unidecode behavior
+    return "".join(
+        c if ord(c) <= 0xFF else anyascii(c).replace(":", "") for c in string
+    )
+
 
 CONFIG_PATH = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
 CONFIG_PATH = os.path.join(CONFIG_PATH, "xword-dl/xword-dl.yaml")
@@ -64,9 +72,9 @@ def remove_invalid_chars_from_filename(filename: str):
 
 def cleanup(field: str, preserve_html=False):
     if preserve_html:
-        field = unidecode(emoji.demojize(field)).strip()
+        field = latinize(emoji.demojize(field)).strip()
     else:
-        field = unidecode(emoji.demojize(html2text(field, bodywidth=0))).strip()
+        field = latinize(emoji.demojize(extract_text(field))).strip()
     return field
 
 
