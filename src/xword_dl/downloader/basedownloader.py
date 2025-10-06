@@ -10,6 +10,11 @@ from ..util import (
     sanitize_for_puzfile,
 )
 
+try:
+    from .._version import __version__ as __version__  # type: ignore
+except ModuleNotFoundError:
+    __version__ = "0.0.0-dev"
+
 
 class BaseDownloader:
     command = ""
@@ -39,8 +44,12 @@ class BaseDownloader:
         if kwargs.get("filename"):
             self.settings["filename"] = kwargs.get("filename")
 
+        headers = self.settings.get("headers", {})
+        if "User-Agent" not in headers:
+            headers["User-Agent"] = f"xword-dl/{__version__}"
+
         self.session = requests.Session()
-        self.session.headers.update(self.settings.get("headers", {}))
+        self.session.headers.update(headers)
         self.session.cookies.update(self.settings.get("cookies", {}))
 
     def pick_filename(self, puzzle: Puzzle, **kwargs) -> str:
