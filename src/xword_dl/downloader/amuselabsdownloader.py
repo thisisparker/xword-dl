@@ -56,17 +56,18 @@ class AmuseLabsDownloader(BaseDownloader):
         for embed_src in sources:
             parsed_url = urllib.parse.urlparse(embed_src)
             if "amuselabs.com" in parsed_url.netloc:
-                queries = urllib.parse.parse_qs(parsed_url.query)
-                if parsed_url.path.endswith("date-picker") and "idx" in queries:
-                    res = requests.get(embed_src)
-                    index = int(queries["idx"][0]) - 1
-                    puzzle_id = cls._select_puzzle_at_index_from_date_picker(
-                        picker_src=res.text, index=index
-                    )
-                    puzzle_url = f"{embed_src.replace('date-picker', 'crossword')}&id={puzzle_id}"
-                    return puzzle_url
-                else:
+                if "crossword" in parsed_url.path:
                     return embed_src
+                elif parsed_url.path.endswith("date-picker"):
+                    queries = urllib.parse.parse_qs(parsed_url.query)
+                    if "idx" in queries:
+                        res = requests.get(embed_src)
+                        index = int(queries["idx"][0]) - 1
+                        puzzle_id = cls._select_puzzle_at_index_from_date_picker(
+                            picker_src=res.text, index=index
+                        )
+                        puzzle_url = f"{embed_src.replace('date-picker', 'crossword')}&id={puzzle_id}"
+                        return puzzle_url
 
         script_sources = [
             str(s.get("src")) for s in soup.find_all("script") if isinstance(s, Tag)
