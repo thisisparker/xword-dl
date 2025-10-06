@@ -9,6 +9,7 @@ from ..util import (
     remove_invalid_chars_from_filename,
     sanitize_for_puzfile,
 )
+
 try:
     from .._version import __version__ as __version__  # type: ignore
 except ModuleNotFoundError:
