@@ -37,6 +37,7 @@ Supported outlets:
 |*Universal*|`uni`|✔️|✔️||
 |*USA Today*|`usa`|✔️|✔️||
 |*Vox*|`vox`|✔️|||
+|*Vulture 10x10*|`vult`|✔️|✔️|✔️|
 |*The Walrus*|`wal`|✔️|||
 |*Washington Post*|`wp`|✔️|✔️||
 
