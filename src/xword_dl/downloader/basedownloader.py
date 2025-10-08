@@ -27,6 +27,8 @@ class BaseDownloader:
 
         self.settings = {}
 
+        self.settings["headers"] = {"User-Agent": f"xword-dl/{__version__}"}
+
         self.settings.update(read_config_values("general"))
 
         if "inherit_settings" in kwargs:
@@ -41,15 +43,8 @@ class BaseDownloader:
 
         self.settings.update(kwargs)
 
-        if kwargs.get("filename"):
-            self.settings["filename"] = kwargs.get("filename")
-
-        headers = self.settings.get("headers", {})
-        if "User-Agent" not in headers:
-            headers["User-Agent"] = f"xword-dl/{__version__}"
-
         self.session = requests.Session()
-        self.session.headers.update(headers)
+        self.session.headers.update(self.settings.get("headers", {}))
         self.session.cookies.update(self.settings.get("cookies", {}))
 
     def pick_filename(self, puzzle: Puzzle, **kwargs) -> str:

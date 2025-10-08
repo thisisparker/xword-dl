@@ -10,15 +10,28 @@ class BillboardDownloader(AmuseLabsDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def find_latest(self) -> str:
-        url = super().matches_embed_pattern(
-            url="https://www.billboard.com/p/billboard-crossword/"
+    @classmethod
+    def matches_url(cls, url_components):
+        return (
+            url_components.netloc == "www.billboard.com"
+            and url_components.path.removesuffix("/") == "/p/billboard-crossword"
         )
 
-        if not url:
+    def find_latest(self) -> str:
+        return "https://www.billboard.com/p/billboard-crossword"
+
+    def find_solver(self, url) -> str:
+        res = self.session.get(url)
+
+        if not res.ok:
+            raise XWordDLException("Unable to connect to Billboard.")
+
+        solver_url = self.matches_embed_pattern(page_source=res.text)
+
+        if not solver_url:
             raise XWordDLException("Can't find latest Billboard puzzle.")
 
-        return url
+        return solver_url
 
     def parse_xword(self, xw_data):
         # Billboard puzzles are typically untitled, and some have the title set to '-'
