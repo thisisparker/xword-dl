@@ -1,6 +1,15 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
+
+[[package]]
+name = "anyascii"
+version = "0.3.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fc/e7/b652df00af4f769c1beb753d6dbf80cc8f396d6d579c4a537335b7d9ba80/anyascii-0.3.1.tar.gz", hash = "sha256:dedf57728206e286c91eed7c759505a5e45c8cd01367dd40c2f7248bb15c11f6", size = 212676, upload-time = "2022-04-06T09:24:07.835Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/39/f6/7c1e3a2a54f18b67c5bd092c25ac7327083d4b3b15731b98a9c193df2db9/anyascii-0.3.1-py3-none-any.whl", hash = "sha256:8707d3185017435933360462a65e2c70a4818490745804f38a5ca55e59eb56a0", size = 287459, upload-time = "2022-04-06T09:24:05.197Z" },
+]
 
 [[package]]
 name = "beautifulsoup4"
@@ -110,12 +119,16 @@ wheels = [
 ]
 
 [[package]]
-name = "html2text"
-version = "2025.4.15"
+name = "html-text"
+version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f8/27/e158d86ba1e82967cc2f790b0cb02030d4a8bef58e0c79a8590e9678107f/html2text-2025.4.15.tar.gz", hash = "sha256:948a645f8f0bc3abe7fd587019a2197a12436cd73d0d4908af95bfc8da337588", size = 64316, upload-time = "2025-04-15T04:02:30.045Z" }
+dependencies = [
+    { name = "lxml" },
+    { name = "lxml-html-clean" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3f/64/126a0603924530e914355338bc49775952292c2d332d036fcbf562b19cd5/html_text-0.7.0.tar.gz", hash = "sha256:3dcb7006945d8ff06b4be639678f633a06ea70bc494163d256066995e1eb9182", size = 56065, upload-time = "2025-02-10T16:07:39.49Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1d/84/1a0f9555fd5f2b1c924ff932d99b40a0f8a6b12f6dd625e2a47f415b00ea/html2text-2025.4.15-py3-none-any.whl", hash = "sha256:00569167ffdab3d7767a4cdf589b7f57e777a5ed28d12907d8c58769ec734acc", size = 34656, upload-time = "2025-04-15T04:02:28.44Z" },
+    { url = "https://files.pythonhosted.org/packages/40/75/517bfdcd4648ea50ed5866d4b21c0589242da7aa8582d9ff1d81aeae5098/html_text-0.7.0-py3-none-any.whl", hash = "sha256:11a95d5588a7b954aa229394bcd4a802d195c793d9970d5d8fc80d3d0ea9618e", size = 8099, upload-time = "2025-02-10T16:07:37.682Z" },
 ]
 
 [[package]]
@@ -199,6 +212,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/01/8b/fde194529ee8a27e6f5966d7eef05fa16f0567e4a8e8abc3b855ef6b3400/lxml-6.0.0-pp310-pypy310_pp73-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:9ab542c91f5a47aaa58abdd8ea84b498e8e49fe4b883d67800017757a3eb78e8", size = 4268788, upload-time = "2025-06-26T16:28:02.776Z" },
     { url = "https://files.pythonhosted.org/packages/99/a8/3b8e2581b4f8370fc9e8dc343af4abdfadd9b9229970fc71e67bd31c7df1/lxml-6.0.0-pp310-pypy310_pp73-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:013090383863b72c62a702d07678b658fa2567aa58d373d963cca245b017e065", size = 4411394, upload-time = "2025-06-26T16:28:05.179Z" },
     { url = "https://files.pythonhosted.org/packages/e7/a5/899a4719e02ff4383f3f96e5d1878f882f734377f10dfb69e73b5f223e44/lxml-6.0.0-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:c86df1c9af35d903d2b52d22ea3e66db8058d21dc0f59842ca5deb0595921141", size = 3517946, upload-time = "2025-06-26T16:28:07.665Z" },
+]
+
+[[package]]
+name = "lxml-html-clean"
+version = "0.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "lxml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/79/b6/466e71db127950fb8d172026a8f0a9f0dc6f64c8e78e2ca79f252e5790b8/lxml_html_clean-0.4.2.tar.gz", hash = "sha256:91291e7b5db95430abf461bc53440964d58e06cc468950f9e47db64976cebcb3", size = 21622, upload-time = "2025-04-09T11:33:59.432Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4e/0b/942cb7278d6caad79343ad2ddd636ed204a47909b969d19114a3097f5aa3/lxml_html_clean-0.4.2-py3-none-any.whl", hash = "sha256:74ccfba277adcfea87a1e9294f47dd86b05d65b4da7c5b07966e3d5f3be8a505", size = 14184, upload-time = "2025-04-09T11:33:57.988Z" },
 ]
 
 [[package]]
@@ -455,15 +480,6 @@ wheels = [
 ]
 
 [[package]]
-name = "unidecode"
-version = "1.4.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/94/7d/a8a765761bbc0c836e397a2e48d498305a865b70a8600fd7a942e85dcf63/Unidecode-1.4.0.tar.gz", hash = "sha256:ce35985008338b676573023acc382d62c264f307c8f7963733405add37ea2b23", size = 200149, upload-time = "2025-04-24T08:45:03.798Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/8f/b7/559f59d57d18b44c6d1250d2eeaa676e028b9c527431f5d0736478a73ba1/Unidecode-1.4.0-py3-none-any.whl", hash = "sha256:c3c7606c27503ad8d501270406e345ddb480a7b5f38827eafe4fa82a137f0021", size = 235837, upload-time = "2025-04-24T08:45:01.609Z" },
-]
-
-[[package]]
 name = "urllib3"
 version = "2.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -485,15 +501,15 @@ wheels = [
 name = "xword-dl"
 source = { editable = "." }
 dependencies = [
+    { name = "anyascii" },
     { name = "beautifulsoup4" },
     { name = "dateparser" },
     { name = "emoji" },
-    { name = "html2text" },
+    { name = "html-text" },
     { name = "lxml" },
     { name = "puzpy" },
     { name = "pyyaml" },
     { name = "requests" },
-    { name = "unidecode" },
     { name = "xmltodict" },
 ]
 
@@ -505,15 +521,15 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anyascii", specifier = "==0.3.1" },
     { name = "beautifulsoup4", specifier = "==4.13.4" },
     { name = "dateparser", specifier = "==1.2.2" },
     { name = "emoji", specifier = "==2.14.1" },
-    { name = "html2text", specifier = "==2025.4.15" },
+    { name = "html-text", specifier = "==0.7.0" },
     { name = "lxml", specifier = "==6.0.0" },
     { name = "puzpy", specifier = "==0.2.6" },
     { name = "pyyaml", specifier = "==6.0.2" },
     { name = "requests", specifier = "==2.32.4" },
-    { name = "unidecode", specifier = "==1.4.0" },
     { name = "xmltodict", specifier = "==0.14.2" },
 ]
 
