@@ -1,5 +1,4 @@
 import base64
-import binascii
 import datetime
 import json
 import urllib.parse
@@ -10,6 +9,9 @@ import requests
 import re
 
 from bs4 import BeautifulSoup, Tag
+
+from collections import deque
+from typing import List
 
 from .basedownloader import BaseDownloader
 from ..util import XWordDLException, unidecode
@@ -183,7 +185,7 @@ class AmuseLabsDownloader(BaseDownloader):
         return url
 
     def fetch_data(self, solver_url):
-        res = requests.get(solver_url)
+        res = self.session.get(solver_url)
 
         # It looks like Amuse returns 200s instead of 404s. This is hacky but catches them
         # early and produces a more informative error than letting it through to fail at
@@ -219,53 +221,15 @@ class AmuseLabsDownloader(BaseDownloader):
                     "Crossword puzzle not found. Could not find script tag."
                 )
 
-            rawc = json.loads(script_tag.string or "").get("rawc")
+            rawc = json.loads(script_tag.string or "").get("rawc") or ""
 
-        ## In some cases we need to pull the underlying JavaScript ##
-        # Find the JavaScript URL
-        amuseKey = None
-        m1 = re.search(r'"([^"]+c-min.js[^"]+)"', res.text)
-        if m1 is None:
-            raise XWordDLException("Failed to find JS url for amuseKey.")
-        js_url_fragment = m1.groups()[0]
-        js_url = urllib.parse.urljoin(solver_url, js_url_fragment)
+        if not rawc:
+            raise XWordDLException("Unable to find rawc object in AmuseLabs page")
 
-        # get the "key" from the URL
-        res2 = requests.get(js_url)
+        xword_data = json.loads(deobfuscate_rawc(rawc))
 
-        # matches a 7-digit hex string preceded by `="` and followed by `"`
-        m2 = re.search(r'="([0-9a-f]{7})"', res2.text)
-        if m2:
-            # in this format, add 2 to each digit
-            amuseKey = [int(c, 16) + 2 for c in m2.groups()[0]]
-        else:
-            # otherwise, grab the new format key and do not add 2
-            amuseKey = [
-                int(x) for x in re.findall(r"=\[\]\).push\(([0-9]{1,2})\)", res2.text)
-            ]
-
-        # But now that might not be the right key, and there's another one
-        # that we need to try!
-        # added on 2023-10-26
-        # updated with stricter regex on 2025-08-04
-        # TODO: Find a better system for finding this
-        key_2_order_regex = r"n=(\d+);n<t\.length;n\+="
-        key_2_digit_regex = r"<t\.length\?(\d+)"
-
-        key_digits = [int(x) for x in re.findall(key_2_digit_regex, res2.text)]
-        key_orders = [int(x) for x in re.findall(key_2_order_regex, res2.text)]
-
-        amuseKey2 = [
-            x for x, _ in sorted(zip(key_digits, key_orders), key=lambda pair: pair[1])
-        ]
-
-        # try to decode potentially obsfucated rawc with the two detected keys
-        xword_data = load_rawc(rawc, amuseKey=amuseKey) or load_rawc(
-            rawc, amuseKey=amuseKey2
-        )
-
-        if xword_data is None:
-            raise XWordDLException("Could not decode rawc for AmuseLabs puzzle.")
+        if not xword_data:
+            raise XWordDLException("Unable to decode AmuseLabs rawc object")
 
         return xword_data
 
@@ -360,60 +324,144 @@ class AmuseLabsDownloader(BaseDownloader):
         return super().pick_filename(puzzle, **kwargs)
 
 
-# helper function to decode rawc as occasionally it can be obfuscated
-def load_rawc(rawc, amuseKey=None):
-    try:
-        # the original case is just base64'd JSON
-        return json.loads(base64.b64decode(rawc).decode("utf-8"))
-    except (binascii.Error, json.JSONDecodeError, UnicodeError):
-        pass
-    try:
-        # case 2 is the first obfuscation
-        E = rawc.split(".")
-        A = list(E[0])
-        H = E[1][::-1]
-        F = [int(A, 16) + 2 for A in H]
-        B, G = 0, 0
-        while B < len(A) - 1:
-            C = min(F[G % len(F)], len(A) - B)
-            for D in range(C // 2):
-                A[B + D], A[B + C - D - 1] = A[B + C - D - 1], A[B + D]
-            B += C
-            G += 1
-        newRawc = "".join(A)
-        return json.loads(base64.b64decode(newRawc).decode("utf-8"))
-    except (binascii.Error, IndexError, json.JSONDecodeError, UnicodeError):
-        if amuseKey is None:
-            return None
+# helper functions for rawc deobfuscation
+def is_valid_key_prefix(rawc: str, key_prefix: List[int], spacing: int) -> bool:
+    """
+    Determine if the given key prefix could be valid.
 
+    Simulates reversing chunks of the string and validates that:
+    1. Base64 portions decode successfully
+    2. Decoded bytes contain only valid UTF-8 (no invalid continuation bytes)
+    """
     try:
-        # case 3 is the most recent obfuscation
-        e = list(rawc)
-        H = amuseKey
-        E = []
-        F = 0
+        pos = 0
+        chunk = []
 
-        while F < len(H):
-            J = H[F]
-            E.append(J)
-            F += 1
+        while pos < len(rawc):
+            start_pos = pos
+            key_index = 0
 
-        A, G, I = 0, 0, len(e) - 1  # noqa: E741
-        while A < I:
-            B = E[G]
-            L = I - A + 1
-            C = A
-            B = min(B, L)
-            D = A + B - 1
-            while C < D:
-                M = e[D]
-                e[D] = e[C]
-                e[C] = M
-                D -= 1
-                C += 1
-            A += B
-            G = (G + 1) % len(E)
-        deobfuscated = "".join(e)
-        return json.loads(base64.b64decode(deobfuscated).decode("utf-8"))
-    except (binascii.Error, IndexError, json.JSONDecodeError, UnicodeError):
-        return None
+            # Assemble a chunk by reversing segments of specified lengths
+            while key_index < len(key_prefix) and pos < len(rawc):
+                chunk_length = min(key_prefix[key_index], len(rawc) - pos)
+                chunk.append(rawc[pos : pos + chunk_length][::-1])
+                pos += chunk_length
+                key_index += 1
+
+            chunk_str = "".join(chunk)
+
+            # Align to 4-byte Base64 boundaries
+            base64_start = ((start_pos + 3) // 4) * 4 - start_pos
+            base64_end = (pos // 4) * 4 - start_pos
+
+            if base64_start >= len(chunk_str) or base64_end <= base64_start:
+                chunk.clear()
+                pos += spacing
+                continue
+
+            b64_chunk = chunk_str[base64_start:base64_end]
+
+            try:
+                decoded = base64.b64decode(b64_chunk)
+            except Exception:
+                return False
+
+            # Check for invalid UTF-8 bytes
+            for byte in decoded:
+                byte_val = byte if isinstance(byte, int) else ord(byte)
+                if (
+                    (byte_val < 32 and byte_val not in (0x09, 0x0A, 0x0D))
+                    or byte_val == 0xC0
+                    or byte_val == 0xC1
+                    or byte_val >= 0xF5
+                ):
+                    return False
+
+            pos += spacing
+            chunk.clear()
+
+        return True
+    except Exception:
+        return False
+
+
+def deobfuscate_rawc_with_key(rawc: str, key: List[int]) -> str:
+    """
+    Deobfuscate using a known key.
+
+    Reverses successive chunks of the string (using key digits as chunk lengths),
+    then Base64-decodes the result.
+    """
+    try:
+        buffer = list(rawc)
+        i = 0
+        segment_count = 0
+
+        # Reverse chunks based on key digits
+        while i < len(buffer) - 1:
+            segment_length = min(key[segment_count % len(key)], len(buffer) - i)
+            segment_count += 1
+
+            left = i
+            right = i + segment_length - 1
+            while left < right:
+                buffer[left], buffer[right] = buffer[right], buffer[left]
+                left += 1
+                right -= 1
+
+            i += segment_length
+
+        reversed_str = "".join(buffer)
+        decoded_bytes = base64.b64decode(reversed_str)
+        return decoded_bytes.decode("utf-8")
+    except Exception:
+        return ""
+
+
+def deobfuscate_rawc(rawc: str) -> str:
+    """
+    Brute-force deobfuscate obfuscated crossword puzzle data.
+    """
+    # Heuristic: find "ye" or "we" which appear at the start of Base64-encoded JSON
+    # In particular, these strings (reversed) correspond to `{"` and `{\n`
+    ye_pos = rawc.find("ye")
+    we_pos = rawc.find("we")
+
+    ye_pos = ye_pos if ye_pos != -1 else len(rawc)
+    we_pos = we_pos if we_pos != -1 else len(rawc)
+
+    first_key_digit = min(ye_pos, we_pos) + 2
+
+    # Initialize BFS queue
+    if first_key_digit > 18:
+        candidate_queue = deque([[]])
+    else:
+        candidate_queue = deque([[first_key_digit]])
+
+    while candidate_queue:
+        candidate_key_prefix = candidate_queue.popleft()
+
+        if len(candidate_key_prefix) == 7:
+            deobfuscated = deobfuscate_rawc_with_key(rawc, candidate_key_prefix)
+            try:
+                json.loads(deobfuscated)
+                return deobfuscated
+            except (json.JSONDecodeError, ValueError):
+                continue
+
+        # Expand by trying next digits (2-18)
+        for next_digit in range(2, 19):
+            new_candidate = candidate_key_prefix + [next_digit]
+
+            remaining_digits = 7 - len(new_candidate)
+            min_spacing = 2 * remaining_digits
+            max_spacing = 18 * remaining_digits
+
+            # Test if any spacing within bounds produces valid output
+            if any(
+                is_valid_key_prefix(rawc, new_candidate, spacing)
+                for spacing in range(min_spacing, max_spacing + 1)
+            ):
+                candidate_queue.append(new_candidate)
+
+    return "{}"
