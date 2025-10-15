@@ -325,6 +325,9 @@ class AmuseLabsDownloader(BaseDownloader):
 
 
 # helper functions for rawc deobfuscation
+# these were adapted from https://github.com/jpd236/kotwords/ and
+# used here under the terms of that project's Apache license
+# https://github.com/jpd236/kotwords/blob/master/LICENSE
 def is_valid_key_prefix(rawc: str, key_prefix: List[int], spacing: int) -> bool:
     """
     Determine if the given key prefix could be valid.
