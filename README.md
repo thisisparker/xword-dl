@@ -8,6 +8,7 @@ Supported outlets:
 |------|-------|:-------------:|:------------:|:-----------:|
 |*Atlantic*|`atl`|✔️|✔️||
 |*Crossword Club*|`club`|✔️|✔️|✔️|
+|*Billboard*|`bill`|✔️|||
 |*The Daily Beast*|`db`|✔️|||
 |*Daily Pop*|`pop`|✔️|✔️||
 |*Der Standard*|`std`|✔️||✔️|
@@ -36,6 +37,7 @@ Supported outlets:
 |*Universal*|`uni`|✔️|✔️||
 |*USA Today*|`usa`|✔️|✔️||
 |*Vox*|`vox`|✔️|||
+|*Vulture 10x10*|`vult`|✔️|✔️|✔️|
 |*The Walrus*|`wal`|✔️|||
 |*Washington Post*|`wp`|✔️|✔️||
 

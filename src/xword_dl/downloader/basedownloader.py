@@ -10,6 +10,11 @@ from ..util import (
     sanitize_for_puzfile,
 )
 
+try:
+    from .._version import __version__ as __version__  # type: ignore
+except ModuleNotFoundError:
+    __version__ = "0.0.0-dev"
+
 
 class BaseDownloader:
     command = ""
@@ -21,6 +26,8 @@ class BaseDownloader:
         self.netloc = urllib.parse.urlparse(kwargs.get("url", "")).netloc
 
         self.settings = {}
+
+        self.settings["headers"] = {"User-Agent": f"xword-dl/{__version__}"}
 
         self.settings.update(read_config_values("general"))
 
@@ -35,9 +42,6 @@ class BaseDownloader:
             self.settings.update(read_config_values(self.netloc))
 
         self.settings.update(kwargs)
-
-        if kwargs.get("filename"):
-            self.settings["filename"] = kwargs.get("filename")
 
         self.session = requests.Session()
         self.session.headers.update(self.settings.get("headers", {}))

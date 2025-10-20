@@ -99,9 +99,7 @@ class NewYorkerDownloader(PuzzmoDownloader):
         return urllib.parse.urljoin(self.api_endpoint, puzzle_id)
 
     def fetch_data(self, solver_url):
-        res = self.session.get(
-            solver_url, headers={"User-Agent": "xword-dl"}
-        )  # TODO: a custom user-agent is necessary here, but we should honor a user-set one
+        res = self.session.get(solver_url)
         try:
             res.raise_for_status()
         except Exception as err:

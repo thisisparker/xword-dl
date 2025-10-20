@@ -28,6 +28,9 @@ jobs:
       - name: Test Atlantic by date
         if: '!cancelled()'
         run: xword-dl atl -d 12/15/23
+      - name: Test Billboard latest
+        if: '!cancelled()'
+        run: xword-dl bill
       - name: Test Crossword Club latest
         if: '!cancelled()'
         run: xword-dl club
@@ -196,6 +199,15 @@ jobs:
       - name: Test Vox
         if: '!cancelled()'
         run: xword-dl vox
+      - name: Test Vulture
+        if: '!cancelled()'
+        run: xword-dl vult
+      - name: Test Vulture by URL
+        if: '!cancelled()'
+        run: xword-dl "https://www.vulture.com/article/daily-crossword-puzzle-june-19-2025.html"
+      - name: Test Vulture by date
+        if: '!cancelled()'
+        run: xword-dl vult -d "may 21, 2025"
       - name: Test The Walrus
         if: '!cancelled()'
         run: xword-dl wal

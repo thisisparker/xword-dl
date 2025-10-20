@@ -55,7 +55,18 @@ class AmuseLabsDownloader(BaseDownloader):
         for embed_src in sources:
             parsed_url = urllib.parse.urlparse(embed_src)
             if "amuselabs.com" in parsed_url.netloc:
-                return embed_src
+                if "crossword" in parsed_url.path:
+                    return embed_src
+                elif parsed_url.path.endswith("date-picker"):
+                    queries = urllib.parse.parse_qs(parsed_url.query)
+                    if "idx" in queries:
+                        res = requests.get(embed_src)
+                        index = int(queries["idx"][0]) - 1
+                        puzzle_id = cls._select_puzzle_at_index_from_date_picker(
+                            picker_src=res.text, index=index
+                        )
+                        puzzle_url = f"{embed_src.replace('date-picker', 'crossword')}&id={puzzle_id}"
+                        return puzzle_url
 
         script_sources = [
             str(s.get("src")) for s in soup.find_all("script") if isinstance(s, Tag)
@@ -85,8 +96,25 @@ class AmuseLabsDownloader(BaseDownloader):
             raise XWordDLException(
                 "This outlet does not support finding the latest crossword."
             )
+
         res = requests.get(self.picker_url)
-        soup = BeautifulSoup(res.text, "html.parser")
+
+        self.id = self._select_puzzle_at_index_from_date_picker(
+            picker_src=res.text, index=0
+        )
+
+        self.get_and_add_picker_token(res.text)
+
+        return self.find_puzzle_url_from_id(self.id)
+
+    @staticmethod
+    def _select_puzzle_at_index_from_date_picker(picker_src=None, index=0):
+        if not picker_src:
+            raise XWordDLException(
+                "Bad call to puzzle selection function. Report this as a bug."
+            )
+
+        soup = BeautifulSoup(picker_src, "html.parser")
 
         param_tag = soup.find("script", id="params")
         param_obj = (
@@ -98,11 +126,7 @@ class AmuseLabsDownloader(BaseDownloader):
         if not puzzles:
             raise XWordDLException("Unable to find puzzles data from picker page.")
 
-        self.id = puzzles[0]["id"]
-
-        self.get_and_add_picker_token(res.text)
-
-        return self.find_puzzle_url_from_id(self.id)
+        return puzzles[index]["id"]
 
     def get_and_add_picker_token(self, picker_source=None):
         if self.picker_url is None:
