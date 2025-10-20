@@ -123,26 +123,42 @@ jobs:
           xword-dl nyt --settings '{"NYT-S": "'$NYT_S_VALUE'"}' -d "9/27/18"
       - name: Test New Yorker latest
         if: '!cancelled()'
+        env:
+          HTTPS_PROXY: ${{ secrets.XWORD_DL_HTTPS_PROXY }}
         run: xword-dl tny
       - name: Test New Yorker by date
         if: '!cancelled()'
+        env:
+          HTTPS_PROXY: ${{ secrets.XWORD_DL_HTTPS_PROXY }}
         run: xword-dl tny -d "3/31/23"
       - name: Test New Yorker by URL
         if: '!cancelled()'
+        env:
+          HTTPS_PROXY: ${{ secrets.XWORD_DL_HTTPS_PROXY }}
         run: xword-dl "https://www.newyorker.com/puzzles-and-games-dept/crossword/2024/01/01"
       - name: Test New Yorker themed
         if: '!cancelled()'
+        env:
+          HTTPS_PROXY: ${{ secrets.XWORD_DL_HTTPS_PROXY }}
         run: xword-dl "https://www.newyorker.com/puzzles-and-games-dept/crossword/2024/01/05"
       - name: Test New Yorker themed, special chars title
+        env:
+          HTTPS_PROXY: ${{ secrets.XWORD_DL_HTTPS_PROXY }}
         if: '!cancelled()'
         run: xword-dl tny -d 1/12/24
       - name: Test New Yorker Mini latest
+        env:
+          HTTPS_PROXY: ${{ secrets.XWORD_DL_HTTPS_PROXY }}
         if: '!cancelled()'
         run: xword-dl tnym
       - name: Test New Yorker Mini by date
+        env:
+          HTTPS_PROXY: ${{ secrets.XWORD_DL_HTTPS_PROXY }}
         if: '!cancelled()'
         run: xword-dl tnym -d "5/16/25"
       - name: Test New Yorker Mini by URL
+        env:
+          HTTPS_PROXY: ${{ secrets.XWORD_DL_HTTPS_PROXY }}
         if: '!cancelled()'
         run: xword-dl "https://www.newyorker.com/puzzles-and-games-dept/mini-crossword/2025/05/16"	
       - name: Test Newsday latest
