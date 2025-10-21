@@ -154,7 +154,11 @@ class PuzzmoDownloader(BaseDownloader):
         fill = ""
         solution = ""
         markup = b""
+        rebus_board = []
+        rebus_index = 0
+        rebus_table = ""
         clue_list = []
+        rebus_entries = {}
 
         for line in puzzle_lines:
             if not line:
@@ -190,6 +194,11 @@ class PuzzmoDownloader(BaseDownloader):
                     #         pass
                     elif k == "copyright":
                         puzzle.copyright = v.strip(" ©")
+                    elif k == "rebus":
+                        rebus_entries = {
+                            entry.split("=")[0]: entry.split("=")[1]
+                            for entry in v.split()
+                        }
 
             elif section == "grid":
                 if not observed_width:
@@ -198,7 +207,7 @@ class PuzzmoDownloader(BaseDownloader):
                 observed_height += 1
 
                 for c in line:
-                    if c.isalpha():
+                    if c.isalnum():
                         fill += "-"
                         solution += c.upper()
                     else:
@@ -223,15 +232,32 @@ class PuzzmoDownloader(BaseDownloader):
                     for c in line:
                         markup += b"\x00" if c in "#." else b"\x80"
 
+        for c in solution:
+            if c in rebus_entries:
+                rebus_board.append(rebus_index + 1)
+                rebus_table += "{:2d}:{};".format(rebus_index, rebus_entries[c])
+                rebus_index += 1
+            else:
+                rebus_board.append(0)
+
         puzzle.height = observed_height
         puzzle.width = observed_width
         puzzle.solution = solution
         puzzle.fill = fill
 
-        if b"\x80" in markup:
+        has_markup = b"\x80" in markup
+        has_rebus = any(rebus_board)
+
+        if has_markup:
             puzzle.extensions[b"GEXT"] = markup
             puzzle._extensions_order.append(b"GEXT")
             puzzle.markup()
+
+        if has_rebus:
+            puzzle.extensions[b"GRBS"] = bytes(rebus_board)
+            puzzle.extensions[b"RTBL"] = rebus_table.encode(puz.ENCODING)
+            puzzle._extensions_order.extend([b"GRBS", b"RTBL"])
+            puzzle.rebus()
 
         clue_list.sort(key=lambda c: (c[1], c[0]))
 
