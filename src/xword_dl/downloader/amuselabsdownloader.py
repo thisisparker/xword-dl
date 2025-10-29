@@ -436,7 +436,7 @@ def deobfuscate_rawc(rawc: str) -> str:
     first_key_digit = min(ye_pos, we_pos) + 2
 
     # Initialize BFS queue
-    if first_key_digit > 18:
+    if first_key_digit > 20:
         candidate_queue = deque([[]])
     else:
         candidate_queue = deque([[first_key_digit]])
@@ -452,13 +452,13 @@ def deobfuscate_rawc(rawc: str) -> str:
             except (json.JSONDecodeError, ValueError):
                 continue
 
-        # Expand by trying next digits (2-18)
-        for next_digit in range(2, 19):
+        # Expand by trying next digits (2-20)
+        for next_digit in range(2, 21):
             new_candidate = candidate_key_prefix + [next_digit]
 
             remaining_digits = 7 - len(new_candidate)
             min_spacing = 2 * remaining_digits
-            max_spacing = 18 * remaining_digits
+            max_spacing = 20 * remaining_digits
 
             # Test if any spacing within bounds produces valid output
             if any(
