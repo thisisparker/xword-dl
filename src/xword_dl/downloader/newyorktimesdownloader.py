@@ -6,7 +6,7 @@ import requests
 from getpass import getpass
 
 from .basedownloader import BaseDownloader
-from ..util import XWordDLException, join_bylines, update_config_file, unidecode
+from ..util import XWordDLException, join_bylines, latinize, update_config_file
 
 
 class NewYorkTimesDownloader(BaseDownloader):
@@ -162,7 +162,7 @@ class NewYorkTimesDownloader(BaseDownloader):
                 rebus_board.append(0)
             else:
                 try:
-                    suitable_answer = unidecode(
+                    suitable_answer = latinize(
                         square.get("answer") or square["moreAnswers"]["valid"][0]
                     )
                 except (IndexError, KeyError):
