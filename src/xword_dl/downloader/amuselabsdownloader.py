@@ -124,12 +124,19 @@ class AmuseLabsDownloader(BaseDownloader):
             json.loads(param_tag.string or "") if isinstance(param_tag, Tag) else {}
         )
 
-        puzzles = param_obj.get("puzzles", [])
+        puzzles = param_obj.get("streakInfo", [])
 
         if not puzzles:
             raise XWordDLException("Unable to find puzzles data from picker page.")
 
-        return puzzles[index]["id"]
+        selected_id = puzzles[index].get("puzzleDetails", []).get("puzzleId")
+
+        if not selected_id:
+            raise XWordDLException(
+                "Unexpected puzzle metadata format. Please report this as a bug."
+            )
+
+        return selected_id
 
     def get_and_add_picker_token(self, picker_source=None):
         if self.picker_url is None:
