@@ -100,6 +100,12 @@ class NewYorkerDownloader(PuzzmoDownloader):
 
     def fetch_data(self, solver_url):
         res = self.session.get(solver_url)
+
+        if res.status_code == 403:
+            raise XWordDLException(
+                "Received a 403 response when attempting to download puzzle data. Your IP range may currently be blocked."
+            )
+
         try:
             res.raise_for_status()
         except Exception as err:
