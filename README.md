@@ -12,6 +12,10 @@ Supported outlets:
 |*The Daily Beast*|`db`|✔️|||
 |*Daily Pop*|`pop`|✔️|✔️||
 |*Der Standard*|`std`|✔️||✔️|
+|*Financial Times Cryptic*|`ftc`|✔️|✔️||
+|*Financial Times Polymath*|`ftp`|✔️|✔️||
+|*Financial Times Sunday*|`fts`|✔️|✔️||
+|*Financial Times Weekend*|`ftw`|✔️|✔️||
 |*Guardian Cryptic*|`grdc`|✔️||✔️|
 |*Guardian Everyman*|`grde`|✔️||✔️|
 |*Guardian Prize*|`grdp`|✔️||✔️|
