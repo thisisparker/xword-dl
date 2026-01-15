@@ -12,6 +12,7 @@ class VoxDownloader(AmuseLabsDownloader):
         super().__init__(**kwargs)
 
         self.picker_url = "https://cdn3.amuselabs.com/vox/date-picker?set=vox"
+        self.calendar_url = "https://cdn3.amuselabs.com/vox/calendar-picker?set=vox"
         self.url_from_id = (
             "https://cdn3.amuselabs.com/vox/crossword?id={puzzle_id}&set=vox"
         )
