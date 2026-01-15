@@ -25,6 +25,7 @@ class AmuseLabsDownloader(BaseDownloader):
 
         # these values must be overridden by subclasses, if used
         self.picker_url = None
+        self.calendar_url = None
         self.url_from_id = None
 
     @classmethod
@@ -109,6 +110,37 @@ class AmuseLabsDownloader(BaseDownloader):
         self.get_and_add_picker_token(res.text)
 
         return self.find_puzzle_url_from_id(self.id)
+
+    def find_by_date(self, dt: datetime) -> str:
+        if self.calendar_url is None:
+            raise XWordDLException(
+                "This outlet does not support finding crosswords by date"
+            )
+
+        res = requests.get(f"{self.calendar_url}&year={dt.year}&month={dt.month - 1}")
+        soup = BeautifulSoup(res.text, features="lxml")
+
+        # look for the calendar box for the requested day
+        puzzle_id = None
+        for div in soup.select(".crossword-calendar-box"):
+            date_divs = div.select(".date")
+            if date_divs == [] or date_divs[0].get_text() != str(dt.day):
+                continue
+
+            id_divs = div.select("[data-puzzle-type]")
+            if id_divs == []:
+                break
+
+            puzzle_id = id_divs[0].get("data-id")
+
+        if puzzle_id is None:
+            raise XWordDLException(
+                "No puzzle found for the requested date"
+            )
+
+        self.get_and_add_picker_token(res.text)
+
+        return self.find_puzzle_url_from_id(puzzle_id)
 
     @staticmethod
     def _select_puzzle_at_index_from_date_picker(picker_src=None, index=0):
