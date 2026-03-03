@@ -23,6 +23,7 @@ Supported outlets:
 |*Los Angeles Times Mini*|`latm`|✔️|✔️||
 |*New York Times*|`nyt`|✔️|✔️|✔️|
 |*New York Times Mini*|`nytm`|✔️|✔️|✔️|
+|*New York Times Midi*|`nytd`|✔️|✔️|✔️|
 |*New York Times Variety*|`nytv`||✔️||
 |*The New Yorker*|`tny`|✔️|✔️|✔️|
 |*The New Yorker Mini*|`tnym`|✔️|✔️|✔️|
