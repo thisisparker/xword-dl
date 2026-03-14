@@ -39,7 +39,7 @@ class AMUniversalDownloader(BaseDownloader):
         attempts = 3
         while attempts:
             try:
-                res = requests.get(solver_url)
+                res = self.session.get(solver_url)
                 xword_data = res.json()
                 break
             except json.JSONDecodeError:
@@ -133,7 +133,7 @@ class USATodayDownloader(BaseDownloader):
         self.date = dt
         url = f"http://picayune.uclick.com/comics/usaon/data/usaon{dt:%y%m%d}-data.xml"
         try:
-            res = requests.head(url)
+            res = self.session.head(url)
             res.raise_for_status()
         except requests.HTTPError:
             raise XWordDLException("Unable to find puzzle for date provided.")
@@ -159,7 +159,7 @@ class USATodayDownloader(BaseDownloader):
         return url
 
     def fetch_data(self, solver_url):
-        res = requests.get(solver_url)
+        res = self.session.get(solver_url)
 
         xw_data = res.content.decode()
 
