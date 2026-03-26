@@ -15,7 +15,7 @@ dependencies = [
     "lxml==6.0.0",
     "puzpy==0.2.6",
     "pyyaml==6.0.2",
-    "requests==2.32.4",
+    "requests==2.33.0",
     "unidecode==1.4.0",
     "xmltodict==0.14.2",
 ]
