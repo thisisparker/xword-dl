@@ -12,7 +12,7 @@ dependencies = [
     "dateparser==1.2.2",
     "emoji==2.14.1",
     "html2text==2025.4.15",
-    "lxml==6.0.0",
+    "lxml==6.1.0",
     "puzpy==0.2.6",
     "pyyaml==6.0.2",
     "requests==2.32.4",
