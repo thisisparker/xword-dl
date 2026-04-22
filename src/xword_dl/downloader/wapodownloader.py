@@ -23,6 +23,17 @@ class WaPoDownloader(BaseDownloader):
         return self.find_by_date(most_recent_sunday)
 
     def find_by_date(self, dt):
+        # The Washington Post only publishes a Sunday crossword (by Evan
+        # Birnholz) — the API endpoint has no puzzles for other days of the
+        # week, so reject non-Sunday dates up front with a clear error.
+        # isoweekday(): Monday=1 ... Sunday=7.
+        if dt.isoweekday() != 7:
+            raise XWordDLException(
+                f"Invalid date: The Washington Post only publishes a Sunday "
+                f"crossword (no puzzle for {dt.strftime('%Y-%m-%d')}, which is "
+                f"a {dt.strftime('%A')})."
+            )
+
         self.date = dt
         url_formatted_date = dt.strftime("%Y/%m/%d")
 
@@ -38,6 +49,15 @@ class WaPoDownloader(BaseDownloader):
             res.raise_for_status()
         except Exception as err:
             raise XWordDLException("Error downloading puzzle:", err)
+
+        # The WaPo API returns HTTP 200 with an empty body when no puzzle
+        # exists for the requested date (e.g. Sundays before ~May 2025).
+        # Surface this as a clear "no puzzle" error rather than the more
+        # cryptic "No parseable JSON".
+        if not res.text.strip():
+            raise XWordDLException(
+                f"No Washington Post puzzle available at {solver_url}."
+            )
 
         try:
             xw_data = res.json()
