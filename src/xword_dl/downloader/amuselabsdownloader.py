@@ -22,6 +22,7 @@ class AmuseLabsDownloader(BaseDownloader):
         super().__init__(**kwargs)
 
         self.id = None
+        self.uid = None
 
         # these values must be overridden by subclasses, if used
         self.picker_url = None
@@ -170,13 +171,28 @@ class AmuseLabsDownloader(BaseDownloader):
             token = picker_params.get("loadToken", None)
             if token:
                 self.url_from_id += "&loadToken=" + token
+                try:
+                    jwt_payload = token.split(".")[1]
+                    padded = jwt_payload + "=" * (-len(jwt_payload) % 4)
+                    self.uid = json.loads(
+                        base64.urlsafe_b64decode(padded).decode("utf-8")
+                    ).get("uid")
+                except Exception:
+                    pass
 
     def find_puzzle_url_from_id(self, puzzle_id):
         if self.url_from_id is None:
             raise XWordDLException(
                 "No URL for puzzle IDs was available. Please report this as a bug."
             )
-        return self.url_from_id.format(puzzle_id=puzzle_id)
+        url = self.url_from_id.format(puzzle_id=puzzle_id)
+        if self.uid:
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)
+            puzzle_set = (query.get("set") or [""])[0]
+            if puzzle_set:
+                fvlt = _compute_fvlt(puzzle_set, puzzle_id, self.uid)
+                url += ("&" if "?" in url else "?") + "fvlt=" + fvlt
+        return url
 
     def guess_date_from_id(self, puzzle_id):
         """Subclass method to set date from an AmuseLabs id, if possible.
@@ -329,6 +345,22 @@ class AmuseLabsDownloader(BaseDownloader):
         if not self.date and self.id:
             self.guess_date_from_id(self.id)
         return super().pick_filename(puzzle, **kwargs)
+
+
+# fvlt is a simple anti-scraping signature AmuseLabs added in 2026.
+# The solver page refuses to render the puzzle unless the URL also carries
+# fvlt = hex(charCodeSum(set) XOR charCodeSum(puzzle_id) XOR charCodeSum(uid)),
+# where uid comes from the loadToken JWT payload. Mirrors picker-min.js.
+def _char_code_sum(s: str) -> int:
+    total = 0
+    for ch in s:
+        total = (total + ord(ch)) & 0xFFFFFFFF
+    return total
+
+
+def _compute_fvlt(puzzle_set: str, puzzle_id: str, uid: str) -> str:
+    combined = _char_code_sum(puzzle_set) ^ _char_code_sum(puzzle_id) ^ _char_code_sum(uid)
+    return format(combined & 0xFFFFFFFF, "x")
 
 
 # helper functions for rawc deobfuscation
