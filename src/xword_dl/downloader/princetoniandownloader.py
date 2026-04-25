@@ -104,14 +104,8 @@ class PrincetonianBaseDownloader(BaseDownloader):
         puzzle.fill = "".join("-" if c != "." else "." for c in puzzle.solution)
 
         if circled:
-            markup = bytes(
-                0x80 if (col, row) in circled else 0x00
-                for row in range(height)
-                for col in range(width)
-            )
-            puzzle.extensions[b"GEXT"] = markup
-            puzzle._extensions_order.append(b"GEXT")
-            puzzle.markup()
+            indices = [row * width + col for col, row in circled]
+            puzzle.markup().set_markup_squares(indices, puz.GridMarkup.Circled)
 
         sorted_clues = sorted(clues, key=lambda c: (c["y"], c["x"], not c["is_across"]))
         puzzle.clues = [c["clue"] for c in sorted_clues]

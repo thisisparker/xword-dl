@@ -266,48 +266,41 @@ class AmuseLabsDownloader(BaseDownloader):
 
         markup_data = xw_data.get("cellInfos", "")
 
-        circled = [
+        circled_coords = {
             (square["x"], square["y"]) for square in markup_data if square["isCircled"]
-        ]
+        }
 
         solution = ""
         fill = ""
-        markup = b""
-        rebus_board = []
-        rebus_index = 0
-        rebus_table = ""
+        circled = []
 
         box = xw_data["box"]
+        i = 0
         for row_num in range(xw_data.get("h")):
             for col_num, column in enumerate(box):
                 cell = column[row_num]
                 if cell == "\x00":
                     solution += "."
                     fill += "."
-                    markup += b"\x00"
-                    rebus_board.append(0)
                 elif len(cell) == 1:
                     solution += cell
                     fill += "-"
-                    markup += b"\x80" if (col_num, row_num) in circled else b"\x00"
-                    rebus_board.append(0)
+                    if (col_num, row_num) in circled_coords:
+                        circled.append(i)
                 elif not cell:
                     solution += "X"
                     fill += "-"
-                    markup += b"\x00"
-                    rebus_board.append(0)
                 else:
                     solution += cell[0]
                     fill += "-"
-                    rebus_board.append(rebus_index + 1)
-                    rebus_table += "{:2d}:{};".format(rebus_index, unidecode(cell))
-                    rebus_index += 1
+                    puzzle.rebus().add_rebus_squares(i, unidecode(cell))
+                i += 1
 
         puzzle.solution = solution
         puzzle.fill = fill
 
         if all(c in [".", "X"] for c in puzzle.solution):
-            puzzle.solution_state = 0x0002
+            puzzle.solution_state = puz.SolutionState.NotProvided
             puzzle.title += " - no solution provided"
 
         placed_words = xw_data["placedWords"]
@@ -321,19 +314,8 @@ class AmuseLabsDownloader(BaseDownloader):
 
         puzzle.clues.extend(clues)
 
-        has_markup = b"\x80" in markup
-        has_rebus = any(rebus_board)
-
-        if has_markup:
-            puzzle.extensions[b"GEXT"] = markup
-            puzzle._extensions_order.append(b"GEXT")
-            puzzle.markup()
-
-        if has_rebus:
-            puzzle.extensions[b"GRBS"] = bytes(rebus_board)
-            puzzle.extensions[b"RTBL"] = rebus_table.encode(puz.ENCODING)
-            puzzle._extensions_order.extend([b"GRBS", b"RTBL"])
-            puzzle.rebus()
+        if circled:
+            puzzle.markup().set_markup_squares(circled, puz.GridMarkup.Circled)
 
         return puzzle
 

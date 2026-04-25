@@ -40,18 +40,20 @@ class CrosswordCompilerDownloader(BaseDownloader):
 
         solution = ""
         fill = ""
-        markup = b""
+        circled = []
 
         cells = {(int(cell["@x"]), int(cell["@y"])): cell for cell in xw_grid["cell"]}
 
-        for y in range(1, puzzle.height + 1):
-            for x in range(1, puzzle.width + 1):
-                cell = cells[(x, y)]
-                solution += cell.get("@solution", ".")
-                fill += "." if cell.get("@type") == "block" else "-"
-                markup += (
-                    b"\x80" if (cell.get("@background-shape") == "circle") else b"\x00"
-                )
+        for i, (y, x) in enumerate(
+            (y, x)
+            for y in range(1, puzzle.height + 1)
+            for x in range(1, puzzle.width + 1)
+        ):
+            cell = cells[(x, y)]
+            solution += cell.get("@solution", ".")
+            fill += "." if cell.get("@type") == "block" else "-"
+            if cell.get("@background-shape") == "circle":
+                circled.append(i)
 
         puzzle.solution = solution
         puzzle.fill = fill
@@ -68,12 +70,8 @@ class CrosswordCompilerDownloader(BaseDownloader):
 
         puzzle.clues = clues
 
-        has_markup = b"\x80" in markup
-
-        if has_markup:
-            puzzle.extensions[b"GEXT"] = markup
-            puzzle._extensions_order.append(b"GEXT")
-            puzzle.markup()
+        if circled:
+            puzzle.markup().set_markup_squares(circled, puz.GridMarkup.Circled)
 
         return puzzle
 

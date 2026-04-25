@@ -153,10 +153,8 @@ class PuzzmoDownloader(BaseDownloader):
         observed_width = 0
         fill = ""
         solution = ""
-        markup = b""
-        rebus_board = []
-        rebus_index = 0
-        rebus_table = ""
+        circled = []
+        design_idx = 0
         clue_list = []
         rebus_entries = {}
 
@@ -230,34 +228,21 @@ class PuzzmoDownloader(BaseDownloader):
                     continue
                 else:
                     for c in line:
-                        markup += b"\x00" if c in "#." else b"\x80"
-
-        for c in solution:
-            if c in rebus_entries:
-                rebus_board.append(rebus_index + 1)
-                rebus_table += "{:2d}:{};".format(rebus_index, rebus_entries[c])
-                rebus_index += 1
-            else:
-                rebus_board.append(0)
+                        if c not in "#.":
+                            circled.append(design_idx)
+                        design_idx += 1
 
         puzzle.height = observed_height
         puzzle.width = observed_width
         puzzle.solution = solution
         puzzle.fill = fill
 
-        has_markup = b"\x80" in markup
-        has_rebus = any(rebus_board)
+        for i, c in enumerate(solution):
+            if c in rebus_entries:
+                puzzle.rebus().add_rebus_squares(i, rebus_entries[c])
 
-        if has_markup:
-            puzzle.extensions[b"GEXT"] = markup
-            puzzle._extensions_order.append(b"GEXT")
-            puzzle.markup()
-
-        if has_rebus:
-            puzzle.extensions[b"GRBS"] = bytes(rebus_board)
-            puzzle.extensions[b"RTBL"] = rebus_table.encode(puz.ENCODING)
-            puzzle._extensions_order.extend([b"GRBS", b"RTBL"])
-            puzzle.rebus()
+        if circled:
+            puzzle.markup().set_markup_squares(circled, puz.GridMarkup.Circled)
 
         clue_list.sort(key=lambda c: (c[1], c[0]))
 
