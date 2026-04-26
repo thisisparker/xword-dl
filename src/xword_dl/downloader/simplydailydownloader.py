@@ -61,7 +61,7 @@ class SimplyDailyCrypticDownloader(SimplyDailyDownloader):
     command = "sdpc"
     outlet = "Simply Daily Puzzles Cryptic"
     outlet_prefix = "Simply Daily Cryptic"
-    url_subdir = "daily-cryptic"
+    url_subdir = "daily-cryptic-crossword"
     qs_prefix = "dc1"
 
 

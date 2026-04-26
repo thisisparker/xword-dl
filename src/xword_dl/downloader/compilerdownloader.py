@@ -103,5 +103,11 @@ class CrosswordCompilerJSEncodedDownloader(CrosswordCompilerDownloader):
 
     def fetch_data(self, solver_url):
         xw_data = super().fetch_data(solver_url)
-        xw_data = xw_data[len(b'var CrosswordPuzzleData = "') : -len(b'";')]
+        prefix = b'var CrosswordPuzzleData = "'
+        if not xw_data.startswith(prefix):
+            raise ValueError(
+                f"Unexpected response from {solver_url} — "
+                "puzzle data may have moved or the URL format may have changed."
+            )
+        xw_data = xw_data[len(prefix) : -len(b'";')]
         return xw_data.replace(b"\\", b"")
