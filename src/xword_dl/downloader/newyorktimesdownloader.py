@@ -290,3 +290,44 @@ class NewYorkTimesMiniDownloader(NewYorkTimesDownloader):
         url = self.url_from_date.format(puzzle_date)
 
         return url
+
+
+class NewYorkTimesBonusDownloader(NewYorkTimesDownloader):
+    command = "nytb"
+    outlet = "New York Times Bonus"
+    outlet_prefix = "NY Times Bonus"
+
+    def __init__(self, **kwargs):
+        super().__init__(inherit_settings="nyt", **kwargs)
+
+        self.url_from_date = (
+            "https://www.nytimes.com/svc/crosswords/v6/puzzle/bonus/{}.json"
+        )
+
+    @classmethod
+    def matches_url(cls, url_components):
+        return "nytimes.com" in url_components.netloc and "bonus" in url_components.path
+
+    def find_latest(self):
+        today = datetime.date.today()
+        q = "https://www.nytimes.com/svc/crosswords/v3/null/puzzles.json"
+        res = requests.get(
+            q,
+            params={
+                "publish_type": "bonus",
+                "sort_order": "desc",
+                "sort_by": "print_date",
+                "date_start": f"{today.year}-01-01",
+                "date_end": f"{today.year}-12-31",
+            },
+        )
+        res.raise_for_status()
+
+        results = res.json().get("results", [])
+
+        if not results:
+            raise XWordDLException("No bonus puzzles found for this year.")
+
+        puzzle_date = results[0]["print_date"]
+
+        return self.url_from_date.format(puzzle_date)
