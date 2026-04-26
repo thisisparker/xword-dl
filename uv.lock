@@ -256,11 +256,11 @@ wheels = [
 
 [[package]]
 name = "puzpy"
-version = "0.2.6"
+version = "0.6.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5e/e2/8186d481b80bd58127ada1f61da4e6c2af25ee6fe59ae0f709df24492e21/puzpy-0.2.6.tar.gz", hash = "sha256:7809144e07691da44598001090805d99eb1bcf8475908a23638a4061605c4015", size = 10314, upload-time = "2024-06-13T17:37:48.046Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/45/9f/51f3bb801f8d0146ed6687861bf9323e59cf872b881ae5282c966f6fcd0e/puzpy-0.6.1.tar.gz", hash = "sha256:7ec6b7e51f1a3a09af6ccd8f1b54c9e5cd95da347e340b88bac933c4d9fa7f63", size = 20011, upload-time = "2026-04-25T20:49:38.38Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/29/fe/f31d2bd2de7e74a6826e9f008ca003d00686fd120c3b4c78d23ec3fc87c2/puzpy-0.2.6-py2.py3-none-any.whl", hash = "sha256:90faa0e8b5497ed51b57e15911d66351a6bad9665c7a01218c6acd747a9dcd32", size = 9691, upload-time = "2024-06-13T17:37:46.842Z" },
+    { url = "https://files.pythonhosted.org/packages/06/5e/1fb75637f9889a948eca4012ddeff404c5962ab657d97aa18aea460e35a8/puzpy-0.6.1-py3-none-any.whl", hash = "sha256:445c14d881dc37a723eb3527dd9baa649ec309a87fddc874e94ddaedbe483ec1", size = 16185, upload-time = "2026-04-25T20:49:36.706Z" },
 ]
 
 [[package]]
@@ -554,7 +554,7 @@ requires-dist = [
     { name = "emoji", specifier = "==2.14.1" },
     { name = "html2text", specifier = "==2025.4.15" },
     { name = "lxml", specifier = "==6.1.0" },
-    { name = "puzpy", specifier = "==0.2.6" },
+    { name = "puzpy", specifier = "==0.6.1" },
     { name = "pyyaml", specifier = "==6.0.2" },
     { name = "requests", specifier = "==2.33.0" },
     { name = "unidecode", specifier = "==1.4.0" },
