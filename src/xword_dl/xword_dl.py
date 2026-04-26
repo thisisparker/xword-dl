@@ -37,14 +37,15 @@ def by_keyword(keyword: str, **kwargs) -> tuple[Puzzle, str]:
 
     if not date:
         puzzle_url = dl.find_latest()
-    elif date and hasattr(dl, "find_by_date"):
+    else:
         parsed_date = parse_date_or_exit(date)
         dl.date = parsed_date
-        puzzle_url = dl.find_by_date(parsed_date)
-    else:
-        raise XWordDLException(
-            "Selection by date not available for {}.".format(dl.outlet)
-        )
+        try:
+            puzzle_url = dl.find_by_date(parsed_date)
+        except NotImplementedError:
+            raise XWordDLException(
+                "Selection by date not available for {}.".format(dl.outlet)
+            )
 
     puzzle = dl.download(puzzle_url)
     filename = dl.pick_filename(puzzle)
@@ -243,10 +244,14 @@ def main():
         if selected_downloader is None:
             raise XWordDLException("Keyword {} not recognized.".format(args.source))
 
-        if not hasattr(selected_downloader, "authenticate"):
-            sys.exit("This outlet does not support authentication.")
-
-        selected_downloader.authenticate(args.username, args.password)
+        try:
+            selected_downloader.authenticate(args.username, args.password)
+        except NotImplementedError:
+            sys.exit(
+                "Authentication not supported for {}.".format(
+                    selected_downloader.outlet
+                )
+            )
 
     elif args.authenticate:
         sys.exit("Authentication flag must use a puzzle outlet keyword.")
