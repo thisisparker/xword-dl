@@ -71,6 +71,18 @@ class SeattleTimesMidiDownloader(AmuseLabsDownloader):
                 self.get_and_add_picker_token(picker_source=res.text)
                 return self.find_puzzle_url_from_id(self.id)
         
+        # Determine available date range for better error message
+        if streak_info:
+            oldest_time = min(p.get('puzzleDetails', {}).get('publicationTime', float('inf')) for p in streak_info)
+            newest_time = max(p.get('puzzleDetails', {}).get('publicationTime', 0) for p in streak_info)
+            oldest_date = datetime.datetime.fromtimestamp(oldest_time / 1000).strftime('%Y-%m-%d') if oldest_time != float('inf') else 'unknown'
+            newest_date = datetime.datetime.fromtimestamp(newest_time / 1000).strftime('%Y-%m-%d') if newest_time > 0 else 'unknown'
+            raise XWordDLException(
+                f"No puzzle found for date {dt.strftime('%Y-%m-%d')}. "
+                f"Seattle Times Midi archive only contains puzzles from {oldest_date} to {newest_date}. "
+                f"Historical puzzles beyond this range are not accessible via this API."
+            )
+        
         raise XWordDLException(f"No puzzle found for date {dt.strftime('%Y-%m-%d')}")
 
     def parse_xword(self, xw_data):
