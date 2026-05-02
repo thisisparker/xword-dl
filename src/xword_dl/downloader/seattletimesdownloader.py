@@ -27,8 +27,8 @@ class SeattleTimesMidiDownloader(AmuseLabsDownloader):
     def find_by_date(self, dt):
         """
         Seattle Times Midi puzzles use sequential IDs (midi-crossword-111, etc.)
-        rather than date-based IDs. We need to fetch the picker page and find
-        the puzzle that matches the requested date.
+        rather than date-based IDs. We fetch the picker page first to check recent
+        puzzles in streakInfo, then fall back to ID enumeration for older puzzles.
         """
         self.date = dt
         
@@ -59,7 +59,7 @@ class SeattleTimesMidiDownloader(AmuseLabsDownloader):
         # Publication times are in America/Los_Angeles timezone
         requested_timestamp = int(dt.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)
         
-        # Find puzzle matching the requested date (within 24 hours)
+        # First, try to find puzzle in streakInfo (fast path for recent puzzles)
         for puzzle_entry in streak_info:
             puzzle_details = puzzle_entry.get('puzzleDetails', {})
             pub_time = puzzle_details.get('publicationTime', 0)
@@ -71,19 +71,72 @@ class SeattleTimesMidiDownloader(AmuseLabsDownloader):
                 self.get_and_add_picker_token(picker_source=res.text)
                 return self.find_puzzle_url_from_id(self.id)
         
-        # Determine available date range for better error message
-        if streak_info:
-            oldest_time = min(p.get('puzzleDetails', {}).get('publicationTime', float('inf')) for p in streak_info)
-            newest_time = max(p.get('puzzleDetails', {}).get('publicationTime', 0) for p in streak_info)
-            oldest_date = datetime.datetime.fromtimestamp(oldest_time / 1000).strftime('%Y-%m-%d') if oldest_time != float('inf') else 'unknown'
-            newest_date = datetime.datetime.fromtimestamp(newest_time / 1000).strftime('%Y-%m-%d') if newest_time > 0 else 'unknown'
-            raise XWordDLException(
-                f"No puzzle found for date {dt.strftime('%Y-%m-%d')}. "
-                f"Seattle Times Midi archive only contains puzzles from {oldest_date} to {newest_date}. "
-                f"Historical puzzles beyond this range are not accessible via this API."
-            )
+        # Not in streakInfo - fall back to ID enumeration for historical puzzles
+        # Seattle Times Midi publishes daily, so estimate the ID based on days difference
+        newest_entry = max(streak_info, key=lambda p: p.get('puzzleDetails', {}).get('publicationTime', 0))
+        newest_id_num = int(newest_entry['puzzleDetails']['puzzleId'].split('-')[-1])
+        newest_time = newest_entry['puzzleDetails']['publicationTime']
         
-        raise XWordDLException(f"No puzzle found for date {dt.strftime('%Y-%m-%d')}")
+        # Calculate days between newest puzzle and requested date
+        days_diff = (newest_time - requested_timestamp) / 86400000  # milliseconds to days
+        
+        # Estimate the target ID (assuming ~1 puzzle per day)
+        estimated_id = int(newest_id_num - days_diff)
+        
+        # Search in a range around the estimate (±15 puzzles to account for gaps/schedule changes)
+        search_start = max(1, estimated_id - 15)
+        search_end = estimated_id + 15
+        
+        # Search for the puzzle, trying IDs closest to estimate first
+        search_order = []
+        for offset in range(16):
+            if estimated_id - offset >= search_start:
+                search_order.append(estimated_id - offset)
+            if estimated_id + offset <= search_end and offset > 0:
+                search_order.append(estimated_id + offset)
+        
+        for id_num in search_order:
+            if id_num < 1:
+                continue
+                
+            puzzle_id = f"midi-crossword-{id_num}"
+            
+            # Set the ID first, then get the token for THIS specific puzzle
+            self.id = puzzle_id
+            self.get_and_add_picker_token(picker_source=res.text)
+            
+            # Build puzzle URL with the correct tokens
+            puzzle_url = self.find_puzzle_url_from_id(puzzle_id)
+            
+            try:
+                # Use the parent class's fetch_data method to get decoded puzzle data
+                xword_data = self.fetch_data(puzzle_url)
+                
+                # Extract publishTime from puzzle data (in milliseconds)
+                pub_time = int(xword_data.get('publishTime', 0))
+                
+                if not pub_time:
+                    continue
+                
+                # Compare dates, not timestamps, to avoid timezone issues
+                pub_date = datetime.date.fromtimestamp(pub_time / 1000)
+                target_date = dt.date()
+                
+                if pub_date == target_date:
+                    # Found it! puzzle_url is already correct
+                    return puzzle_url
+                    
+            except Exception as e:
+                # Failed to fetch/parse this ID, try next
+                continue
+            finally:
+                # Reset url_from_id for next iteration
+                self.url_from_id = "https://seattletimes.amuselabs.com/puzzleme/crossword?id={puzzle_id}&set=seattletimes-crossword-midi"
+        
+        raise XWordDLException(
+            f"No puzzle found for date {dt.strftime('%Y-%m-%d')}. "
+            f"Searched puzzle IDs {search_start} to {search_end} based on publication schedule."
+        )
 
     def parse_xword(self, xw_data):
         # Date is already set in find_by_date
