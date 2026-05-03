@@ -73,10 +73,10 @@ class SeattleTimesMidiDownloader(AmuseLabsDownloader):
         
         # Not in streakInfo - fall back to ID enumeration for historical puzzles
         # Seattle Times Midi publishes daily, so estimate the ID based on days difference
-        # Use known reference point: Jan 12, 2026 = puzzle ID 8
+        # Use known reference point: Feb 4, 2026 = puzzle ID 1 (first puzzle)
         from datetime import datetime as dt_class
-        reference_date = dt_class(2026, 1, 12, 0, 0, 0)
-        reference_id = 8
+        reference_date = dt_class(2026, 2, 4, 0, 0, 0)
+        reference_id = 1
         reference_timestamp = int(reference_date.timestamp() * 1000)
         
         # Calculate days between reference date and requested date
