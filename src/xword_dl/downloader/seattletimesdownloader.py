@@ -73,15 +73,17 @@ class SeattleTimesMidiDownloader(AmuseLabsDownloader):
         
         # Not in streakInfo - fall back to ID enumeration for historical puzzles
         # Seattle Times Midi publishes daily, so estimate the ID based on days difference
-        newest_entry = max(streak_info, key=lambda p: p.get('puzzleDetails', {}).get('publicationTime', 0))
-        newest_id_num = int(newest_entry['puzzleDetails']['puzzleId'].split('-')[-1])
-        newest_time = newest_entry['puzzleDetails']['publicationTime']
+        # Use known reference point: Jan 12, 2026 = puzzle ID 8
+        from datetime import datetime as dt_class
+        reference_date = dt_class(2026, 1, 12, 0, 0, 0)
+        reference_id = 8
+        reference_timestamp = int(reference_date.timestamp() * 1000)
         
-        # Calculate days between newest puzzle and requested date
-        days_diff = (newest_time - requested_timestamp) / 86400000  # milliseconds to days
+        # Calculate days between reference date and requested date
+        days_diff = (requested_timestamp - reference_timestamp) / 86400000  # milliseconds to days
         
         # Estimate the target ID (assuming ~1 puzzle per day)
-        estimated_id = int(newest_id_num - days_diff)
+        estimated_id = int(reference_id + days_diff)
         
         # Search in a range around the estimate (±15 puzzles to account for gaps/schedule changes)
         search_start = max(1, estimated_id - 15)
