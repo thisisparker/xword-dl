@@ -85,13 +85,13 @@ class SeattleTimesMidiDownloader(AmuseLabsDownloader):
         # Estimate the target ID (assuming ~1 puzzle per day)
         estimated_id = int(reference_id + days_diff)
         
-        # Search in a range around the estimate (±15 puzzles to account for gaps/schedule changes)
-        search_start = max(1, estimated_id - 15)
-        search_end = estimated_id + 15
+        # Search in a range around the estimate (±60 puzzles - IDs are not strictly chronological)
+        search_start = max(1, estimated_id - 60)
+        search_end = estimated_id + 60
         
         # Search for the puzzle, trying IDs closest to estimate first
         search_order = []
-        for offset in range(16):
+        for offset in range(61):
             if estimated_id - offset >= search_start:
                 search_order.append(estimated_id - offset)
             if estimated_id + offset <= search_end and offset > 0:
