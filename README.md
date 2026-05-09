@@ -8,7 +8,7 @@ Supported outlets:
 |------|-------|:-------------:|:------------:|:-----------:|
 |*Atlantic*|`atl`|✔️|✔️||
 |*Crossword Club*|`club`|✔️|✔️|✔️|
-|*Billboard*|`bill`|✔️|||
+|*Billboard*|`bill`||✔️||
 |*The Daily Beast*|`db`|✔️|||
 |*Daily Pop*|`pop`|✔️|✔️||
 |*Der Standard*|`std`|✔️||✔️|
