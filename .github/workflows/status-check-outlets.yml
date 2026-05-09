@@ -28,9 +28,9 @@ jobs:
       - name: Test Atlantic by date
         if: '!cancelled()'
         run: xword-dl atl -d 12/15/23
-      - name: Test Billboard latest
+      - name: Test Billboard by date
         if: '!cancelled()'
-        run: xword-dl bill
+        run: xword-dl bill -d 2/10/26
       - name: Test Crossword Club latest
         if: '!cancelled()'
         run: xword-dl club

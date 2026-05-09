@@ -100,7 +100,7 @@ class AmuseLabsDownloader(BaseDownloader):
                 "This outlet does not support finding the latest crossword."
             )
 
-        res = self.session.get(self.picker_url)
+        res = requests.get(self.picker_url)
 
         self.id = self._select_puzzle_at_index_from_date_picker(
             picker_src=res.text, index=0
@@ -126,17 +126,27 @@ class AmuseLabsDownloader(BaseDownloader):
 
         puzzles = param_obj.get("streakInfo", [])
 
-        if not puzzles:
-            raise XWordDLException("Unable to find puzzles data from picker page.")
+        if puzzles:
+            selected_id = puzzles[index].get("puzzleDetails", []).get("puzzleId")
 
-        selected_id = puzzles[index].get("puzzleDetails", []).get("puzzleId")
+            if not selected_id:
+                raise XWordDLException(
+                    "Unexpected puzzle metadata format. Please report this as a bug."
+                )
 
-        if not selected_id:
-            raise XWordDLException(
-                "Unexpected puzzle metadata format. Please report this as a bug."
-            )
+            return selected_id
 
-        return selected_id
+        rawsps = param_obj.get("rawsps", "")
+        if rawsps:
+            try:
+                sps = json.loads(base64.b64decode(rawsps + "==").decode("utf-8"))
+                puzzle_id = sps.get("id")
+                if puzzle_id:
+                    return puzzle_id
+            except (ValueError, KeyError):
+                pass
+
+        raise XWordDLException("Unable to find puzzles data from picker page.")
 
     def get_and_add_picker_token(self, picker_source=None):
         if self.picker_url is None:
@@ -144,7 +154,7 @@ class AmuseLabsDownloader(BaseDownloader):
                 "No picker URL was available. Please report this as a bug."
             )
         if not picker_source:
-            res = self.session.get(self.picker_url)
+            res = requests.get(self.picker_url)
             picker_source = res.text
 
         if "pickerParams.rawsps" in picker_source:
@@ -170,18 +180,6 @@ class AmuseLabsDownloader(BaseDownloader):
             token = picker_params.get("loadToken", None)
             if token:
                 self.url_from_id += "&loadToken=" + token
-
-        set_name = (
-            urllib.parse.parse_qs(urllib.parse.urlparse(self.picker_url).query).get(
-                "set", [None]
-            )[0]
-            if self.picker_url
-            else None
-        )
-        uid = self.session.cookies.get("uid")
-        if set_name and self.id and uid:
-            assert self.url_from_id is not None
-            self.url_from_id += "&fvlt=" + _compute_fvlt(set_name, self.id, uid)
 
     def find_puzzle_url_from_id(self, puzzle_id):
         if self.url_from_id is None:
@@ -341,25 +339,6 @@ class AmuseLabsDownloader(BaseDownloader):
         if not self.date and self.id:
             self.guess_date_from_id(self.id)
         return super().pick_filename(puzzle, **kwargs)
-
-
-def _compute_fvlt(set_name: str, puzzle_id: str, uid: str) -> str:
-    """Compute the fvlt (first-visit load token) required by the AmuseLabs puzzle viewer.
-
-    Reverse-engineered from picker-min.js. The token is an XOR of unsigned
-    32-bit char-sum hashes of the set name, puzzle ID, and session UID cookie,
-    formatted as a lowercase hex string.
-    """
-
-    def charsum(s: str) -> int:
-        t = 0
-        for c in s:
-            t = (t + ord(c)) & 0xFFFFFFFF
-        return t
-
-    return format(
-        (charsum(set_name) ^ charsum(puzzle_id) ^ charsum(uid)) & 0xFFFFFFFF, "x"
-    )
 
 
 # helper functions for rawc deobfuscation
