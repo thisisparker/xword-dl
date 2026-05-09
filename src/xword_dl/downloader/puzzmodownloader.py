@@ -234,12 +234,17 @@ class PuzzmoDownloader(BaseDownloader):
 
         puzzle.height = observed_height
         puzzle.width = observed_width
-        puzzle.solution = solution
         puzzle.fill = fill
 
+        # Puzzmo uses non-latin-1 placeholders (e.g. ❶❷❸) in the grid for
+        # rebus cells; the .puz solution must be one latin-1 char per cell, so
+        # substitute the first letter of the rebus value per convention.
+        solution_chars = list(solution)
         for i, c in enumerate(solution):
             if c in rebus_entries:
                 puzzle.rebus().add_rebus_squares(i, rebus_entries[c])
+                solution_chars[i] = rebus_entries[c][0].upper()
+        puzzle.solution = "".join(solution_chars)
 
         if circled:
             puzzle.markup().set_markup_squares(circled, puz.GridMarkup.Circled)
