@@ -1,9 +1,13 @@
+"""
+Billboard hasn't run a puzzle since February 2026, so we should shut them down
+"""
+
 from .amuselabsdownloader import AmuseLabsDownloader
 from ..util import XWordDLException
 
 
 class BillboardDownloader(AmuseLabsDownloader):
-    command = "bill"
+    # command = "bill"
     outlet = "Billboard"
     outlet_prefix = "Billboard"
 
