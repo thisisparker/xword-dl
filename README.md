@@ -153,6 +153,13 @@ If authentication is successful, an authentication token will be stored in a con
 
 In some cases, the authentication may fail because of anti-automation efforts on New York Times servers. If the automatic authentication doesn't work for you, you can [manually find your NYT-S token](https://xwstats.com/link) and save it in your config file.
 
+Example config:
+
+```
+nyt:
+  NYT-S: long-NYT-S-key-here-pulled-from-your-browser-cookies
+```
+
 ## Contributing
 
 `xword-dl` is open-source and freely licensed, and I welcome contributions. It is usually helpful to start by opening a new issue for discussion. Generally, only downloaders that pull crossword data from a first-party source are included in official releases.
