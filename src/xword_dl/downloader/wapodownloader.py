@@ -84,16 +84,28 @@ class WaPoDownloader(BaseDownloader):
         solution = ""
         fill = ""
         markup = b""
+        rebus_board = []
+        rebus_index = 0
+        rebus_table = ""
 
         for cell in xw_data["cells"]:
             if ans := cell.get("answer"):
-                solution += ans
-                fill += "-"
-                markup += b"\x80" if cell.get("circle") else b"\x00"
+                if len(ans) > 1:
+                    solution += ans[0]
+                    fill += "-"
+                    rebus_board.append(rebus_index + 1)
+                    rebus_table += f"{rebus_index:2d}:{ans};"
+                    rebus_index += 1
+                else:
+                    solution += ans
+                    fill += "-"
+                    markup += b"\x80" if cell.get("circle") else b"\x00"
+                    rebus_board.append(0)
             else:
                 solution += "."
                 fill += "."
                 markup += b"\x00"
+                rebus_board.append(0)
 
         puzzle.solution = solution
         puzzle.fill = fill
@@ -106,10 +118,16 @@ class WaPoDownloader(BaseDownloader):
         puzzle.clues = [clue["clue"].strip() for clue in clues]
 
         has_markup = b"\x80" in markup
+        has_rebus = any(rebus_board)
 
         if has_markup:
             puzzle.extensions[b"GEXT"] = markup
             puzzle._extensions_order.append(b"GEXT")
             puzzle.markup()
+        if has_rebus:
+            puzzle.extensions[b"GRBS"] = bytes(rebus_board)
+            puzzle.extensions[b"RTBL"] = rebus_table.encode(puz.ENCODING)
+            puzzle._extensions_order.extend([b"GRBS", b"RTBL"])
+            puzzle.rebus()
 
         return puzzle
