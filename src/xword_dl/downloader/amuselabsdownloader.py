@@ -117,7 +117,7 @@ class AmuseLabsDownloader(BaseDownloader):
                 "This outlet does not support finding crosswords by date"
             )
 
-        res = requests.get(f"{self.calendar_url}&year={dt.year}&month={dt.month - 1}")
+        res = self.session.get(f"{self.calendar_url}&year={dt.year}&month={dt.month - 1}")
         soup = BeautifulSoup(res.text, features="lxml")
 
         # look for the calendar box for the requested day
@@ -138,7 +138,8 @@ class AmuseLabsDownloader(BaseDownloader):
                 "No puzzle found for the requested date"
             )
 
-        self.get_and_add_picker_token(res.text)
+        self.id = puzzle_id
+        self.get_and_add_picker_token()  # the load token is on the date picker, not the calendar
 
         return self.find_puzzle_url_from_id(puzzle_id)
 
