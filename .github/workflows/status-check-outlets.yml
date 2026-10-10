@@ -245,6 +245,12 @@ jobs:
       - name: Test The Walrus
         if: '!cancelled()'
         run: xword-dl wal
+      - name: Test Seattle Times Midi latest
+        if: '!cancelled()'
+        run: xword-dl stm
+      - name: Test Seattle Times Midi by date
+        if: '!cancelled()'
+        run: xword-dl stm -d "2026-10-01"
       - name: Test Washington Post latest
         if: '!cancelled()'
         run: xword-dl wp

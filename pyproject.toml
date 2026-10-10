@@ -46,6 +46,7 @@ fix = true
 venvPath = "."
 venv = ".venv"
 typeCheckingMode = "standard"
+include = ["src/"]
 
 [dependency-groups]
 dev = [
