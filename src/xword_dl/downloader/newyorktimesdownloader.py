@@ -324,7 +324,8 @@ class NewYorkTimesBonusDownloader(NewYorkTimesDownloader):
             raise XWordDLException(f'Cannot parse date from bonus URL: "{url}"')
 
     def find_by_date(self, dt):
-        return self.url_from_date.format(dt.strftime("%Y-%m-01"))
+        self.date = datetime.datetime(dt.year, dt.month, 1)
+        return self.url_from_date.format(self.date.strftime("%Y-%m-%d"))
 
     def find_latest(self):
         today = datetime.date.today()
