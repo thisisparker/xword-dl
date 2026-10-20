@@ -308,6 +308,24 @@ class NewYorkTimesBonusDownloader(NewYorkTimesDownloader):
     def matches_url(cls, url_components):
         return "nytimes.com" in url_components.netloc and "bonus" in url_components.path
 
+    def parse_date_from_url(self, url):
+        path = urllib.parse.urlparse(url).path.strip("/")
+        parts = path.split("/")
+        try:
+            bonus_idx = parts.index("bonus")
+            date_part = parts[bonus_idx + 1].removesuffix(".json")
+            if "-" in date_part:
+                return datetime.datetime.strptime(date_part, "%Y-%m-%d")
+            year = int(date_part)
+            month = int(parts[bonus_idx + 2])
+            day = int(parts[bonus_idx + 3]) if len(parts) > bonus_idx + 3 else 1
+            return datetime.datetime(year, month, day)
+        except (ValueError, IndexError):
+            raise XWordDLException(f'Cannot parse date from bonus URL: "{url}"')
+
+    def find_by_date(self, dt):
+        return self.url_from_date.format(dt.strftime("%Y-%m-01"))
+
     def find_latest(self):
         today = datetime.date.today()
         q = "https://www.nytimes.com/svc/crosswords/v3/null/puzzles.json"
