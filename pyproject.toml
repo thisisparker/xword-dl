@@ -9,7 +9,7 @@ requires-python = ">=3.10"
 dynamic = [ "version" ]
 dependencies = [
     "beautifulsoup4==4.13.4",
-    "dateparser==1.2.2",
+    "dateparser>=1.4.3",
     "emoji==2.14.1",
     "html2text==2025.4.15",
     "lxml==6.1.0",
