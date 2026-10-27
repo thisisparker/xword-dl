@@ -27,7 +27,7 @@ class BaseDownloader:
 
         self.settings = {}
 
-        self.settings["headers"] = {"User-Agent": f"xword-dl/{__version__}"}
+        self.settings["headers"] = {"User-Agent": f"python-requests/{requests.__version__}"}
 
         self.settings.update(read_config_values("general"))
 
