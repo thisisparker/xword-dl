@@ -67,7 +67,7 @@ class GuardianDownloader(BaseDownloader):
             puzzle.title += " - no solution provided"
 
         self.date = datetime.datetime.fromtimestamp(xw_data["date"] // 1000, 
-                                                    tz=datetime.timezone.utc)
+                                                    ZoneInfo("Europe/London"))
 
         grid_dict = {}
 
