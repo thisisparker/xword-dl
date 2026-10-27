@@ -66,7 +66,8 @@ class GuardianDownloader(BaseDownloader):
         if not all(e.get("solution") for e in xw_data["entries"]):
             puzzle.title += " - no solution provided"
 
-        self.date = datetime.datetime.fromtimestamp(xw_data["date"] // 1000)
+        self.date = datetime.datetime.fromtimestamp(xw_data["date"] // 1000, 
+                                                    tz=datetime.timezone.utc)
 
         grid_dict = {}
 
