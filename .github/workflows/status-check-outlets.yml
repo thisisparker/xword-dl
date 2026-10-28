@@ -43,6 +43,15 @@ jobs:
       - name: Test Daily Beast latest
         if: '!cancelled()'
         run: xword-dl db
+      - name: Test Defector latest
+        if: '!cancelled()'
+        run: xword-dl def
+      - name: Test Defector by date
+        if: '!cancelled()'
+        run: xword-dl def -d 7/1/24
+      - name: Test Defector by URL
+        if: '!cancelled()'
+        run: xword-dl "https://defector.com/the-crossword-july-1-crosstown-rivals"
       - name: Test Daily Pop latest
         if: '!cancelled()'
         run: xword-dl pop
