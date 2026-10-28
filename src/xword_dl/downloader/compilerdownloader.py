@@ -97,7 +97,7 @@ class CrosswordCompilerJSEncodedDownloader(CrosswordCompilerDownloader):
             s for s in soup.find_all("script") if isinstance(s, Tag) and s.get("src")
         ]:
             js_url = urllib.parse.urljoin(url, str(script.get("src")))
-            res = requests.get(js_url, headers={"User-Agent": "python-requests"})
+            res = requests.get(js_url, headers={"User-Agent": "xword-dl"})
             if res.text.startswith("var CrosswordPuzzleData"):
                 return js_url
 
