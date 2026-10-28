@@ -19,7 +19,9 @@ from ..util import XWordDLException, unidecode
 
 class AmuseLabsDownloader(BaseDownloader):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(
+            headers={"User-Agent": f"requests/{requests.__version__}"}, **kwargs
+        )
 
         self.id = None
 
