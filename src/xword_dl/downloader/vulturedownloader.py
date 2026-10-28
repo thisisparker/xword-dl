@@ -15,6 +15,13 @@ class VultureDownloader(AmuseLabsDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+
+        self.session.headers.update(
+            {
+                "User-Agent": "xword-dl",  # needed to get around privacy consent screen
+            }
+        )
+
         self.archive_url = "https://www.vulture.com/tags/vulture-10x10/"
 
     @classmethod
