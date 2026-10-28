@@ -1,12 +1,12 @@
 import datetime
 import urllib.parse
+from getpass import getpass
 
 import puz
 import requests
-from getpass import getpass
 
+from ..util import XWordDLException, join_bylines, unidecode, update_config_file
 from .basedownloader import BaseDownloader
-from ..util import XWordDLException, join_bylines, update_config_file, unidecode
 
 
 class NewYorkTimesDownloader(BaseDownloader):
@@ -156,25 +156,36 @@ class NewYorkTimesDownloader(BaseDownloader):
                 solution += "."
                 fill += "."
                 rebus_board.append(0)
-            elif square and len(square.get("answer", "")) == 1:
-                solution += square["answer"]
-                fill += "-"
-                rebus_board.append(0)
             else:
+                raw_answer = (square.get("answer") or "").strip()
+                if not raw_answer:
+                    valid_alternates = [
+                        a
+                        for a in square.get("moreAnswers", {}).get("valid", [])
+                        if a.strip()
+                    ]
+                    if valid_alternates:
+                        raw_answer = valid_alternates[0].strip()
+
                 try:
-                    suitable_answer = unidecode(
-                        square.get("answer") or square["moreAnswers"]["valid"][0]
-                    )
-                except (IndexError, KeyError):
+                    suitable_answer = unidecode(raw_answer)
+                except Exception:
+                    suitable_answer = ""
+
+                if len(suitable_answer) == 1:
+                    solution += suitable_answer
+                    fill += "-"
+                    rebus_board.append(0)
+                elif len(suitable_answer) > 1:
+                    solution += suitable_answer[0]
+                    fill += "-"
+                    rebus_board.append(rebus_index + 1)
+                    rebus_table += f"{rebus_index:2d}:{suitable_answer};"
+                    rebus_index += 1
+                else:
                     raise XWordDLException(
                         "Unable to parse puzzle JSON. Possibly something .puz incompatible"
                     )
-
-                solution += suitable_answer[0]
-                fill += "-"
-                rebus_board.append(rebus_index + 1)
-                rebus_table += "{:2d}:{};".format(rebus_index, suitable_answer)
-                rebus_index += 1
 
             markup += b"\x00" if square.get("type", 1) == 1 else b"\x80"
 
