@@ -18,7 +18,7 @@ class VultureDownloader(AmuseLabsDownloader):
 
         self.session.headers.update(
             {
-                "User-Agent": "xword-dl",  # needed to get around privacy consent screen
+                "User-Agent": "Googlebot",  # needed to get around privacy consent screen
             }
         )
 
