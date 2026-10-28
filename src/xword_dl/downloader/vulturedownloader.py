@@ -1,4 +1,5 @@
-from datetime import datetime
+import requests
+from datetime import datetime, date
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup, Tag
@@ -55,9 +56,12 @@ class VultureDownloader(AmuseLabsDownloader):
         return url
 
     def find_by_date(self, dt):
-        url_format = f"{dt:%B-{dt.day}-%Y}".lower()
+        if dt.date() == date.today(): # Latest puzzle doesn't have date in URL
+            url_format = ""
+        else:
+            url_format = f"-{dt:%B-{dt.day}-%Y}".lower()
         guessed_url = (
-            f"https://www.vulture.com/article/daily-crossword-puzzle-{url_format}.html"
+            f"https://www.vulture.com/article/daily-crossword-puzzle{url_format}.html"
         )
         res = self.session.head(guessed_url)
         if res.status_code == 404:
@@ -72,7 +76,13 @@ class VultureDownloader(AmuseLabsDownloader):
             parsed_url = urlparse(url)
             slug = parsed_url.path.split("/")[-1].removesuffix(".html")
             date_section = "-".join(slug.split("-")[-3:])
-            self.date = datetime.strptime(date_section, "%B-%d-%Y")
+            if date_section == "daily-crossword-puzzle": # Latest, no date in URL 
+                headers = {"User-Agent": "Googlebot"} # python-requests blocked
+                response = requests.get(url, headers=headers)
+                header_date = response.headers.get('Date') # Publishing date
+                self.date = datetime.strptime(header_date, '%a, %d %b %Y %H:%M:%S %Z')
+            else:
+                self.date = datetime.strptime(date_section, "%B-%d-%Y")
         except Exception:
             pass
 
