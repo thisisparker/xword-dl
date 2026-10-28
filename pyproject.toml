@@ -46,6 +46,13 @@ fix = true
 venvPath = "."
 venv = ".venv"
 typeCheckingMode = "standard"
+exclude = [
+    "**/__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    ".git",
+]
 
 [dependency-groups]
 dev = [

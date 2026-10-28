@@ -8,7 +8,6 @@ Supported outlets:
 |------|-------|:-------------:|:------------:|:-----------:|
 |*Atlantic*|`atl`|✔️|✔️||
 |*Crossword Club*|`club`|✔️|✔️|✔️|
-|*Billboard*|`bill`|✔️|||
 |*The Daily Beast*|`db`|✔️|||
 |*Daily Pop*|`pop`|✔️|✔️||
 |*Der Standard*|`std`|✔️||✔️|
@@ -28,8 +27,6 @@ Supported outlets:
 |*The New Yorker*|`tny`|✔️|✔️|✔️|
 |*The New Yorker Mini*|`tnym`|✔️|✔️|✔️|
 |*Newsday*|`nd`|✔️|✔️||
-|*Observer Everyman*|`ever`|✔️||✔️|
-|*Observer Speedy*|`spdy`|✔️||✔️|
 |*Daily Princetonian*|`prince`|✔️|✔️||
 |*Daily Princetonian Mini*|`prince-mini`|✔️|✔️||
 |*Puzzmo*|`pzm`|✔️|✔️|✔️|
@@ -94,7 +91,7 @@ In either case, the resulting .puz file can be opened with [`cursewords`](https:
 
 Due to the constraints of the .puz format, the `xword-dl`'s conversion may be a bit lossy. For example, the most common form of .puz files only support [Latin-1 text encoding](https://en.wikipedia.org/wiki/ISO/IEC_8859-1), which means that some special characters (and even “curly quotes”) need to be converted before saving.
 
-`xword-dl` will also, by default, convert provided HTML to plaintext markdown. If you want to skip that step, you can provide the `--preserve-html` flag at runtime or set the `preserve-html` key to `True` in your config file. 
+`xword-dl` will also, by default, convert provided HTML to plaintext markdown. If you want to skip that step, you can provide the `--preserve-html` flag at runtime or set the `preserve-html` key to `True` in your config file.
 
 ### Specifying puzzle date
 
