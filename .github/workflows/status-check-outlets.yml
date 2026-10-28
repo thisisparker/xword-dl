@@ -251,3 +251,9 @@ jobs:
       - name: Test Washington Post by date
         if: '!cancelled()'
         run: xword-dl wp -d "6/22/25"
+      - name: Test Wall Street Journal latest
+        if: '!cancelled()'
+        run: xword-dl wsj
+      - name: Test Wall Street Journal by date
+        if: '!cancelled()'
+        run: xword-dl wsj -d "2026-07-10"
