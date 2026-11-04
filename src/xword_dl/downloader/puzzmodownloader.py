@@ -132,7 +132,6 @@ class PuzzmoDownloader(BaseDownloader):
         self.date = dateparser.parse(xw_data["dailyTitle"]) or dateparser.parse(
             xw_data["dailyTitle"].split("-")[0]
         )
-        print(xw_data)
 
         puzzle.title = xw_data.get("name", "")
         puzzle.author = join_bylines(
