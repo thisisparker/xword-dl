@@ -321,3 +321,27 @@ class PuzzmoBigDownloader(PuzzmoDownloader):
         guessed_most_recent_date = self._get_most_recent_puzzmo_big_date(today)
 
         return self.find_by_date(guessed_most_recent_date) + "/big"
+
+
+class PuzzmoMiniDownloader(PuzzmoDownloader):
+    command = "pzmm"
+    outlet = "Puzzmo Mini"
+    outlet_prefix = "Puzzmo Mini"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.finder_key += "/mini"
+
+    @classmethod
+    def matches_url(cls, url_components):
+        return "puzzmo.com" in url_components.netloc and bool(
+            re.match(
+                r"^/puzzle/\d{4}-\d{2}-\d{2}/crossword/mini/?$", url_components.path
+            )
+        )
+
+    def find_latest(self):
+        puzzmo_date = self._get_puzzmo_date()
+
+        return self.find_by_date(puzzmo_date)
