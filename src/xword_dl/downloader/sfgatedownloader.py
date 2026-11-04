@@ -32,7 +32,6 @@ class SFGATEDownloader(PuzzmoDownloader):
 
         # California-based clues are marked by an inline image, change to text
         xd_data = re.sub(r'\{\!.*?california bear.*?\}', ':california bear:', xd_data)
-        print(xd_data)
         puzzle = self.parse_xd_format(xd_data)
 
         # Override xd metadata with more reliable API results
