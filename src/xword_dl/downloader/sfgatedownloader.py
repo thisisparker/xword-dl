@@ -40,7 +40,9 @@ class PuzzmoBigDownloader(PuzzmoDownloader):
             xw_data["dailyTitle"].split("-")[0]
         )
 
+        # Typical 'Name' field is None for the California Mini, use formatted date from dailyTitle instead
         puzzle.title = xw_data.get("dailyTitle", "")
+
         puzzle.author = join_bylines(
             [a.get("publishingName") or a.get("name") for a in xw_data["authors"]]
         )
