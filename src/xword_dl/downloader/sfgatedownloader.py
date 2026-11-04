@@ -4,6 +4,7 @@ import dateparser
 from .puzzmodownloader import PuzzmoDownloader
 from ..util import join_bylines
 
+
 class SFGATEDownloader(PuzzmoDownloader):
     command = "sfg"
     outlet = "SFGATE California Mini"
@@ -18,7 +19,8 @@ class SFGATEDownloader(PuzzmoDownloader):
     def matches_url(cls, url_components):
         return "puzzmo.com" in url_components.netloc and bool(
             re.match(
-                r"^/puzzle/\d{4}-\d{2}-\d{2}/crossword/california/?$", url_components.path
+                r"^/puzzle/\d{4}-\d{2}-\d{2}/crossword/california/?$",
+                url_components.path,
             )
         )
 
@@ -26,12 +28,12 @@ class SFGATEDownloader(PuzzmoDownloader):
         puzzmo_date = self._get_puzzmo_date()
 
         return self.find_by_date(puzzmo_date) + "/california"
-    
+
     def parse_xword(self, xw_data):
         xd_data = xw_data["puzzle"]
 
         # California-based clues are marked by an inline image, change to text
-        xd_data = re.sub(r'\{\!.*?california bear.*?\}', ':california bear:', xd_data)
+        xd_data = re.sub(r"\{\!.*?california bear.*?\}", ":california bear:", xd_data)
         puzzle = self.parse_xd_format(xd_data)
 
         # Override xd metadata with more reliable API results
