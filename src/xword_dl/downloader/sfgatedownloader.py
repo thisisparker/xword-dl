@@ -4,7 +4,7 @@ import dateparser
 from .puzzmodownloader import PuzzmoDownloader
 from ..util import join_bylines
 
-class PuzzmoBigDownloader(PuzzmoDownloader):
+class SFGATEDownloader(PuzzmoDownloader):
     command = "sfg"
     outlet = "SFGATE California Mini"
     outlet_prefix = "SFGATE California Mini"
