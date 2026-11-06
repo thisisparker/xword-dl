@@ -37,6 +37,7 @@ Supported outlets:
 |*Simply Daily Puzzles*|`sdp`|✔️|✔️|✔️|
 |*Simply Daily Puzzles Cryptic*|`sdpc`|✔️|✔️|✔️|
 |*Simply Daily Puzzles Quick*|`sdpq`|✔️|✔️|✔️|
+|*STAT News Mini*|`stat`|✔️|✔️||
 |*Universal*|`uni`|✔️|✔️||
 |*USA Today*|`usa`|✔️|✔️||
 |*Vox*|`vox`|✔️|||
