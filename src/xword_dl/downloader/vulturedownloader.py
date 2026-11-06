@@ -16,7 +16,6 @@ class VultureDownloader(AmuseLabsDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-
         self.session.headers.update(
             {
                 "User-Agent": "Googlebot",  # needed to get around privacy consent screen
@@ -56,7 +55,7 @@ class VultureDownloader(AmuseLabsDownloader):
         return url
 
     def find_by_date(self, dt):
-        if dt.date() == date.today(): # Latest puzzle doesn't have date in URL
+        if dt.date() == date.today():  # Latest puzzle doesn't have date in URL
             url_format = ""
         else:
             url_format = f"-{dt:%B-{dt.day}-%Y}".lower()
@@ -76,11 +75,15 @@ class VultureDownloader(AmuseLabsDownloader):
             parsed_url = urlparse(url)
             slug = parsed_url.path.split("/")[-1].removesuffix(".html")
             date_section = "-".join(slug.split("-")[-3:])
-            if date_section == "daily-crossword-puzzle": # Latest, no date in URL 
-                headers = {"User-Agent": "Googlebot"} # python-requests blocked
+            if date_section == "daily-crossword-puzzle":  # Latest, no date in URL
+                headers = {"User-Agent": "Googlebot"}  # python-requests blocked
                 response = requests.get(url, headers=headers)
-                header_date = response.headers.get('Date') # Publishing date
-                self.date = datetime.strptime(header_date, '%a, %d %b %Y %H:%M:%S %Z')
+                header_date = response.headers.get("Date")  # Publishing date
+                if not header_date:
+                    raise XWordDLException(
+                        "Could not determine puzzle date: no Date header in response"
+                    )
+                self.date = datetime.strptime(header_date, "%a, %d %b %Y %H:%M:%S %Z")
             else:
                 self.date = datetime.strptime(date_section, "%B-%d-%Y")
         except Exception:
