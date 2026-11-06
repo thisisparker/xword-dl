@@ -81,3 +81,31 @@ class LATimesMiniDownloader(LATimesDownloader):
         self.get_and_add_picker_token()
 
         return self.find_puzzle_url_from_id(self.id)
+
+
+class LATimesMidiDownloader(LATimesDownloader):
+    command = "latd"
+    outlet = "Los Angeles Times Midi"
+    outlet_prefix = "LA Times Midi"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.picker_url = "https://lat.amuselabs.com/lat/date-picker?set=latimes-midi"
+        self.url_from_id = (
+            "https://lat.amuselabs.com/lat/crossword?id={puzzle_id}&set=latimes-midi"
+        )
+
+    def guess_date_from_puzzle_title(self, title):
+        self.date = dateparser.parse(title)
+
+    def find_by_date(self, dt) -> str:
+        """ID format for midi puzzles differs from other amuselabs and can't
+        be built from date.
+
+        Other amuselabs puzzles, including LAT mini and full, use
+        prefix_YYYYMMDD or similar formatting for id, allowing for reverse-
+        engineering when given date. LAT midi uses the format
+        PuzzleTitle_YYYYMMDD, so one must know the puzzle title before finding
+        the url, which is currently not feasible"""
+        raise NotImplementedError
