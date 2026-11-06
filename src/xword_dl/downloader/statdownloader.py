@@ -1,7 +1,7 @@
 from .amuselabsdownloader import AmuseLabsDownloader
 
 
-class DailyBeastDownloader(AmuseLabsDownloader):
+class STATDownloader(AmuseLabsDownloader):
     command = "stat"
     outlet = "STAT News Mini"
     outlet_prefix = "STAT Mini"
