@@ -15,7 +15,6 @@ class VultureDownloader(AmuseLabsDownloader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-
         self.session.headers.update(
             {
                 "User-Agent": "Googlebot",  # needed to get around privacy consent screen
