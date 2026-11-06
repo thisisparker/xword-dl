@@ -99,13 +99,13 @@ class LATimesMidiDownloader(LATimesDownloader):
     def guess_date_from_puzzle_title(self, title):
         self.date = dateparser.parse(title)
 
-    def find_by_date(self, dt: datetime) -> str:
+    def find_by_date(self, dt) -> str:
         """ID format for midi puzzles differs from other amuselabs and can't
         be built from date.
 
-        Other amuselabs puzzles, including LAT mini and full, use 
+        Other amuselabs puzzles, including LAT mini and full, use
         prefix_YYYYMMDD or similar formatting for id, allowing for reverse-
-        engineering when given date. LAT midi uses the format 
+        engineering when given date. LAT midi uses the format
         PuzzleTitle_YYYYMMDD, so one must know the puzzle title before finding
         the url, which is currently not feasible"""
         raise NotImplementedError
