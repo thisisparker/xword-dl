@@ -1,7 +1,5 @@
 from .amuselabsdownloader import AmuseLabsDownloader
 from ..util import XWordDLException
-from datetime import datetime
-import requests
 
 
 class STATDownloader(AmuseLabsDownloader):
@@ -19,9 +17,9 @@ class STATDownloader(AmuseLabsDownloader):
         self.id = "STAT_" + url_formatted_date
 
         self.get_and_add_picker_token()
-        
+
         url = self.find_puzzle_url_from_id(self.id)
-        
+
         res = self.session.get(url)
 
         if (
@@ -29,6 +27,5 @@ class STATDownloader(AmuseLabsDownloader):
             or "The puzzle you are trying to access was not found" in res.text
         ):
             raise XWordDLException(f"No puzzle found for: {dt: %A, %-d %B, %Y}")
-    
-        return self.find_puzzle_url_from_id(self.id)
 
+        return self.find_puzzle_url_from_id(self.id)
