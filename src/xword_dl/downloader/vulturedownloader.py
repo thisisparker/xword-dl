@@ -1,4 +1,5 @@
 import requests
+import re
 from datetime import datetime, date
 from urllib.parse import urlparse
 
@@ -78,12 +79,19 @@ class VultureDownloader(AmuseLabsDownloader):
             if date_section == "daily-crossword-puzzle":  # Latest, no date in URL
                 headers = {"User-Agent": "Googlebot"}  # python-requests blocked
                 response = requests.get(url, headers=headers)
-                header_date = response.headers.get("Date")  # Publishing date
-                if not header_date:
+                soup = BeautifulSoup(response.text, "html.parser")
+                html_date = None
+                for script in soup.find_all("script"):
+                    text = script.get_text() or ""
+                    match = re.search(r'.publishDate\s*=\s*"(\d{4}-\d{2}-\d{2})"', text)
+                    if match:
+                        html_date = match.group(1)
+                        break
+                if not html_date:
                     raise XWordDLException(
-                        "Could not determine puzzle date: no Date header in response"
+                        "Could not determine puzzle date: no Date in html"
                     )
-                self.date = datetime.strptime(header_date, "%a, %d %b %Y %H:%M:%S %Z")
+                self.date = datetime.strptime(html_date, "%Y-%m-%d")
             else:
                 self.date = datetime.strptime(date_section, "%B-%d-%Y")
         except Exception:
