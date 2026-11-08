@@ -1,6 +1,6 @@
 import requests
 import re
-from datetime import datetime, date
+from datetime import datetime
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup, Tag
@@ -79,15 +79,17 @@ class VultureDownloader(AmuseLabsDownloader):
             return datetime.strptime(date_section, "%B-%d-%Y")
 
     def find_by_date(self, dt):
-        if dt.date() == date.today():  # Latest puzzle doesn't have date in URL
-            latest_url = "https://www.vulture.com/article/daily-crossword-puzzle.html"
-            latest_date = self.date_from_html(latest_url).date()
-            if dt.date() != latest_date:
-                raise XWordDLException(
-                    f"No puzzle found for today, most recent puzzle is: {latest_date: %A, %B %-d, %Y}"
-                )
-            else:
-                guessed_url = latest_url
+        latest_url = "https://www.vulture.com/article/daily-crossword-puzzle.html"
+        latest_date = self.date_from_html(
+            latest_url
+        ).date()  # date of "latest" (no date in url, have to search html)
+
+        if dt.date() > latest_date:  # specified date is after latest date
+            raise XWordDLException(
+                f"No puzzle found for {dt: %A, %B %-d, %Y}, most recent puzzle is: {latest_date: %A, %B %-d, %Y}"
+            )
+        elif dt.date() == latest_date:
+            guessed_url = latest_url
         else:
             url_format = f"-{dt:%B-{dt.day}-%Y}".lower()
             guessed_url = f"https://www.vulture.com/article/daily-crossword-puzzle{url_format}.html"
