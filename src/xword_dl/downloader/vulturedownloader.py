@@ -55,14 +55,42 @@ class VultureDownloader(AmuseLabsDownloader):
 
         return url
 
+    def date_from_html(self, url):
+        parsed_url = urlparse(url)
+        slug = parsed_url.path.split("/")[-1].removesuffix(".html")
+        date_section = "-".join(slug.split("-")[-3:])
+        if date_section == "daily-crossword-puzzle":  # Latest, no date in URL
+            headers = {"User-Agent": "Googlebot"}  # python-requests blocked
+            response = requests.get(url, headers=headers)
+            soup = BeautifulSoup(response.text, "html.parser")
+            html_date = None
+            for script in soup.find_all("script"):
+                text = script.get_text() or ""
+                match = re.search(r'.publishDate\s*=\s*"(\d{4}-\d{2}-\d{2})"', text)
+                if match:
+                    html_date = match.group(1)
+                    break
+            if not html_date:
+                raise XWordDLException(
+                    "Could not determine puzzle date: no Date in html"
+                )
+            return datetime.strptime(html_date, "%Y-%m-%d")
+        else:
+            return datetime.strptime(date_section, "%B-%d-%Y")
+
     def find_by_date(self, dt):
         if dt.date() == date.today():  # Latest puzzle doesn't have date in URL
-            url_format = ""
+            latest_url = "https://www.vulture.com/article/daily-crossword-puzzle.html"
+            latest_date = self.date_from_html(latest_url).date()
+            if dt.date() != latest_date:
+                raise XWordDLException(
+                    f"No puzzle found for today, most recent puzzle is: {latest_date: %A, %B %-d, %Y}"
+                )
+            else:
+                guessed_url = latest_url
         else:
             url_format = f"-{dt:%B-{dt.day}-%Y}".lower()
-        guessed_url = (
-            f"https://www.vulture.com/article/daily-crossword-puzzle{url_format}.html"
-        )
+            guessed_url = f"https://www.vulture.com/article/daily-crossword-puzzle{url_format}.html"
         res = self.session.head(guessed_url)
         if res.status_code == 404:
             raise XWordDLException(
@@ -73,28 +101,8 @@ class VultureDownloader(AmuseLabsDownloader):
 
     def find_solver(self, url):
         try:
-            parsed_url = urlparse(url)
-            slug = parsed_url.path.split("/")[-1].removesuffix(".html")
-            date_section = "-".join(slug.split("-")[-3:])
-            if date_section == "daily-crossword-puzzle":  # Latest, no date in URL
-                headers = {"User-Agent": "Googlebot"}  # python-requests blocked
-                response = requests.get(url, headers=headers)
-                soup = BeautifulSoup(response.text, "html.parser")
-                html_date = None
-                for script in soup.find_all("script"):
-                    text = script.get_text() or ""
-                    match = re.search(r'.publishDate\s*=\s*"(\d{4}-\d{2}-\d{2})"', text)
-                    if match:
-                        html_date = match.group(1)
-                        break
-                if not html_date:
-                    raise XWordDLException(
-                        "Could not determine puzzle date: no Date in html"
-                    )
-                self.date = datetime.strptime(html_date, "%Y-%m-%d")
-            else:
-                self.date = datetime.strptime(date_section, "%B-%d-%Y")
-        except Exception:
+            self.date = self.date_from_html(url)
+        except XWordDLException:
             pass
 
         res = self.session.get(url)
