@@ -91,31 +91,26 @@ class WSJDownloader(BaseDownloader):
 
         solution = ""
         fill = ""
-        markup = b""
+        circled = []
+        i = 0
 
         for row in xw_data:
             for cell in row:
                 if cell.get("Blank"):
                     fill += "."
                     solution += "."
-                    markup += b"\x00"
                 else:
                     fill += "-"
                     solution += cell["Letter"] or "X"
-                    markup += (
-                        b"\x80"
-                        if (
-                            cell.get("style", "")
-                            and cell["style"]["shapebg"] == "circle"
-                        )
-                        else b"\x00"
-                    )
+                    if cell.get("style", "") and cell["style"]["shapebg"] == "circle":
+                        circled.append(i)
+                i += 1
 
         puzzle.fill = fill
         puzzle.solution = solution
 
         if all(c in [".", "X"] for c in puzzle.solution):
-            puzzle.solution_state = 0x0002
+            puzzle.solution_state = puz.SolutionState.NotProvided
 
         clue_list = (
             xword_metadata["clues"][0]["clues"] + xword_metadata["clues"][1]["clues"]
@@ -126,11 +121,7 @@ class WSJDownloader(BaseDownloader):
 
         puzzle.clues = clues
 
-        has_markup = b"\x80" in markup
-
-        if has_markup:
-            puzzle.extensions[b"GEXT"] = markup
-            puzzle._extensions_order.append(b"GEXT")
-            puzzle.markup()
+        if circled:
+            puzzle.markup().set_markup_squares(circled, puz.GridMarkup.Circled)
 
         return puzzle

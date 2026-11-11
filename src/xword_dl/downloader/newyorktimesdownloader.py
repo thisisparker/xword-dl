@@ -146,20 +146,15 @@ class NewYorkTimesDownloader(BaseDownloader):
 
         solution = ""
         fill = ""
-        markup = b""
-        rebus_board = []
-        rebus_index = 0
-        rebus_table = ""
+        circled = []
 
         for idx, square in enumerate(xw_data["body"][0]["cells"]):
             if not square:
                 solution += "."
                 fill += "."
-                rebus_board.append(0)
-            elif square and len(square.get("answer", "")) == 1:
+            elif len(square.get("answer", "")) == 1:
                 solution += square["answer"]
                 fill += "-"
-                rebus_board.append(0)
             else:
                 try:
                     suitable_answer = unidecode(
@@ -172,25 +167,16 @@ class NewYorkTimesDownloader(BaseDownloader):
 
                 solution += suitable_answer[0]
                 fill += "-"
-                rebus_board.append(rebus_index + 1)
-                rebus_table += "{:2d}:{};".format(rebus_index, suitable_answer)
-                rebus_index += 1
+                puzzle.rebus().add_rebus_squares(idx, suitable_answer)
 
-            markup += b"\x00" if square.get("type", 1) == 1 else b"\x80"
+            if square and square.get("type", 1) != 1:
+                circled.append(idx)
 
         puzzle.solution = solution
         puzzle.fill = fill
 
-        if b"\x80" in markup:
-            puzzle.extensions[b"GEXT"] = markup
-            puzzle._extensions_order.append(b"GEXT")
-            puzzle.markup()
-
-        if any(rebus_board):
-            puzzle.extensions[b"GRBS"] = bytes(rebus_board)
-            puzzle.extensions[b"RTBL"] = rebus_table.encode(puz.ENCODING)
-            puzzle._extensions_order.extend([b"GRBS", b"RTBL"])
-            puzzle.rebus()
+        if circled:
+            puzzle.markup().set_markup_squares(circled, puz.GridMarkup.Circled)
 
         clue_list = xw_data["body"][0]["clues"]
         clue_list.sort(key=lambda c: (int(c["label"]), c["direction"]))
@@ -234,7 +220,7 @@ class NewYorkTimesVarietyDownloader(NewYorkTimesDownloader):
                 "Encountered error while parsing data. Maybe the selected puzzle is not a crossword?"
             )
         if xw_data.get("subcategory") == 3:
-            puzzle.puzzletype = 0x0401  # PuzzleType.Diagramless
+            puzzle.puzzletype = puz.PuzzleType.Diagramless
         return puzzle
 
 
