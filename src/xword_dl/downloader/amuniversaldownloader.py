@@ -57,7 +57,7 @@ class AMUniversalDownloader(BaseDownloader):
 
     def parse_xword(self, xw_data):
         fetched = {}
-        for field in ["Title", "Author", "Editor", "Copryight"]:
+        for field in ["Title", "Author", "Editor", "Copyright"]:
             fetched[field] = unquote(xw_data.get(field, "")).strip()
 
         puzzle = puz.Puzzle()
