@@ -156,15 +156,20 @@ class NewYorkTimesDownloader(BaseDownloader):
                 solution += "."
                 fill += "."
                 rebus_board.append(0)
-            elif square and len(square.get("answer", "")) == 1:
+            elif (
+                square
+                and len(square.get("answer", "")) == 1
+                and ord(square["answer"]) < 256
+            ):
                 solution += square["answer"]
                 fill += "-"
                 rebus_board.append(0)
             else:
                 try:
-                    suitable_answer = unidecode(
-                        square.get("answer") or square["moreAnswers"]["valid"][0]
-                    )
+                    answer = square.get("answer") or square["moreAnswers"]["valid"][0]
+                    if len(square.get("answer", "")) == 1:
+                        answer = square["moreAnswers"]["valid"][0]
+                    suitable_answer = unidecode(answer)
                 except (IndexError, KeyError):
                     raise XWordDLException(
                         "Unable to parse puzzle JSON. Possibly something .puz incompatible"
