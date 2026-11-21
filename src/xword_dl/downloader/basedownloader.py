@@ -71,6 +71,8 @@ class BaseDownloader:
         for token in tokens.keys():
             replacement = kwargs.get(token, tokens[token])
             replacement = remove_invalid_chars_from_filename(replacement)
+            if date:
+                replacement = replacement.replace("%", "%%")
             template = template.replace("%" + token, replacement)
 
         if date:
